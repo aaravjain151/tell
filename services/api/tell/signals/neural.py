@@ -41,6 +41,18 @@ def onnx_vote(x16k: np.ndarray) -> Tell:
     return Tell("neural_onnx", "acoustic", p_fake, W_ONNX, f"anti-spoof model: P(synthetic) = {p_fake:.2f}")
 
 
+_FAKE_WORDS = {"fake", "spoof", "spoofed", "synthetic", "synth", "ai", "deepfake", "generated"}
+
+
+def fake_label_index(id2label: dict) -> int | None:
+    """Index of the 'synthetic' class, matching whole words so 'bona-fide'/'real'/'fail' never match."""
+    import re
+    for i, label in id2label.items():
+        if set(re.split(r"[^a-z0-9]+", str(label).lower())) & _FAKE_WORDS:
+            return int(i)
+    return None
+
+
 def hf_vote(x16k: np.ndarray) -> Tell:
     global _hf
     name = os.environ.get("HF_SPOOF_MODEL", "")
@@ -58,9 +70,10 @@ def hf_vote(x16k: np.ndarray) -> Tell:
     with torch.no_grad():
         inputs = fe(x16k, sampling_rate=16_000, return_tensors="pt")
         probs = torch.softmax(model(**inputs).logits, dim=-1)[0].tolist()
-    labels = {i: str(l).lower() for i, l in model.config.id2label.items()}
-    fake_idx = next((i for i, l in labels.items() if any(k in l for k in ("fake", "spoof", "synth", "ai"))), None)
-    p_fake = probs[fake_idx] if fake_idx is not None else probs[0]
+    fake_idx = fake_label_index(model.config.id2label)
+    if fake_idx is None:
+        return Tell("neural_hf", "acoustic", 0.5, W_HF, f"cannot tell which label is synthetic in {model.config.id2label}", applicable=False)
+    p_fake = probs[fake_idx]
     return Tell("neural_hf", "acoustic", float(p_fake), W_HF, f"{name.split('/')[-1]}: P(synthetic) = {p_fake:.2f}")
 
 
