@@ -21,7 +21,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 os.environ.setdefault("LLM_PROVIDER", "stub")
 
-from tell import pipeline  # noqa: E402
+from doublespeak import pipeline  # noqa: E402
 from tests.synth import make_call, to_wav_bytes  # noqa: E402
 
 TARGET_TRANSCRIPT = 0.85
@@ -112,7 +112,7 @@ def run_wild(folder: str, verbose: bool) -> None:
     tools/redteam/degrade.sh. Flat names `ai__<engine>__<script>.wav` / `human__<speaker>__<script>.wav` also work.
     """
     from eval.metrics import auc, eer, fpr_at_tpr, loeo
-    from tell.thresholds import P_AI_THRESHOLD, THRESHOLDS_VERSION
+    from doublespeak.thresholds import P_AI_THRESHOLD, THRESHOLDS_VERSION
     root = Path(folder)
     rows: dict[str, list[dict]] = {}
     for wav in sorted(root.rglob("*.wav")):

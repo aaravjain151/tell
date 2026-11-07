@@ -47,9 +47,9 @@ def audio_fingerprint(data: bytes | None) -> str:
 
 
 def sign(payload: dict, audio_fp: str) -> str:
-    key = os.environ.get("TELL_SIGNING_KEY", "change-me-local").encode()
+    key = os.environ.get("DOUBLESPEAK_SIGNING_KEY", "change-me-local").encode()
     canon = json.dumps({**payload, "audio_fp": audio_fp}, sort_keys=True, separators=(",", ":")).encode()
-    return "tell1:" + audio_fp + ":" + hmac.new(key, canon, hashlib.sha256).hexdigest()[:32]
+    return "ds1:" + audio_fp + ":" + hmac.new(key, canon, hashlib.sha256).hexdigest()[:32]
 
 
 def verify(payload: dict, signature: str) -> bool:

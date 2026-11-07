@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from tell.main import app
+from doublespeak.main import app
 from tests.synth import make_call, to_wav_bytes
 
 client = TestClient(app)

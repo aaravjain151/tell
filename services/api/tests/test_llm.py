@@ -1,4 +1,4 @@
-from tell import llm
+from doublespeak import llm
 
 
 def test_cap_words_keeps_the_tail():

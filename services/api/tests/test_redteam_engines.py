@@ -73,7 +73,7 @@ def test_unavailable_reasons(monkeypatch):
 
 
 def test_analysis_package_never_mentions_tts_services():
-    """Privacy: TTS clients live in tools/, outside the analysis package (tell/)."""
+    """Privacy: TTS clients live in tools/, outside the analysis package (doublespeak/)."""
     banned = ("elevenlabs", "voicestudio", "xi-api-key", "api.gradium")
     for p in (ROOT / "services" / "api" / "tell").rglob("*.py"):
         src = p.read_text().lower()
