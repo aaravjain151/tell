@@ -6,12 +6,12 @@ threshold above our largest allowed upload keeps every upload in RAM. The API's 
 """
 from __future__ import annotations
 
-import os
-
 from starlette.formparsers import MultiPartParser
+
+from .limits import max_upload_bytes   # one tolerant parser for DOUBLESPEAK_MAX_UPLOAD_MB
 
 
 def keep_uploads_in_memory() -> int:
-    cap = int(os.environ.get("DOUBLESPEAK_MAX_UPLOAD_MB", "25")) * 1024 * 1024 + (2 << 20)   # largest upload + slack
+    cap = max_upload_bytes() + (2 << 20)   # largest upload + slack
     MultiPartParser.spool_max_size = max(MultiPartParser.spool_max_size, cap)
     return MultiPartParser.spool_max_size

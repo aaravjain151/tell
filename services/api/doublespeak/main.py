@@ -7,18 +7,19 @@ import os
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
-from . import pipeline, privacy, secure_store, speak, thresholds, uploads
-from . import limits, pipeline, privacy, speak, thresholds
-from . import pipeline, privacy, speak, thresholds, net_monitor, offline_guard
-from . import pipeline, privacy, secure_store, speak, thresholds
+from . import limits, net_monitor, offline_guard, pipeline, privacy, readiness, secure_store, speak, thresholds, uploads
 from .audio import AudioDecodeError
 from .redteam import router as redteam_router
+from .live import router as live_router
+from .stream import router as stream_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 uploads.keep_uploads_in_memory()   # caller audio never touches disk, even for large uploads
 app = FastAPI(title="Doublespeak", version="0.1.0")
 limits.install(app)  # CORS allow-list, Host/Origin guard, body limit (see limits.py)
 app.include_router(redteam_router)
+app.include_router(stream_router)
+app.include_router(live_router)
 
 
 @app.on_event("startup")
@@ -49,6 +50,11 @@ def health() -> dict:
     return {"ok": True, "thresholds_version": thresholds.THRESHOLDS_VERSION, "egress": privacy.report(),
             "os_network": net_monitor.snapshot_report(), "offline_models": offline_guard.is_enforced(),
             "llm_provider": os.environ.get("LLM_PROVIDER", "stub")}
+
+
+@app.get("/ready")
+def ready() -> dict:
+    return readiness.report()
 
 
 @app.get("/thresholds")

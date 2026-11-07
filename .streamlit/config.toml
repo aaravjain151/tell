@@ -1,0 +1,13 @@
+# DoubleSpeak Streamlit configuration.
+# Usage statistics are disabled to honour the "no telemetry" hard rule.
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+# High-contrast, large-friendly defaults for older users.
+base = "light"
+primaryColor = "#a50e0e"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f1f3f4"
+textColor = "#202124"

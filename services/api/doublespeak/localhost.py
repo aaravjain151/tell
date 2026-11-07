@@ -61,6 +61,14 @@ def post_json(url: str, body: dict, timeout: float = 10.0, opener: Opener | None
     return json.loads(_send(req, timeout, opener))
 
 
+def get_json(url: str, timeout: float = 1.5, opener: Opener | None = None) -> dict:
+    """Read engine status without inference or changing analysis traffic counters."""
+    _check(url)
+    req = urllib.request.Request(url, method="GET")
+    with (opener or _OPENER.open)(req, timeout=timeout) as response:
+        return json.loads(response.read())
+
+
 def post_multipart(url: str, fields: dict[str, str], file_field: str, filename: str, data: bytes,
                    timeout: float = 10.0, opener: Opener | None = None, content_type: str = "audio/wav") -> dict:
     boundary = "----doublespeak" + secrets.token_hex(12)

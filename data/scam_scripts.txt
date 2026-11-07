@@ -1,0 +1,19 @@
+# Scam-style lines used ONLY as text for generating fake-voice training clips
+# and as positive examples for the scam-text model. One line per utterance.
+# Authored in-house. These are generic, well-known scam patterns - no real
+# person, number, or case is referenced.
+This is the Social Security Administration. Your number has been suspended due to suspicious activity.
+To avoid arrest, you must verify your identity by reading back the code we just sent you.
+Grandma, it's me, I'm in trouble and I need you to send money right away, please don't tell mom.
+Your grandson has been in a car accident and needs bail money transferred this afternoon.
+This is the IRS. You owe back taxes and a warrant will be issued unless you pay today.
+We can only accept payment in gift cards. Please go to the store and buy five hundred dollars of cards.
+Read me the numbers on the back of the gift card so I can confirm the payment.
+Your bank account has been compromised. Give me the one-time password to secure it.
+Do not hang up or tell anyone, or the investigation will be compromised.
+This is Microsoft support. Your computer has a virus and we need remote access immediately.
+You have won a prize, but you must pay a small processing fee by wire transfer first.
+Your electricity will be shut off within the hour unless you pay the overdue balance now.
+We need your card number and the three digits on the back to stop the fraudulent charge.
+I am a federal agent and this call is being recorded as part of a legal case against you.
+Transfer the funds to this secure account using Western Union to protect your savings.
