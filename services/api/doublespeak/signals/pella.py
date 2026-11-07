@@ -19,6 +19,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
+import time
 from pathlib import Path
 
 import numpy as np
@@ -27,7 +28,7 @@ from ..types import Tell
 from . import windows as win
 
 log = logging.getLogger("doublespeak.pella")
-W_PELLA = 1.6                       # placeholder until the wild eval; weights live here, tier logic is untouched
+W_PELLA = 4.0                       # 1.6 -> 4.0 (2026-11-07.2) from the wild eval, see pm/AUDITS.md; tier logic untouched
 REPO, FILENAME = "Sadanie/pellav2-audio-deepfake-detector", "pellav2_detector.pt"
 REVISION = "b668eb4dfe4719665692c73c1d70383680afff6b"
 SHA256 = "d21aedfb52e2f87706c2753715a29665482b0f4a034800c31579df5d458559ac"
@@ -163,10 +164,16 @@ def _build():
     return Detector()
 
 
+def pick_device(want: str, mps_available: bool) -> str:
+    """PELLA_DEVICE: '' / 'auto' / 'mps' -> Apple MPS when the machine has it (about 0.15 s per vote), else CPU (about 1.6 s); 'cpu' forces CPU."""
+    return "mps" if want in ("", "auto", "mps") and mps_available else "cpu"
+
+
 def _load():
     global _model, _device, _error
     if _model is not None or _error:
         return
+    t0 = time.perf_counter()
     path = weights_path()
     if path is None or not path.exists():
         _error = "Pellav2 weights not cached; run `make models` while online"
@@ -191,10 +198,9 @@ def _load():
         m.load_state_dict(safe_state_dict(real))           # the SAME resolved path that was hashed
         if _identity(real) != before:                       # swapped between the check and the load
             raise RuntimeError("weights file changed while loading")
-        want = os.environ.get("PELLA_DEVICE", "cpu")
-        _device = "mps" if want in ("mps", "auto") and torch.backends.mps.is_available() else "cpu"
+        _device = pick_device(os.environ.get("PELLA_DEVICE", "").strip().lower(), torch.backends.mps.is_available())
         _model = m.to(_device).eval()
-        log.info("loaded Pellav2 on %s", _device)
+        log.info("loaded Pellav2 on %s in %.1fs (hash check included)", _device, time.perf_counter() - t0)
     except Exception as e:  # noqa: BLE001 - missing deps, uncached backbone config, bad file: degrade, never raise
         _error = f"Pellav2 unavailable ({type(e).__name__}: {str(e)[:80]}); run `make models` while online"
         log.warning(_error)

@@ -84,5 +84,10 @@ def transcribe(x16k: np.ndarray) -> str | None:
             log.warning("faster-whisper %s unavailable (%s); run `make models` while online", size, e)
             return None
         log.info("loaded faster-whisper %s", size)
-    segments, _ = _model.transcribe(x16k, beam_size=1, vad_filter=True)
-    return " ".join(s.text.strip() for s in segments).strip()
+    try:
+        segments, _ = _model.transcribe(x16k, beam_size=1, vad_filter=True)
+        return " ".join(s.text.strip() for s in segments).strip()
+    except ValueError:
+        # An all-silence clip: VAD strips everything and faster-whisper's language detection fails on the empty
+        # sequence. That means "no speech", not an error (idea from sam_dev1's transcribe.py).
+        return ""

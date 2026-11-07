@@ -1,0 +1,11 @@
+# Privacy-critical code needs a review from someone other than its author.
+# Enforced only once branch protection on `main` enables "Require review from Code Owners"
+# (an admin setting; see the PR that added this file).
+/services/api/doublespeak/privacy.py      @aaravjain151 @sanathNU @samarthsrinivas
+/services/api/doublespeak/localhost.py    @aaravjain151 @sanathNU @samarthsrinivas
+/services/api/doublespeak/limits.py       @aaravjain151 @sanathNU @samarthsrinivas
+/services/api/tests/test_privacy.py       @aaravjain151 @sanathNU @samarthsrinivas
+
+# Verdict logic: Aarav owns scorer and thresholds (pm/BOARD.md).
+/services/api/doublespeak/scorer.py       @aaravjain151
+/services/api/doublespeak/thresholds.py   @aaravjain151

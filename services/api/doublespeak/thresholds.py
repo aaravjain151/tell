@@ -3,7 +3,7 @@
 Scores are in [0, 1]. Acoustic/script scores point *toward AI*; intent scores point *toward scam*.
 """
 
-THRESHOLDS_VERSION = "2026-11-07.1"
+THRESHOLDS_VERSION = "2026-11-07.3"   # .2 = fusion re-weight (#57), call-understanding families (#58); .3 = both merged together
 
 # --- fusion weights (normalised at runtime over the signals that actually ran) ---
 ACOUSTIC_WEIGHTS = {
@@ -19,8 +19,10 @@ SCRIPT_WEIGHTS = {
     "sentence_uniformity": 0.6,
     "contraction_rate": 0.5,
 }
-# how much of p_ai comes from acoustic vs script when both present
-ACOUSTIC_SHARE = 0.6
+# how much of p_ai comes from acoustic vs script when both present.
+# 0.6 -> 0.8 (2026-11-07.2): in the paired wild set the script tells are identical across classes (same text read by human
+# and AI), so they only add a constant. Real undisclosed-agent calls still carry script signal, so this stays well below 1.
+ACOUSTIC_SHARE = 0.8
 
 INTENT_WEIGHTS = {
     "urgency": 0.8,
@@ -28,6 +30,8 @@ INTENT_WEIGHTS = {
     "impersonation": 1.0,
     "credential_ask": 1.3,
     "secrecy": 1.0,
+    "emergency": 0.9,
+    "authority_threat": 1.0,
 }
 
 # --- decision thresholds ---

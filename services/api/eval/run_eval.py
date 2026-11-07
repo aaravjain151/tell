@@ -106,7 +106,29 @@ def _f(x: float | None, nd: int = 2) -> str:
     return "n/a" if x is None else f"{x:.{nd}f}"
 
 
-def run_wild(folder: str, verbose: bool) -> None:
+def wild_markdown(rows: dict[str, list[dict]], thr: float, version: str) -> str:
+    """Compact paste-ready table: per condition and per engine, metrics plus caught / false alarms at the SHIPPING threshold."""
+    from eval.metrics import auc, eer, fpr_at_tpr, loeo
+    out = [f"thresholds_version `{version}` · shipping P_AI_THRESHOLD {thr}", "",
+           "| Condition | Slice | AI n | Human n | AUC | EER | FPR@90%TPR | Caught @thr | False alarms @thr | LOEO TPR / FPR |",
+           "|---|---|---|---|---|---|---|---|---|---|"]
+    for cond in sorted(rows):
+        ai = [r for r in rows[cond] if r["label"] == "ai"]
+        h = [r["p_ai"] for r in rows[cond] if r["label"] == "human"]
+        by: dict[str, list[float]] = {}
+        for r in ai:
+            by.setdefault(r["engine"], []).append(r["p_ai"])
+        held = loeo(by, h) if len(by) > 1 else {}
+        for name, sc in [("all AI", [r["p_ai"] for r in ai]), *sorted(by.items())]:
+            fpr, _ = fpr_at_tpr(sc, h)
+            ho = held.get(name)
+            fa = f"{sum(x >= thr for x in h)}/{len(h)}"
+            out.append(f"| {cond} | {name} | {len(sc)} | {len(h)} | {_f(auc(sc, h))} | {_f(eer(sc, h))} | {_f(fpr)} | "
+                       f"{sum(x >= thr for x in sc)}/{len(sc)} | {fa} | " + (f"{ho['tpr']:.2f} / {ho['fpr']:.2f}" if ho else "-") + " |")
+    return "\n".join(out)
+
+
+def run_wild(folder: str, verbose: bool, dump: str | None = None) -> None:
     """Per-condition AUC / EER / FPR@90%TPR for p_ai on real recordings, plus each generator held out in turn.
 
     Layout: <folder>/<engine>/<script>.wav (AI) · <folder>/human/**.wav (human) · <stem>.opus8k.wav from
@@ -122,7 +144,9 @@ def run_wild(folder: str, verbose: bool) -> None:
         v = pipeline.analyze(wav.read_bytes(), _transcript(wav, base))
         fired = [f"{t.name}={t.score:.2f}" for t in v.tells if t.applicable and t.score >= 0.5]
         rows.setdefault(cond, []).append({"name": str(rel), "label": _label(rel, base), "engine": _engine(rel, base),
-                                          "p_ai": v.p_ai, "tier": v.tier, "fired": fired})
+                                          "p_ai": v.p_ai, "tier": v.tier, "fired": fired,
+                                          "tells": [{"name": t.name, "family": t.family, "score": t.score, "weight": t.weight,
+                                                     "applicable": t.applicable} for t in v.tells]})
     if not rows:
         print(f"no .wav clips under {folder} (make redteam ARGS='--engine all' / record humans into {folder}/human / tools/redteam/degrade.sh)")
         return
@@ -154,15 +178,19 @@ def run_wild(folder: str, verbose: bool) -> None:
         if verbose:
             for r in rows[cond]:
                 print(f"   {r['label']:5} {r['engine']:12} {r['name']}: p_ai {r['p_ai']:.2f}")
+    print("\n" + wild_markdown(rows, P_AI_THRESHOLD, THRESHOLDS_VERSION))
+    if dump:  # per-clip tells, for replaying other weights offline (eval/replay_weights.py); contains clip names only
+        Path(dump).write_text(json.dumps(rows))
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--verbose", action="store_true")
     ap.add_argument("--wild", metavar="DIR", help="evaluate real/Gradium recordings in DIR (e.g. data/calls) instead of the golden set")
+    ap.add_argument("--dump", metavar="FILE", help="with --wild: write every clip's tells as JSON for eval/replay_weights.py")
     a = ap.parse_args()
     if a.wild:
-        run_wild(a.wild, a.verbose)
+        run_wild(a.wild, a.verbose, a.dump)
         sys.exit(0)
     t = run_transcripts(a.verbose)
     au = run_audio(a.verbose)

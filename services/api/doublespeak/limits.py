@@ -82,6 +82,14 @@ def _host_only(value: str) -> str:
     return v
 
 
+def handshake_allowed(host_header: str, origin: str | None) -> bool:
+    """Same Host/Origin rules as GuardMiddleware, for WebSocket handshakes (the middleware only sees http scopes).
+    A missing Origin is accepted (non-browser local tools); a browser always sends one."""
+    if _host_only(host_header) not in allowed_hosts():
+        return False
+    return origin is None or origin in allowed_origins()
+
+
 async def _reply(send: Send, status: int, detail: str, headers: list[tuple[bytes, bytes]] | None = None) -> None:
     body = json.dumps({"detail": detail}).encode()
     await send({"type": "http.response.start", "status": status,
@@ -206,8 +214,11 @@ def _checked(fn: Callable[..., Any], data: bytes | None, transcript: str | None)
     """Runs in the worker thread: duration cap after decode, then the real analysis."""
     if data:
         from . import audio as audio_mod
-        _x, _sr, dur_ms = audio_mod.decode(data)
         cap = max_audio_s()
+        try:
+            _x, _sr, dur_ms = audio_mod.decode(data)
+        except audio_mod.AudioTooLong:
+            raise HTTPException(413, f"audio too long: limit is {cap:g} s") from None
         if dur_ms / 1000 > cap:
             raise HTTPException(413, f"audio too long: limit is {cap:g} s")
     return fn(data, transcript)
