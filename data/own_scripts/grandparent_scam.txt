@@ -1,0 +1,10 @@
+# In-house grandparent-scam positive examples (scam = 1) for the text model.
+# One conversational line/turn per line. Generic; no real people.
+Hi grandma, it's your favorite grandson, please don't recognize my voice, I have a cold.
+I got into a little accident and I'm at the police station, I need help fast.
+Please don't tell mom or dad, they'll be so angry with me, I just need this between us.
+The lawyer says I need two thousand dollars for bail by this evening or I stay overnight.
+Can you go to the store and buy gift cards, then read me the codes over the phone?
+Don't hang up, grandma, the officer says I can only make this one call.
+I'm so scared, please hurry, send the money through a wire transfer to this account.
+It has to be today, grandma, there's no time to check with anyone else.

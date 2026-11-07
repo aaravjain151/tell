@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DoubleSpeak — Interface Mockup</title>
+  <style>
+    :root {
+      --red-bg: #fce8e6; --red: #a50e0e;
+      --amber-bg: #fef7e0; --amber: #b06000;
+      --green-bg: #e6f4ea; --green: #137333;
+      --blue: #1a73e8; --ink: #202124; --muted: #5f6368;
+      --line: #dadce0; --surface: #ffffff; --page: #f1f3f4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--page); color: var(--ink);
+      font-family: "Segoe UI", Roboto, Arial, sans-serif; font-size: 21px;
+      line-height: 1.4; padding: 28px 16px;
+    }
+    .app {
+      max-width: 820px; margin: 0 auto; background: var(--surface);
+      border: 2px solid var(--line); border-radius: 20px; padding: 32px;
+    }
+    h1 { font-size: 46px; font-weight: 800; margin: 0 0 4px; }
+    h2 { font-size: 30px; font-weight: 800; margin: 36px 0 14px; }
+    .tagline { color: var(--muted); font-size: 21px; margin: 0 0 22px; }
+
+    /* Network-proof panel */
+    .net {
+      background: var(--green-bg); border: 3px solid var(--green);
+      border-radius: 14px; padding: 16px; text-align: center;
+    }
+    .net .big { color: var(--green); font-size: 22px; font-weight: 800; }
+    .net .sub { color: var(--green); font-size: 15px; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 12px; margin: 24px 0 8px; }
+    .tab {
+      flex: 1; text-align: center; padding: 14px; border-radius: 10px;
+      font-size: 19px; font-weight: 700; cursor: pointer; border: none;
+    }
+    .tab.active { background: var(--blue); color: #fff; }
+    .tab.idle { background: #e8eaed; color: var(--muted); font-weight: 600; }
+
+    /* Capture area */
+    .capture {
+      border: 2px dashed var(--line); border-radius: 14px; padding: 28px;
+      text-align: center; color: var(--muted); margin-bottom: 8px;
+    }
+    .mic {
+      width: 92px; height: 92px; border-radius: 50%; background: var(--blue);
+      color: #fff; font-size: 40px; border: none; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .btn {
+      background: var(--blue); color: #fff; border: none; border-radius: 12px;
+      font-size: 20px; font-weight: 700; padding: 14px 22px; cursor: pointer;
+    }
+
+    /* Alert banner */
+    .alert {
+      border-radius: 18px; border-width: 4px; border-style: solid;
+      padding: 28px; text-align: center; margin: 16px 0;
+    }
+    .alert .title { font-size: 40px; font-weight: 800; }
+    .alert .sub { font-size: 23px; font-weight: 500; display: block; margin-top: 8px; }
+    .alert.high { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+    .alert.medium { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
+    .alert.low { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+
+    .reasons { list-style: none; padding: 0; margin: 0; }
+    .reasons li { padding: 6px 0 6px 26px; position: relative; }
+    .reasons li::before {
+      content: "•"; position: absolute; left: 6px; color: var(--red); font-weight: 800;
+    }
+
+    /* Chart */
+    .chart { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 12px; padding: 8px; }
+    .caption { color: var(--muted); font-size: 16px; margin: 0 0 8px; }
+
+    /* Contacts */
+    .contacts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .contacts .btn { width: 100%; }
+    .contacts .num { color: var(--muted); font-size: 15px; text-align: center; margin-top: 4px; }
+
+    /* Expanders */
+    details {
+      background: var(--page); border: 1px solid var(--line);
+      border-radius: 8px; padding: 12px 14px; margin-top: 12px; font-size: 17px;
+    }
+    summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+    details p { color: var(--ink); margin: 10px 0 0; }
+
+    .state-switch { text-align: center; margin: 0 auto 20px; max-width: 820px; }
+    .state-switch button {
+      border: 1px solid var(--line); background: #fff; border-radius: 999px;
+      padding: 8px 16px; margin: 0 4px; cursor: pointer; font-size: 15px;
+    }
+    .state-switch button.on { background: var(--ink); color: #fff; }
+  </style>
+</head>
+<body>
+  <!-- Demo-only switch to preview the three alert states -->
+  <div class="state-switch">
+    <strong style="font-size:15px;color:var(--muted);">Preview state:</strong>
+    <button class="on" onclick="setState('high')">High</button>
+    <button onclick="setState('medium')">Medium</button>
+    <button onclick="setState('low')">Low</button>
+  </div>
+
+  <div class="app">
+    <h1>🛡️ DoubleSpeak</h1>
+    <p class="tagline">A friendly helper that spots fake voices and scam calls.</p>
+
+    <!-- Always-visible privacy proof -->
+    <div class="net">
+      <div class="big">✓ Private &amp; offline — 0 outbound connections</div>
+      <div class="sub">Your call never leaves this computer. Only local AI is used.</div>
+    </div>
+
+    <!-- Input tabs -->
+    <div class="tabs">
+      <button class="tab active">🎙 Record now</button>
+      <button class="tab idle">📁 Upload a file</button>
+    </div>
+    <div class="capture">
+      <button class="mic" title="Record">●</button>
+      <p>Press the microphone, hold it to your phone, then stop.</p>
+      <button class="btn">Check this recording</button>
+    </div>
+
+    <!-- Verdict -->
+    <div id="alert" class="alert high">
+      <div class="title" id="alert-title">⚠ This may be a scam</div>
+      <span class="sub" id="alert-sub">Do not send money or share codes. Hang up and call back on a number you trust.</span>
+    </div>
+
+    <h2>Why we think so</h2>
+    <ul class="reasons" id="reasons">
+      <li>The voice may be an AI copy, not a real person.</li>
+      <li>Asked you to buy gift cards.</li>
+      <li>Pressured you to act immediately.</li>
+    </ul>
+
+    <h2>Fake-voice score over the call</h2>
+    <p class="caption">Higher means the voice is more likely an AI copy.</p>
+    <div class="chart">
+      <svg viewBox="0 0 760 160" width="100%" height="150">
+        <line x1="20" y1="120" x2="740" y2="120" stroke="#e0e0e0"/>
+        <line x1="20" y1="70" x2="740" y2="70" stroke="#a50e0e" stroke-width="1.5" stroke-dasharray="6 5"/>
+        <polyline fill="none" stroke="#a50e0e" stroke-width="3"
+          points="30,118 120,112 210,86 300,96 390,64 480,70 570,52 660,58 735,46"/>
+      </svg>
+    </div>
+
+    <h2>Not sure? Call someone you trust</h2>
+    <div class="contacts">
+      <div><button class="btn">📞 Call your bank</button><div class="num">1-800-555-0100</div></div>
+      <div><button class="btn">📞 Call David</button><div class="num">1-415-555-0137</div></div>
+      <div><button class="btn">📞 Police</button><div class="num">1-311 (non-emergency)</div></div>
+    </div>
+
+    <details>
+      <summary>Words we heard (kept in memory only, never saved)</summary>
+      <p>"...your account has been compromised, you must buy gift cards right now to protect it..."</p>
+    </details>
+    <details>
+      <summary>Past warnings (saved encrypted on this computer)</summary>
+      <p>2026-11-07 — High · Asked you to buy gift cards</p>
+    </details>
+  </div>
+
+  <script>
+    const STATES = {
+      high:   { cls: "high",   title: "⚠ This may be a scam",
+                sub: "Do not send money or share codes. Hang up and call back on a number you trust.",
+                reasons: ["The voice may be an AI copy, not a real person.", "Asked you to buy gift cards.", "Pressured you to act immediately."] },
+      medium: { cls: "medium", title: "Be careful with this call",
+                sub: "Some of what was said sounds risky. Take your time.",
+                reasons: ["Pressured you to act immediately.", "Told you to keep it secret."] },
+      low:    { cls: "low",    title: "This call looks okay",
+                sub: "We did not spot scam tactics or a fake voice.",
+                reasons: ["Nothing in this clip looked like a scam."] }
+    };
+    function setState(key) {
+      const s = STATES[key], a = document.getElementById("alert");
+      a.className = "alert " + s.cls;
+      document.getElementById("alert-title").textContent = s.title;
+      document.getElementById("alert-sub").textContent = s.sub;
+      document.getElementById("reasons").innerHTML = s.reasons.map(r => "<li>" + r + "</li>").join("");
+      document.querySelectorAll(".state-switch button").forEach(b =>
+        b.classList.toggle("on", b.textContent.toLowerCase() === key));
+    }
+  </script>
+</body>
+</html>
