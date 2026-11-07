@@ -33,7 +33,7 @@ Cross-branch asks: `python3 scripts/pm.py msg <from> <to> "..."`. Log: `python3 
 - [T-014] Logistic head on frozen XLS-R embeddings, retrainable on data/calls in <1 min; export ONNX — claude
 - [T-015] Streaming mode: analyze rolling 10 s windows while recording; alert on first red — codex
 ### LATER
-- [T-016] SQLite history (opt-in) + export — codex
+- [T-016] DONE: opt-in encrypted alert history (`doublespeak/secure_store.py`, AES-256-GCM, key in OS keychain, `/history` GET/DELETE + `/history/status`; DOUBLESPEAK_HISTORY=1); ported in spirit from sam_dev1. No SQLite/export — claude · feat/secure-history
 
 ## frontend
 ### NOW
