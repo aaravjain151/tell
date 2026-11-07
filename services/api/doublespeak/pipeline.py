@@ -1,6 +1,7 @@
 """analyze(audio_bytes, transcript) → Verdict. Pure function over inputs; no I/O except optional LLM."""
 from __future__ import annotations
 
+import logging
 import os
 import time
 
@@ -11,6 +12,17 @@ from . import llm, privacy, scorer, secure_store
 from . import stt
 from .signals import acoustic, intent, neural, script
 from .types import Tell, Verdict
+
+
+_debug_warned = False
+
+
+def _warn_debug_save_once() -> None:
+    global _debug_warned
+    if not _debug_warned:
+        _debug_warned = True
+        logging.getLogger("doublespeak.pipeline").warning(
+            "DOUBLESPEAK_DEBUG_SAVE=1: RAW CALLER AUDIO IS BEING WRITTEN TO data/debug. Never use this in a demo or with real calls.")
 
 
 def analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
@@ -37,6 +49,7 @@ def _analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
                 transcript = local
                 ctx["transcript_source"] = src
         if os.environ.get("DOUBLESPEAK_DEBUG_SAVE") == "1":  # never in a demo; documented in skills.md
+            _warn_debug_save_once()
             os.makedirs("data/debug", exist_ok=True)
             with open(f"data/debug/{privacy.audio_fingerprint(audio_bytes)}.bin", "wb") as f:
                 f.write(audio_bytes)
