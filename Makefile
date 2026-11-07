@@ -12,10 +12,10 @@ setup:
 	fi
 	@echo "setup ok: $$($(PY) --version), deps from $(LOCK)"
 
-# Re-pin after editing services/api/requirements*.txt (needs uv). Commit both .lock files.
+# Re-pin after editing services/api/requirements*.txt or tools/redteam/requirements.txt (the tests import the red-team engines). Needs uv; commit both .lock files.
 lock:
-	cd services/api && uv pip compile -q --universal --python-version 3.11 requirements.txt -o requirements.lock
-	cd services/api && uv pip compile -q --universal --python-version 3.11 requirements-models.txt -o requirements-models.lock
+	cd services/api && uv pip compile -q --universal --python-version 3.11 requirements.txt ../../tools/redteam/requirements.txt -o requirements.lock
+	cd services/api && uv pip compile -q --universal --python-version 3.11 requirements-models.txt ../../tools/redteam/requirements.txt -o requirements-models.lock
 
 test:
 	cd services/api && ../../.venv/bin/python -m pytest -q
