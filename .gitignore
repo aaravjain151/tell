@@ -13,3 +13,4 @@ council/sessions/*
 *.ogg
 !services/api/tests/fixtures/*.wav
 .DS_Store
+.env.local
