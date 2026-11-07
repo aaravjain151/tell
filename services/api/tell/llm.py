@@ -66,8 +66,11 @@ def _ollama(transcript: str) -> tuple[list[Tell], dict]:
     import urllib.request
     model = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
     base = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
-    body = json.dumps({"model": model, "prompt": PROMPT + cap_words(transcript), "stream": False, "format": "json",
-                       "options": {"temperature": 0, "num_predict": 200}}).encode()
+    payload = {"model": model, "prompt": PROMPT + cap_words(transcript), "stream": False, "format": "json",
+               "options": {"temperature": 0, "num_predict": 200}}
+    if "qwen3" in model.lower() or os.environ.get("OLLAMA_THINK") == "0":
+        payload["think"] = False   # reasoning tokens would eat num_predict and the 3 s budget
+    body = json.dumps(payload).encode()
     req = urllib.request.Request(base + "/api/generate", data=body, headers={"content-type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=float(os.environ.get('OLLAMA_TIMEOUT_S', '10'))) as r:
