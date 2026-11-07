@@ -2,7 +2,7 @@
 
 ## pm
 ### NOW
-- [T-001] Confirm name (Tell vs alternates in final message) — human
+- [T-001] ~~Confirm name~~ done: Doublespeak (D-009) — human
 - [T-002] Create private GitHub repo + push; share with team — human
 - [T-003] Write 90-second demo script: human vs Gradium clone, live, bytes-out meter visible — human
 ### NEXT

@@ -1,4 +1,4 @@
-# Tell — Codex pointer
+# Doublespeak — Codex pointer
 
 Read `skills.md` (root), then your domain's `skills.md`, then `pm/inbox/<domain>.md`. Work on a branch per ticket, run the domain's validation commands, never self-merge.
 
