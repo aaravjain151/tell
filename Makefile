@@ -1,4 +1,4 @@
-.PHONY: setup test eval api web redteam audit
+.PHONY: setup test eval api web redteam record wild audit
 PY=./.venv/bin/python
 setup:
 	python3 -m venv .venv && ./.venv/bin/pip install -q -r services/api/requirements.txt

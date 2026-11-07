@@ -9,7 +9,7 @@
 **Why:** iOS exposes no third-party access to cellular call audio; Android default-dialer is too heavy for <24 h; the judging criteria are provable privacy and a convincing demo, both achievable on a laptop.
 
 ## D-003 · 2026-11-07 · Passive, local listen-and-judge. No talk-back.
-**Decision:** Tell listens and judges; it never answers or speaks to the caller. Liveness challenges are out of scope (team decision 14:12).
+**Decision:** Doublespeak listens and judges; it never answers or speaks to the caller. Liveness challenges are out of scope (team decision 14:12).
 **Why:** Team wants the product to be invisible to the caller. Differentiation is local + open + ensemble + provable, not an active protocol.
 
 ## D-004 · 2026-11-07 · Core architectural rule: models interpret, code decides; caller audio never leaves the device

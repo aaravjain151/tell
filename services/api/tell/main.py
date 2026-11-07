@@ -1,4 +1,4 @@
-"""Tell API — runs on localhost only. Caller audio is analyzed in memory and never stored or forwarded."""
+"""Doublespeak API — runs on localhost only. Caller audio is analyzed in memory and never stored or forwarded."""
 from __future__ import annotations
 
 import logging
@@ -12,7 +12,7 @@ from . import pipeline, privacy, speak, thresholds
 from .audio import AudioDecodeError
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
-app = FastAPI(title="Tell", version="0.1.0")
+app = FastAPI(title="Doublespeak", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 

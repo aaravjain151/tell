@@ -10,7 +10,7 @@ GRADIUM_VOICE_ID / ELEVENLABS_VOICE_ID / VOICESTUDIO_VOICE / QWEN3TTS_REF (+ QWE
 Every engine only ever receives our script text.
 
 Demo recipe: clone a teammate in Gradium Studio → pass --voice-id → generate `casual_clone` →
-play it to Tell next to the teammate reading the same lines live. Keep --max small; credits are shared.
+play it to Doublespeak next to the teammate reading the same lines live. Keep --max small; credits are shared.
 """
 from __future__ import annotations
 

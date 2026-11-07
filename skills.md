@@ -1,9 +1,9 @@
-# Tell — root skills.md (source of truth)
+# Doublespeak — root skills.md (source of truth)
 
 Every tool and every human reads this first. Edit *this* file; `CLAUDE.md`, `AGENTS.md` and `.cursor/rules/tell.mdc` are thin pointers.
 
 ## 1. Overview
-Tell is a privacy-first detector that classifies the voice on a call as **Human · AI (disclosed) · AI (undisclosed) · Scam**, with the specific "tells" that fired, and never sends caller audio off-device. Built at HACK1984 (Privacy-First track + Gradium side prize). Product brief: `pm/PRODUCT.md`. Decisions: `pm/DECISIONS.md`.
+Doublespeak is a privacy-first detector that classifies the voice on a call as **Human · AI (disclosed) · AI (undisclosed) · Scam**, with the specific "tells" that fired, and never sends caller audio off-device. Built at HACK1984 (Privacy-First track + Gradium side prize). Product brief: `pm/PRODUCT.md`. Decisions: `pm/DECISIONS.md`.
 
 Core loop: user feeds a clip or mic → local analysis → verdict card with evidence + "bytes leaving device: 0".
 
@@ -99,5 +99,5 @@ python3 council/ask.py "question" --paste
 - 2026-11-07 · backend · Breath detection needs ≥ 5 s of audio; shorter clips return `score=0.5, evidence="too short"` so they don't bias the verdict.
 - 2026-11-07 · design · Light primary teal failed 4.5:1 on white; use `signal.600` in light, `signal.400` in dark.
 - 2026-11-07 · backend · Neural voters and local STT must never raise when uninstalled: return `applicable=False` so `make test` stays green on a clean checkout.
-- 2026-11-07 · pm · Team decision: no talk-back. Tell listens and judges only; never speaks to the caller.
+- 2026-11-07 · pm · Team decision: no talk-back. Doublespeak listens and judges only; never speaks to the caller.
 - 2026-11-07 · pm · iOS exposes no third-party access to cellular call audio; real-call v2 on iOS must be a VoIP/screener design, not a listener.

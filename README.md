@@ -1,4 +1,4 @@
-# Tell
+# Doublespeak
 
 *Every voice has a tell.* A privacy-first detector that classifies the voice on a call as **Human · AI (identified itself) · AI (undisclosed) · Scam pattern**, shows the exact tells that fired, and never sends caller audio off the device.
 
