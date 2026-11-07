@@ -2,13 +2,16 @@
 PY=./.venv/bin/python
 LOCK=services/api/requirements.lock
 MODELS_LOCK=services/api/requirements-models.lock
+# first interpreter >= 3.11 on PATH (macOS /usr/bin/python3 is 3.9 and cannot install the lock)
+SYSPY:=$(shell for p in python3.13 python3.12 python3.11 python3; do command -v $$p >/dev/null 2>&1 && $$p -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null && { echo $$p; break; }; done)
 
 # Pinned install. Uses uv when present (fast), plain venv + pip otherwise. Additive: never removes `make models` deps.
 setup:
 	@if command -v uv >/dev/null 2>&1; then \
-		uv venv -q --allow-existing .venv && uv pip install -q --python $(PY) -r $(LOCK); \
+		uv venv -q --allow-existing --python '>=3.11' .venv && uv pip install -q --python $(PY) -r $(LOCK); \
 	else \
-		python3 -m venv .venv && $(PY) -m pip install -q -r $(LOCK); \
+		test -n "$(SYSPY)" || { echo "need Python >= 3.11 (brew install python@3.12) or uv (brew install uv)"; exit 2; }; \
+		$(SYSPY) -m venv .venv && $(PY) -m pip install -q --upgrade pip && $(PY) -m pip install -q -r $(LOCK); \
 	fi
 	@echo "setup ok: $$($(PY) --version), deps from $(LOCK)"
 
