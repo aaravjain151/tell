@@ -15,6 +15,20 @@ doublespeak/scorer.py          deterministic fusion → tier (DANGEROUS)
 doublespeak/thresholds.py      every weight/threshold + THRESHOLDS_VERSION (DANGEROUS)
 doublespeak/privacy.py         egress meter, AudioEgressError, HMAC verdict signatures (DANGEROUS)
 doublespeak/llm.py             transcript interpreter: stub | ollama (localhost 3B, the product) | anthropic (dev); logs tokens
+doublespeak/stt.py             local STT: VoiceStudio on loopback first, then faster-whisper; fills transcript when none was given (ctx.transcript_source = local_voicestudio | local_whisper); DOUBLESPEAK_STT=auto|voicestudio|whisper
+doublespeak/localhost.py       the ONLY socket opener for local engines (VoiceStudio STT, Ollama): loopback-only (NotLoopbackError otherwise), counts `localhost_requests` (D-009)
+doublespeak/signals/neural.py  neural voters: ANTI_SPOOF_MODEL (ONNX) and HF_SPOOF_MODEL (transformers); applicable=False if absent
+doublespeak/speak.py           spoken verdict via Gradium CLI (only our text leaves)
+doublespeak/main.py            FastAPI routes: /health /thresholds /analyze /speak
+doublespeak/pipeline.py        analyze(audio_bytes, transcript) → Verdict   (the only orchestration)
+doublespeak/audio.py           wav decode (stdlib) / ffmpeg pipe for webm-ogg-mp3 / resample to 16k mono
+doublespeak/signals/acoustic.py  pause_regularity · breath_proxy · pitch_stability · noise_floor · band_limited flag
+doublespeak/signals/script.py    llm_isms · disfluency · sentence_uniformity · contraction_rate · ai_denial()
+doublespeak/signals/intent.py    urgency · payment_rails · impersonation · credential_ask · secrecy · DISCLOSURE
+doublespeak/scorer.py          deterministic fusion → tier (DANGEROUS)
+doublespeak/thresholds.py      every weight/threshold + THRESHOLDS_VERSION (DANGEROUS)
+doublespeak/privacy.py         egress meter, AudioEgressError, HMAC verdict signatures (DANGEROUS)
+doublespeak/llm.py             transcript interpreter: stub | ollama (localhost 3B, the product) | anthropic (dev); logs tokens
 doublespeak/stt.py             local faster-whisper; fills transcript when none was given (ctx.transcript_source)
 doublespeak/signals/neural.py  neural voters: ANTI_SPOOF_MODEL (ONNX) and HF_SPOOF_MODEL (transformers); applicable=False if absent
 doublespeak/speak.py           spoken verdict via Gradium CLI (only our text leaves)
@@ -37,12 +51,12 @@ Acoustic/script scores point toward AI; intent scores toward scam. `applicable=F
 - Short input → `applicable=False`, never a guess. Clip < 4 s skips acoustics; breath needs ≥ 5 s; transcript < 25 words skips disfluency.
 - Disclosure wins: a caller that says it's AI is `ai_disclosed` unless scam cues fire.
 - Changing `thresholds.py`: bump `THRESHOLDS_VERSION`, run `make eval`, note the before/after in the commit body.
-- Network imports are forbidden on the analysis path (`tests/test_privacy.py` scans for them). Only `llm.py` and `speak.py` may talk to the network, and only with text.
+- Network imports are forbidden on the analysis path (`tests/test_privacy.py` scans for them). Only `localhost.py` (loopback, audio or text), `llm.py` and `speak.py` may open a socket (exact allowlist in `test_privacy.py`); everything else stays network-free.
 - Gradium credits: never call TTS in tests; `make_calls.py` caps at `--max 20` clips per run.
 
 ## Validation
 ```
-make test                      # 17 tests incl. privacy + API
+make test                      # 58 tests incl. privacy + localhost + API
 make eval  (ARGS=--verbose)    # transcript ≥0.85, synthetic audio ≥0.90
 make api && curl -s localhost:8000/health
 curl -s -F audio=@data/calls/scam_grandparent.wav -F transcript="$(cat tools/redteam/scripts/scam_grandparent.txt)" localhost:8000/analyze | jq .tier,.tells[].evidence

@@ -30,16 +30,32 @@ def _wav_info(path: Path):
         return w.getframerate(), w.getnchannels(), w.getnframes()
 
 
-def test_elevenlabs_wraps_pcm_and_sends_key(tmp_path, monkeypatch):
-    monkeypatch.setenv("ELEVENLABS_API_KEY", "k-test")
-    seen: list = []
+def test_elevenlabs_uses_sdk_pcm16k_and_wraps_to_wav(tmp_path, monkeypatch):
+    """Fake SDK client: nothing touches the network and no key is needed."""
+    import types
+    monkeypatch.delenv("ELEVENLABS_VOICE_ID", raising=False)
+    monkeypatch.delenv("ELEVENLABS_MODEL", raising=False)
+    seen = {}
+
+    def convert(**kw):
+        seen.update(kw)
+        yield b"\x00\x01" * 800
+        yield b"\x00\x01" * 800
+
+    client = types.SimpleNamespace(text_to_speech=types.SimpleNamespace(convert=convert))
     out = tmp_path / "a.wav"
-    engines.elevenlabs("hello there", out, voice_id="VOICE1", opener=fake_opener(b"\x00\x01" * 1600, seen))
-    req = seen[0]
-    assert "VOICE1" in req.full_url and "output_format=pcm_16000" in req.full_url
-    assert req.get_header("Xi-api-key") == "k-test"
-    assert json.loads(req.data)["text"] == "hello there"
+    engines.elevenlabs("hello there", out, voice_id="VOICE1", client=client)
+    assert seen == {"text": "hello there", "voice_id": "VOICE1", "model_id": "eleven_v4", "output_format": "pcm_16000"}
     assert _wav_info(out) == (16000, 1, 1600)
+
+
+def test_elevenlabs_default_voice_is_a_stock_voice(tmp_path, monkeypatch):
+    import types
+    monkeypatch.delenv("ELEVENLABS_VOICE_ID", raising=False)
+    seen = {}
+    client = types.SimpleNamespace(text_to_speech=types.SimpleNamespace(convert=lambda **kw: (seen.update(kw), [b"\x00\x00"])[1]))
+    engines.elevenlabs("x", tmp_path / "b.wav", client=client)
+    assert seen["voice_id"] == "JBFqnCBsd6RMkjVDRZzb"
 
 
 def test_voicestudio_posts_openai_style_body(tmp_path, monkeypatch):
@@ -64,6 +80,8 @@ def test_unavailable_reasons(monkeypatch):
     monkeypatch.delenv("ELEVENLABS_API_KEY", raising=False)
     assert "GRADIUM_API_KEY" in engines.unavailable_reason("gradium")
     assert "ELEVENLABS_API_KEY" in engines.unavailable_reason("elevenlabs")
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "k")
+    assert engines.unavailable_reason("elevenlabs") in (None, "elevenlabs SDK not installed (pip install -r tools/redteam/requirements.txt)")
 
     def refuse(req, timeout=0):
         raise ConnectionRefusedError("nope")
@@ -74,8 +92,8 @@ def test_unavailable_reasons(monkeypatch):
 
 def test_analysis_package_never_mentions_tts_services():
     """Privacy: TTS clients live in tools/, outside the analysis package (doublespeak/)."""
-    banned = ("elevenlabs", "voicestudio", "xi-api-key", "api.gradium")
-    for p in (ROOT / "services" / "api" / "tell").rglob("*.py"):
+    banned = ("elevenlabs", "/v1/audio/speech", "xi-api-key", "api.gradium")  # VoiceStudio STT is allowed (D-009); its TTS endpoint is not
+    for p in (ROOT / "services" / "api" / "doublespeak").rglob("*.py"):
         src = p.read_text().lower()
         assert not any(b in src for b in banned), p
 
