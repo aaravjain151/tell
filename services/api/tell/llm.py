@@ -28,9 +28,51 @@ Transcript:
 PRICE_PER_MTOK = {"input": 3.0, "output": 15.0}
 
 
+def _parse(text: str) -> dict:
+    try:
+        return json.loads(text[text.find("{"): text.rfind("}") + 1])
+    except (ValueError, json.JSONDecodeError):
+        return {}
+
+
+def _to_tells(data: dict, src: str) -> list[Tell]:
+    if not data:
+        return []
+    tells = [
+        Tell("llm_assistant_style", "script", float(data.get("assistant_style", 0.5)), 0.8, f"{src}: " + str(data.get("assistant_style_reason", ""))[:140]),
+        Tell("llm_scam_framing", "intent", float(data.get("scam_framing", 0.0)), 1.0, f"{src}: " + str(data.get("scam_framing_reason", ""))[:140]),
+    ]
+    if data.get("disclosed_ai"):
+        tells.append(Tell("ai_disclosure", "intent", 0.0, 0.0, f"{src}: caller disclosed it is AI", applicable=False))
+    return tells
+
+
+def _ollama(transcript: str) -> tuple[list[Tell], dict]:
+    """Local 3B model via Ollama on localhost (http://127.0.0.1:11434). Transcript text only; nothing leaves the machine."""
+    import urllib.request
+    model = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
+    base = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
+    body = json.dumps({"model": model, "prompt": PROMPT + transcript, "stream": False, "format": "json",
+                       "options": {"temperature": 0, "num_predict": 200}}).encode()
+    req = urllib.request.Request(base + "/api/generate", data=body, headers={"content-type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            resp = json.loads(r.read())
+    except Exception as e:  # noqa: BLE001
+        log.warning("ollama unavailable: %s", e)
+        return [], {"provider": "ollama", "model": model, "error": str(e)[:80], "usd": 0.0}
+    usage = {"provider": "ollama", "model": model, "input_tokens": resp.get("prompt_eval_count", 0),
+             "output_tokens": resp.get("eval_count", 0), "usd": 0.0, "local": True}
+    return _to_tells(_parse(resp.get("response", "")), model), usage
+
+
 def interpret(transcript: str) -> tuple[list[Tell], dict]:
     provider = os.environ.get("LLM_PROVIDER", "stub")
-    if provider != "anthropic" or not transcript or not transcript.strip():
+    if not transcript or not transcript.strip():
+        return [], {"provider": "stub", "input_tokens": 0, "output_tokens": 0, "usd": 0.0}
+    if provider == "ollama":
+        return _ollama(transcript)
+    if provider != "anthropic":
         return [], {"provider": "stub", "input_tokens": 0, "output_tokens": 0, "usd": 0.0}
     try:
         import anthropic  # optional dependency

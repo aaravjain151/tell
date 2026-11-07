@@ -6,7 +6,8 @@ import time
 
 from . import audio as audio_mod
 from . import llm, privacy, scorer
-from .signals import acoustic, intent, script
+from . import stt
+from .signals import acoustic, intent, neural, script
 from .types import Tell, Verdict
 
 
@@ -19,6 +20,12 @@ def analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
         ctx["original_sample_rate"] = orig_sr
         acoustic_tells, actx = acoustic.analyze(x, dur_ms)
         ctx.update(actx)
+        acoustic_tells += neural.analyze(x, dur_ms / 1000)
+        if not (transcript or "").strip():
+            local = stt.transcribe(x)   # local whisper; None if not installed
+            if local:
+                transcript = local
+                ctx["transcript_source"] = "local_whisper"
         if os.environ.get("TELL_DEBUG_SAVE") == "1":  # never in a demo; documented in skills.md
             os.makedirs("data/debug", exist_ok=True)
             with open(f"data/debug/{privacy.audio_fingerprint(audio_bytes)}.bin", "wb") as f:

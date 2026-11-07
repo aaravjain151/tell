@@ -11,8 +11,9 @@ Core loop: user feeds a clip or mic → local analysis → verdict card with evi
 | Layer | Choice | Why |
 |---|---|---|
 | API | Python 3.11+, FastAPI, uvicorn | fast to write, every teammate knows it |
-| Signals | numpy only (no librosa/torch in v1) | installs in seconds, runs on any laptop, judge can run it offline |
-| Optional LLM | `LLM_PROVIDER=stub` by default; `anthropic` opt-in | tests/eval run with no keys; model interprets, code decides |
+| Behavioral signals | numpy only | installs in seconds; interpretable; the explanation layer |
+| Neural voters | faster-whisper (local STT), open anti-spoof checkpoint via transformers/ONNX, Ollama 3B for scam-talk | all on-device; `neural.py`/`stt.py`/`llm.py` degrade to `applicable=False` when not installed |
+| LLM | `LLM_PROVIDER=stub` (tests) · `ollama` (local 3B, the product) · `anthropic` (dev only) | model interprets, code decides |
 | Web | one self-contained `apps/web/index.html` | no build step; works as an Artifact and from `file://` |
 | Red team | Gradium CLI (`uvx gradium tts`) | generates fresh synthetic attacker calls; voice-clone a teammate |
 | Spoken verdict | Gradium TTS (optional) | only *our* text leaves the device |
@@ -97,4 +98,6 @@ python3 council/ask.py "question" --paste
 - 2026-11-07 · backend · Phone-band audio (≤ 4 kHz content) kills spectral tells; always compute `band_limited` first and down-weight spectral signals when true.
 - 2026-11-07 · backend · Breath detection needs ≥ 5 s of audio; shorter clips return `score=0.5, evidence="too short"` so they don't bias the verdict.
 - 2026-11-07 · design · Light primary teal failed 4.5:1 on white; use `signal.600` in light, `signal.400` in dark.
+- 2026-11-07 · backend · Neural voters and local STT must never raise when uninstalled: return `applicable=False` so `make test` stays green on a clean checkout.
+- 2026-11-07 · pm · Team decision: no talk-back. Tell listens and judges only; never speaks to the caller.
 - 2026-11-07 · pm · iOS exposes no third-party access to cellular call audio; real-call v2 on iOS must be a VoIP/screener design, not a listener.

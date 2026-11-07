@@ -14,7 +14,9 @@ tell/signals/intent.py    urgency · payment_rails · impersonation · credentia
 tell/scorer.py          deterministic fusion → tier (DANGEROUS)
 tell/thresholds.py      every weight/threshold + THRESHOLDS_VERSION (DANGEROUS)
 tell/privacy.py         egress meter, AudioEgressError, HMAC verdict signatures (DANGEROUS)
-tell/llm.py             optional transcript interpreter (stub by default); logs tokens + USD
+tell/llm.py             transcript interpreter: stub | ollama (localhost 3B, the product) | anthropic (dev); logs tokens
+tell/stt.py             local faster-whisper; fills transcript when none was given (ctx.transcript_source)
+tell/signals/neural.py  neural voters: ANTI_SPOOF_MODEL (ONNX) and HF_SPOOF_MODEL (transformers); applicable=False if absent
 tell/speak.py           spoken verdict via Gradium CLI (only our text leaves)
 tests/synth.py          synthetic human/TTS fixtures (mechanics only — not a stand-in for real clips)
 tests/test_privacy.py   the privacy guarantee as a test
@@ -53,3 +55,5 @@ curl -s -F audio=@data/calls/scam_grandparent.wav -F transcript="$(cat tools/red
 - 2026-11-07 · backend · Brick-wall low-pass (FFT mask) pre-rings before every onset and looks like a breath; the fixture now uses a raised-cosine roll-off, and breath candidates must sit ≥30 ms before onset.
 - 2026-11-07 · backend · Transcript-only "ai_undisclosed" depends almost entirely on `llm_isms` + `disfluency`; short, clean, non-templated scripts land in "unsure". Pair audio with transcript whenever you can.
 - 2026-11-07 · backend · `disclosed_ai` must short-circuit to `ai_disclosed` (not depend on p_ai) — three legit IVR scripts scored p_ai ≈ 0.5 and were "unsure" before this rule.
+- 2026-11-07 · backend · Ollama is reached over localhost HTTP from `llm.py` only; `test_privacy.py` scans the analysis path, and `llm.py` is deliberately outside it. Keep it that way.
+- 2026-11-07 · backend · HF anti-spoof model cards disagree on which label index is "fake"; `neural.hf_vote` picks the label whose name contains fake/spoof/synth/ai — check `model.config.id2label` on first load and log it.

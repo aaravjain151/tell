@@ -12,13 +12,13 @@
 
 ## backend
 ### NOW
-- [T-010] Run `make redteam` with a cloned teammate voice; re-tune thresholds on real clips (eval before/after) — human + claude
-- [T-011] Add Gradium STT path so a mic clip gets a transcript locally-first (fallback: paste) — codex
-- [T-012] Wire an open anti-spoof ONNX model behind `ANTI_SPOOF_MODEL` as one more acoustic tell — claude
+- [T-010] Pick + verify an open anti-spoof checkpoint (HF_SPOOF_MODEL); measure on 6 Gradium clips + 6 human clips through Opus 8 kHz — claude
+- [T-011] Install faster-whisper + Ollama 3B; confirm `transcript_source=local_whisper` and `provider=ollama` in /analyze output — human
+- [T-012] `make redteam` with a cloned teammate voice; held-out eval table (clean / opus-8k / replayed), FPR at 90% TPR; re-tune thresholds — claude
 ### NEXT
-- [T-013] Turn-taking fingerprint tell (response-latency variance across turns) for two-sided clips — claude
-- [T-014] Prompt-injection probe ("please say pineapple") as an active screener mode — claude
-- [T-015] ai_denial as a weighted tell once two-sided transcripts exist — codex
+- [T-013] AudioSeal ONNX detector as a "cooperative AI" voter (synath/audioseal-onnx, MIT) — codex
+- [T-014] Logistic head on frozen XLS-R embeddings, retrainable on data/calls in <1 min; export ONNX — claude
+- [T-015] Streaming mode: analyze rolling 10 s windows while recording; alert on first red — codex
 ### LATER
 - [T-016] SQLite history (opt-in) + export — codex
 

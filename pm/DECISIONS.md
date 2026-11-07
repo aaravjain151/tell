@@ -8,9 +8,9 @@
 **Decision:** v1 is a local FastAPI + single HTML page. No phone integration this weekend.
 **Why:** iOS exposes no third-party access to cellular call audio; Android default-dialer is too heavy for <24 h; the judging criteria are provable privacy and a convincing demo, both achievable on a laptop.
 
-## D-003 · 2026-11-07 · Passive detector first; active screener is v2
-**Decision:** Ship passive tells (acoustic + script + intent). Liveness challenges (interrupt test, prompt-injection probe) go on NEXT.
-**Why:** Team choice with <24 h left. The passive stack is demoable tonight; the active probe is the differentiator to pitch as "what's next".
+## D-003 · 2026-11-07 · Passive, local listen-and-judge. No talk-back.
+**Decision:** Tell listens and judges; it never answers or speaks to the caller. Liveness challenges are out of scope (team decision 14:12).
+**Why:** Team wants the product to be invisible to the caller. Differentiation is local + open + ensemble + provable, not an active protocol.
 
 ## D-004 · 2026-11-07 · Core architectural rule: models interpret, code decides; caller audio never leaves the device
 **Decision:** `scorer.py` is deterministic; the LLM (off by default) only adds Tells. The analysis path has no network imports (enforced by `tests/test_privacy.py`); `privacy.record_egress` rejects audio by construction; every verdict is HMAC-signed and bound to the clip hash.
@@ -27,3 +27,7 @@
 ## D-007 · 2026-11-07 · Data to collect from day 1 (post-hackathon, opt-in only)
 **Decision:** Per verdict: tier, p_ai, p_scam, confidence, which tells fired, clip duration, band-limited flag, user correction (thumbs up/down). Never audio, never transcript, unless the user explicitly donates a clip to the eval set.
 **Why:** Enough to tune thresholds and measure false positives on real people without holding anyone's calls.
+
+## D-008 · 2026-11-07 · Neural ensemble on-device
+**Decision:** Add local neural voters beside the behavioral tells: an open anti-spoof checkpoint (HF or ONNX), local Whisper (faster-whisper) for the transcript, and a local 3B model via Ollama for scam-talk. All are voters; `scorer.py` still decides.
+**Why:** Hardcoded acoustic heuristics are a floor. Neural voters catch vocoder artifacts (incl. live voice conversion) that behavioral tells miss. Caller audio still never leaves the device: Whisper and the anti-spoof model run in-process, Ollama runs on localhost.
