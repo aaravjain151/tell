@@ -41,9 +41,9 @@ models:
 demo:
 	@test -x $(PY) || { echo "run 'make setup' first"; exit 2; }
 	@echo "Doublespeak demo · UI http://localhost:5173 · API http://localhost:8000/health · offline models · Ctrl-C to stop"
-	@trap 'kill 0' INT TERM EXIT; \
-	(cd services/api && DOUBLESPEAK_OFFLINE=1 $(VPY) -m uvicorn doublespeak.main:app --host 127.0.0.1 --port 8000$(if $(ENVFILE), $(ENVFILE),)) & \
-	(cd apps/web && python3 -m http.server 5173 --bind 127.0.0.1) & \
+	@(cd services/api && DOUBLESPEAK_OFFLINE=1 exec $(VPY) -m uvicorn doublespeak.main:app --host 127.0.0.1 --port 8000$(if $(ENVFILE), $(ENVFILE),)) & API=$$!; \
+	(cd apps/web && exec python3 -m http.server 5173 --bind 127.0.0.1) & WEB=$$!; \
+	trap 'kill $$API $$WEB 2>/dev/null; wait' INT TERM EXIT; \
 	wait
 
 redteam:
