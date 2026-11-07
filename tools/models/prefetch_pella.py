@@ -16,7 +16,9 @@ def main():
     p = hf_hub_download(pella.REPO, pella.FILENAME, revision=pella.REVISION)
     if not pella.verify(Path(p)):
         raise RuntimeError(f"{p} does not match the pinned SHA-256; delete it and retry")
-    hf_hub_download(pella.BACKBONE, "config.json")
+    cfg = Path(hf_hub_download(pella.BACKBONE, "config.json", revision=pella.BACKBONE_REVISION))
+    if pella._sha256(cfg) != pella.BACKBONE_CONFIG_SHA256:
+        raise RuntimeError(f"{cfg} does not match the pinned SHA-256; delete it and retry")
     print("Pellav2 cached and verified:", p)
 
 

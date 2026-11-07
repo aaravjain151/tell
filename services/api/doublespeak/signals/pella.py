@@ -33,7 +33,11 @@ REPO, FILENAME = "Sadanie/pellav2-audio-deepfake-detector", "pellav2_detector.pt
 REVISION = "b668eb4dfe4719665692c73c1d70383680afff6b"
 SHA256 = "d21aedfb52e2f87706c2753715a29665482b0f4a034800c31579df5d458559ac"
 SIZE = 2_322_248_702
-BACKBONE = "facebook/w2v-bert-2.0"  # config only
+BACKBONE = "facebook/w2v-bert-2.0"  # config only, pinned and hashed like the weights
+BACKBONE_REVISION = "da985ba0987f70aaeb84a80f2851cfac8c697a7b"
+BACKBONE_CONFIG_SHA256 = "f5572bd5998b68182e9c328a43127ed21fed687f6910497136b91a4e3b0e3675"
+MIN_TORCH = (2, 6)                  # weights_only had a bypass (CVE-2025-32434) before torch 2.6
+MAX_LAYERS, MAX_HIDDEN = 64, 4096   # a poisoned config must not be able to demand terabytes
 SR, CROP, TARGET_LUFS = 16_000, 4 * 16_000, -23.0
 _model = None
 _device = "cpu"
@@ -68,21 +72,43 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def _identity(real: Path) -> tuple:
+    st = real.stat()
+    return (st.st_ino, st.st_size, st.st_mtime_ns)
+
+
 def verify(path: Path) -> bool:
-    """True only if the file is byte-identical to the pinned weights. The result is cached next to the file."""
-    real = path.resolve()
-    marker = Path(str(real) + ".ds-verified")
+    """True only if the file is byte-identical to the pinned weights. Hashed on EVERY load (a few seconds, once per process):
+    an earlier version trusted a '.ds-verified' marker, which a same-size swap defeats (found in review)."""
     try:
-        if real.stat().st_size != SIZE:
-            return False
-        if marker.exists() and marker.read_text().strip() == SHA256:
-            return True
-        if _sha256(real) != SHA256:
-            return False
-        marker.write_text(SHA256)
+        real = path.resolve()
+        return real.stat().st_size == SIZE and _sha256(real) == SHA256
     except OSError:
         return False
-    return True
+
+
+def check_config(cfg) -> str:
+    """Empty string if the backbone config is sane, else why not."""
+    layers, hidden = getattr(cfg, "num_hidden_layers", None), getattr(cfg, "hidden_size", None)
+    if not (isinstance(layers, int) and 1 <= layers <= MAX_LAYERS and isinstance(hidden, int) and 1 <= hidden <= MAX_HIDDEN):
+        return f"backbone config out of bounds (layers={layers}, hidden={hidden})"
+    return ""
+
+
+def backbone_config():
+    """The pinned backbone config: located in the local cache, hash-checked, bounds-checked, never downloaded here."""
+    from huggingface_hub import try_to_load_from_cache
+    from transformers import Wav2Vec2BertConfig
+    p = try_to_load_from_cache(BACKBONE, "config.json", revision=BACKBONE_REVISION)
+    if not isinstance(p, str):
+        raise RuntimeError("backbone config not cached")
+    if _sha256(Path(p)) != BACKBONE_CONFIG_SHA256:
+        raise RuntimeError("backbone config does not match the pinned SHA-256")
+    cfg = Wav2Vec2BertConfig.from_json_file(p)
+    why = check_config(cfg)
+    if why:
+        raise RuntimeError(why)
+    return cfg
 
 
 def safe_state_dict(path: Path):
@@ -95,12 +121,12 @@ def safe_state_dict(path: Path):
 def _build():
     import torch
     import torch.nn as nn
-    from transformers import Wav2Vec2BertConfig, Wav2Vec2BertModel
+    from transformers import Wav2Vec2BertModel
 
     class Detector(nn.Module):
         def __init__(self):
             super().__init__()
-            cfg = Wav2Vec2BertConfig.from_pretrained(BACKBONE, local_files_only=True)
+            cfg = backbone_config()
             self.backbone = Wav2Vec2BertModel(cfg)
             self.layer_weights = nn.Parameter(torch.zeros(cfg.num_hidden_layers + 1))
             self.head = nn.Linear(cfg.hidden_size, 1)
@@ -147,19 +173,31 @@ def _load():
     global _model, _device, _error
     if _model is not None or _error:
         return
-    t0 = time.perf_counter()
+    t0 = time.perf_counter()                               # load time incl. the per-load hash, logged below
     path = weights_path()
     if path is None or not path.exists():
         _error = "Pellav2 weights not cached; run `make models` while online"
         return
-    if not verify(path):
+    try:
+        import torch
+        real = path.resolve()
+        before = _identity(real)
+    except Exception as e:  # noqa: BLE001
+        _error = f"Pellav2 weights unreadable ({type(e).__name__})"
+        return
+    if tuple(int(x) for x in torch.__version__.split("+")[0].split(".")[:2]) < MIN_TORCH:
+        _error = f"torch {torch.__version__} is too old for the safe weights loader (need >= {'.'.join(map(str, MIN_TORCH))})"
+        log.error(_error)
+        return
+    if not verify(real):
         _error = "Pellav2 weights do not match the pinned SHA-256; refusing to load them"
         log.error(_error)
         return
     try:
-        import torch
         m = _build()
-        m.load_state_dict(safe_state_dict(path))
+        m.load_state_dict(safe_state_dict(real))           # the SAME resolved path that was hashed
+        if _identity(real) != before:                       # swapped between the check and the load
+            raise RuntimeError("weights file changed while loading")
         _device = pick_device(os.environ.get("PELLA_DEVICE", "").strip().lower(), torch.backends.mps.is_available())
         _model = m.to(_device).eval()
         log.info("loaded Pellav2 on %s in %.1fs", _device, time.perf_counter() - t0)
