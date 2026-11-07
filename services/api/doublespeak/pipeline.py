@@ -25,6 +25,31 @@ def _warn_debug_save_once() -> None:
             "DOUBLESPEAK_DEBUG_SAVE=1: RAW CALLER AUDIO IS BEING WRITTEN TO data/debug. Never use this in a demo or with real calls.")
 
 
+VOICE_WINDOW_CAP = 60
+
+
+def voice_windows(tells: list[Tell]) -> list[dict]:
+    """DISPLAY ONLY: merge per-window voice scores from the neural voters by window start time (seconds).
+    Returns [{"t":.., "pella":.., "hf":..}] ordered by t (a key is absent when that voter did not score that start), at most 60 points."""
+    keys = {"neural_pella": "pella", "neural_hf": "hf"}
+    merged: dict[float, dict] = {}
+    for t in tells:
+        k = keys.get(t.name)
+        if not (k and t.applicable and t.detail):
+            continue
+        for w in t.detail.get("windows") or []:
+            try:
+                start, p = round(float(w["t"]), 2), round(float(w["p"]), 3)
+            except (KeyError, TypeError, ValueError):
+                continue
+            merged.setdefault(start, {"t": start})[k] = p
+    pts = [merged[s] for s in sorted(merged)]
+    if len(pts) > VOICE_WINDOW_CAP:
+        step = (len(pts) - 1) / (VOICE_WINDOW_CAP - 1)
+        pts = [pts[round(i * step)] for i in range(VOICE_WINDOW_CAP)]
+    return pts
+
+
 def analyze(audio_bytes: bytes | None, transcript: str | None, *, ephemeral: bool = False) -> Verdict:
     """Analyse, while asking the OS (not our own counters) whether this process opened any outside connection.
 
@@ -68,6 +93,9 @@ def _analyze(audio_bytes: bytes | None, transcript: str | None, ephemeral: bool 
         # deterministic detector (intent.DISCLOSURE). A hallucinating 3B model must not be able to flip the tier.
     denial = script.ai_denial(transcript) if transcript else False
 
+    vw = voice_windows(acoustic_tells)
+    if vw:
+        ctx["voice_windows"] = vw   # display only: nothing reads it back into a tier or score
     v = scorer.fuse(acoustic_tells, script_tells, intent_tells, disclosed, denial, ctx)
     v.transcript = transcript
     v.reasons = reasons.build(v.tells, v.disclosed_ai, v.p_ai)   # fixed wording from deterministic tells

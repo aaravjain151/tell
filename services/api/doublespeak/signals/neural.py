@@ -88,13 +88,15 @@ def hf_vote(x16k: np.ndarray) -> Tell:
             return float(torch.softmax(model(**inputs).logits, dim=-1)[0].tolist()[fake_idx])
 
     # long calls: a few evenly spaced non-silent windows instead of one huge input (bounds latency and memory)
-    chunks = [c for _, c in windows.windows(x16k, 16_000, win_s=6.0, hop_s=3.0, max_n=3)] if len(x16k) > 12 * 16_000 else [x16k]
+    ws = windows.windows(x16k, 16_000, win_s=6.0, hop_s=3.0, max_n=3) if len(x16k) > 12 * 16_000 else [(0.0, x16k)]
+    chunks = [c for _, c in ws]
     if not chunks:
         return Tell("neural_hf", "acoustic", 0.5, W_HF, "no speech found for the anti-spoof model (all windows silent)", applicable=False)
     ps = [prob(c) for c in chunks]
     p_fake = float(np.mean(ps))
     over = f" over {len(ps)} windows" if len(ps) > 1 else ""
-    return Tell("neural_hf", "acoustic", p_fake, W_HF, f"{name.split('/')[-1]}: P(synthetic) = {p_fake:.2f}{over}")
+    detail = {"windows": [{"t": round(float(t), 2), "p": round(p, 4)} for (t, _), p in zip(ws, ps)]}
+    return Tell("neural_hf", "acoustic", p_fake, W_HF, f"{name.split('/')[-1]}: P(synthetic) = {p_fake:.2f}{over}", detail=detail)
 
 
 def analyze(x16k: np.ndarray, dur_s: float) -> list[Tell]:
