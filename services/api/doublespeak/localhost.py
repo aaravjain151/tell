@@ -2,7 +2,7 @@
 
 Caller audio / transcript text may go to loopback and nowhere else. Every request is checked
 (host resolved, every address must be loopback), counted as `localhost_requests`, and never
-counted as external egress. stdlib only; `opener` is injectable so tests never touch a network.
+counted as external egress. Proxy settings are ignored and redirects are refused. stdlib only; `opener` is injectable so tests never touch a network.
 """
 from __future__ import annotations
 
@@ -18,6 +18,18 @@ from . import privacy
 
 ALLOWED_HOSTS = ("127.0.0.1", "::1", "localhost")
 Opener = Callable[..., Any]   # urlopen-compatible: opener(request, timeout=...) -> file-like with .read()
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """A local engine must never bounce a request (and its body) somewhere else."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+# ProxyHandler({}) ignores HTTP_PROXY / HTTPS_PROXY / ALL_PROXY from the environment, so a "loopback" call can never be
+# routed through a proxy; _NoRedirect turns any 3xx into an HTTPError instead of following it.
+_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
 
 class NotLoopbackError(RuntimeError):
@@ -40,7 +52,7 @@ def _check(url: str) -> None:
 def _send(req: urllib.request.Request, timeout: float, opener: Opener | None) -> bytes:
     _check(req.full_url)
     privacy.record_localhost()   # attempted requests count, success or not
-    with (opener or urllib.request.urlopen)(req, timeout=timeout) as r:
+    with (opener or _OPENER.open)(req, timeout=timeout) as r:
         return r.read()
 
 
@@ -51,7 +63,7 @@ def post_json(url: str, body: dict, timeout: float = 10.0, opener: Opener | None
 
 def post_multipart(url: str, fields: dict[str, str], file_field: str, filename: str, data: bytes,
                    timeout: float = 10.0, opener: Opener | None = None, content_type: str = "audio/wav") -> dict:
-    boundary = "----tell" + secrets.token_hex(12)
+    boundary = "----doublespeak" + secrets.token_hex(12)
     out = b""
     for k, v in fields.items():
         out += f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode()

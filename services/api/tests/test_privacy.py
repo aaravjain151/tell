@@ -6,6 +6,7 @@
 """
 import io
 import json
+import types
 import re
 from pathlib import Path
 
@@ -93,7 +94,7 @@ def test_voicestudio_stt_used_when_it_answers(monkeypatch):
     monkeypatch.setenv("DOUBLESPEAK_STT", "voicestudio")
     privacy.reset()
     op = FakeOpener({"text": "  this is the voicestudio transcript  "})
-    monkeypatch.setattr(localhost.urllib.request, "urlopen", op)
+    monkeypatch.setattr(localhost, "_OPENER", types.SimpleNamespace(open=op))
     v = pipeline.analyze(to_wav_bytes(make_call("human", seed=5)), None)
     assert v.egress["context"]["transcript_source"] == "local_voicestudio"
     req, timeout = op.requests[0]
@@ -106,7 +107,7 @@ def test_voicestudio_stt_used_when_it_answers(monkeypatch):
 def test_voicestudio_unreachable_falls_back_silently(monkeypatch):
     monkeypatch.setenv("DOUBLESPEAK_STT", "auto")
     monkeypatch.setattr(stt, "available", lambda: False)
-    monkeypatch.setattr(localhost.urllib.request, "urlopen", FakeOpener(exc=ConnectionRefusedError("down")))
+    monkeypatch.setattr(localhost, "_OPENER", types.SimpleNamespace(open=FakeOpener(exc=ConnectionRefusedError("down"))))
     v = pipeline.analyze(to_wav_bytes(make_call("human", seed=5)), None)
     assert "transcript_source" not in v.egress["context"]
     assert v.egress["caller_audio_bytes_sent"] == 0
@@ -115,14 +116,14 @@ def test_voicestudio_unreachable_falls_back_silently(monkeypatch):
 def test_voicestudio_bad_response_falls_back(monkeypatch):
     monkeypatch.setenv("DOUBLESPEAK_STT", "auto")
     monkeypatch.setattr(stt, "available", lambda: False)
-    monkeypatch.setattr(localhost.urllib.request, "urlopen", FakeOpener({"error": "x"}))
+    monkeypatch.setattr(localhost, "_OPENER", types.SimpleNamespace(open=FakeOpener({"error": "x"})))
     assert stt.transcribe_with_source(make_call("human", seed=5)) == (None, None)
 
 
 def test_stt_whisper_mode_never_contacts_voicestudio(monkeypatch):
     monkeypatch.setenv("DOUBLESPEAK_STT", "whisper")
     op = FakeOpener({"text": "x"})
-    monkeypatch.setattr(localhost.urllib.request, "urlopen", op)
+    monkeypatch.setattr(localhost, "_OPENER", types.SimpleNamespace(open=op))
     monkeypatch.setattr(stt, "available", lambda: False)
     assert stt.transcribe_with_source(make_call("human", seed=5)) == (None, None) and op.requests == []
 

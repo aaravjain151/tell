@@ -19,19 +19,7 @@ doublespeak/stt.py             local STT: VoiceStudio on loopback first, then fa
 doublespeak/localhost.py       the ONLY socket opener for local engines (VoiceStudio STT, Ollama): loopback-only (NotLoopbackError otherwise), counts `localhost_requests` (D-009)
 doublespeak/signals/neural.py  neural voters: ANTI_SPOOF_MODEL (ONNX) and HF_SPOOF_MODEL (transformers); applicable=False if absent
 doublespeak/speak.py           spoken verdict via Gradium CLI (only our text leaves)
-doublespeak/main.py            FastAPI routes: /health /thresholds /analyze /speak
-doublespeak/pipeline.py        analyze(audio_bytes, transcript) → Verdict   (the only orchestration)
-doublespeak/audio.py           wav decode (stdlib) / ffmpeg pipe for webm-ogg-mp3 / resample to 16k mono
-doublespeak/signals/acoustic.py  pause_regularity · breath_proxy · pitch_stability · noise_floor · band_limited flag
-doublespeak/signals/script.py    llm_isms · disfluency · sentence_uniformity · contraction_rate · ai_denial()
-doublespeak/signals/intent.py    urgency · payment_rails · impersonation · credential_ask · secrecy · DISCLOSURE
-doublespeak/scorer.py          deterministic fusion → tier (DANGEROUS)
-doublespeak/thresholds.py      every weight/threshold + THRESHOLDS_VERSION (DANGEROUS)
-doublespeak/privacy.py         egress meter, AudioEgressError, HMAC verdict signatures (DANGEROUS)
-doublespeak/llm.py             transcript interpreter: stub | ollama (localhost 3B, the product) | anthropic (dev); logs tokens
-doublespeak/stt.py             local faster-whisper; fills transcript when none was given (ctx.transcript_source)
-doublespeak/signals/neural.py  neural voters: ANTI_SPOOF_MODEL (ONNX) and HF_SPOOF_MODEL (transformers); applicable=False if absent
-doublespeak/speak.py           spoken verdict via Gradium CLI (only our text leaves)
+doublespeak/secure_store.py    opt-in (DOUBLESPEAK_HISTORY=1) AES-256-GCM alert history, key in OS keychain only; API: GET/DELETE /history, GET /history/status (T-016)
 tests/synth.py          synthetic human/TTS fixtures (mechanics only — not a stand-in for real clips)
 tests/test_privacy.py   the privacy guarantee as a test
 eval/golden.jsonl       32 transcript cases · eval/run_eval.py (targets 0.85 / 0.90)
@@ -95,3 +83,8 @@ curl -s -F audio=@data/calls/scam_grandparent.wav -F transcript="$(cat tools/red
 - 2026-11-07 · backend · `offline_guard.py`: `DOUBLESPEAK_OFFLINE=1` sets HF_HUB_OFFLINE/TRANSFORMERS_OFFLINE (+ telemetry off) from `doublespeak/__init__.py`, i.e. before transformers/huggingface_hub import. `make models` (tools/models/prefetch.py, the only place that downloads weights) fills the caches first.
 - 2026-11-07 · backend · Model loads must never 500 a request: `hf_vote` and the Whisper load were unguarded, so offline + uncached would have crashed `/analyze`. Both now degrade (voter `applicable=False` with "run `make models`", STT returns None) and remember the failure instead of retrying per request.
 - 2026-11-07 · backend · Writing a loopback/socket test with psutil: a listener bound to the machine's own LAN address gives a real non-loopback endpoint without leaving the machine (find it with a UDP `connect`, which sends nothing); skip the test if there is no LAN interface.
+- 2026-11-07 · backend · History records are built only by `secure_store.record_from_verdict` (allowlist: ts, tier, p_ai, p_scam, thresholds_version, top-3 fired tell NAMES). Never add `evidence`, `transcript`, `headline` or `advice`: evidence strings quote the caller. `test_secure_store.py` plants a sentinel in all of them and greps file bytes plus decrypted output.
+- 2026-11-07 · backend · No key on disk, ever: the AES key exists only in the OS keychain (service "doublespeak"). Missing cryptography/keyring or a locked keychain means history is off (`unavailable: <reason>`), never a plaintext fallback. Tests inject a key by monkeypatching `secure_store.keyring_key_provider`; never touch the real keychain in tests. Both libs are imported lazily so a clean checkout stays green.
+- 2026-11-07 · backend · History file is append-only AES-GCM lines: a tampered or garbage line fails authentication and is skipped and counted (`skipped`), not fatal; a wrong key skips every line. `pipeline.analyze` calls `record_verdict`, which swallows all errors so history can never fail an analysis. `data/history/` is gitignored (only `data/calls/*` was before).
+- 2026-11-07 · backend · `localhost.py` hardening (Codex adversarial review): urllib honors `HTTP_PROXY`/`ALL_PROXY` and follows redirects by default, so a "loopback" request could be carried to an outside proxy or bounced elsewhere. The module now uses its own opener (`ProxyHandler({})` + a no-redirect handler); a 3xx is an `HTTPError`. Tests use real loopback servers (never the network) and were mutation-checked against the old code. Note `build_opener` drops a `ProxyHandler({})` from `opener.handlers`, so test behavior (a listener that must receive nothing), not the handler list. Tests that fake the network must patch `localhost._OPENER`, not `urllib.request.urlopen`.
+- 2026-11-07 · backend · Open items from the same review, not yet done: only literal `127.0.0.1`/`::1` would be stricter than also allowing `localhost`; `record_egress` accepts arbitrary kinds and negative counts; the socket-import scan misses `import os, socket` and `importlib.import_module("socket")` and skips `stt.py` and `signals/neural.py`; HF/Whisper cold-cache loads open unmetered sockets (set `HF_HUB_OFFLINE=1` once models are cached, as Samarth's `offline_guard.py` does).
