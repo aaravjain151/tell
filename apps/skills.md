@@ -8,7 +8,7 @@ Two-column instrument panel: left = input (samples, transcript, audio file / mic
 
 ## Data contract (from `POST /analyze`)
 `{tier, p_ai, p_scam, confidence, disclosed_ai, headline, advice, tells[{name, family, score, weight, evidence, applicable}], thresholds_version, egress{caller_audio_bytes_sent, bytes_sent_external, external_requests, context}, signature, cost{latency_ms}}`.
-`render(v)` is the only function that touches the verdict DOM. Samples embedded in `#samples-data` are real engine output (regenerate with the snippet in `services/api/skills.md` if thresholds change).
+`render(v)` is the only function that touches the verdict DOM. Samples embedded in `#samples-data` are real engine output (regenerate with `./.venv/bin/python apps/web/build_samples.py` if thresholds change).
 
 ## Rules
 - Vanilla JS, CSS vars only; colours and fonts come from `design/tokens.json` (copy the values, keep names aligned).
@@ -27,3 +27,4 @@ Regenerate samples after a thresholds change (see services/api/skills.md), re-in
 
 ## Recent lessons
 - 2026-11-07 · frontend · Samples are injected at build time (`__SAMPLES__` placeholder) because an artifact can't fetch a sibling JSON unless it is published alongside; keep them inline.
+- 2026-11-07 · frontend · A context line under the gauges shows duration, band-limited, transcript source and local scam-talk model from `egress.context`/`cost`; the bytes counter reads the server's `caller_audio_bytes_sent` (verified 0 with whisper + wav2vec2 + Ollama all on).

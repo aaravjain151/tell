@@ -21,7 +21,8 @@ tell/speak.py           spoken verdict via Gradium CLI (only our text leaves)
 tests/synth.py          synthetic human/TTS fixtures (mechanics only — not a stand-in for real clips)
 tests/test_privacy.py   the privacy guarantee as a test
 eval/golden.jsonl       32 transcript cases · eval/run_eval.py (targets 0.85 / 0.90)
-../../tools/redteam/    make_calls.py — Gradium attacker clips from scripts/*.txt
+apps/web/build_samples.py  regenerates the 4 inline demo verdicts (deterministic: stub LLM, no heavy models) — run after any thresholds change; tests/test_web_samples.py guards it
+../../tools/redteam/    degrade.sh (opus-8k) · make_calls.py — Gradium attacker clips from scripts/*.txt
 ```
 
 ## Data model
@@ -67,3 +68,4 @@ curl -s -F audio=@data/calls/scam_grandparent.wav -F transcript="$(cat tools/red
 - 2026-11-07 · backend · Ollama llama3.2:3b via /api/generate: 0.5-0.7 s warm per ~45-word script, 2.5 s cold; whole `/analyze` (whisper + wav2vec2 + ollama) 1.3 s warm, 7.7 s on the first request after boot → `main.warm_up()` preloads all three at startup (TELL_WARMUP=0 disables). Transcript is capped to the last 120 words (`TELL_LLM_MAX_WORDS`) and the HTTP timeout is 10 s (`OLLAMA_TIMEOUT_S`); on failure `llm.py` returns no tells and `cost.error`, never an exception.
 - 2026-11-07 · backend · The 3B model hallucinates `disclosed_ai: true` on an undisclosed sales script and answers `assistant_style` 1.0 on both sales scripts. That is why disclosure stays in code (`signals/intent.DISCLOSURE`; the LLM `ai_disclosure` tell is applicable=False, weight 0). Scores from the 3B are clamped and non-numeric values fall back to defaults (`llm._score`).
 - 2026-11-07 · backend · Background processes started with `&` die when the Bash call ends in this harness; start `make api` with run_in_background and poll /health.
+- 2026-11-07 · web · Inline samples come from `./.venv/bin/python apps/web/build_samples.py` (refuses to write if a tier changes; `--check` to dry-run). It forces LLM_PROVIDER=stub and unsets HF/ONNX models so the file:// demo is identical on every laptop; live API verdicts will differ (neural + Ollama on). The page's context line reads `egress.context` + `cost.local`; `transcript_source` is absent when the user supplied the transcript.
