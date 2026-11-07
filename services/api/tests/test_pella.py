@@ -36,26 +36,77 @@ def test_degrades_when_weights_are_not_cached(monkeypatch):
     assert not t.applicable and "make models" in t.evidence
 
 
-def test_refuses_weights_that_do_not_match_the_pinned_hash(monkeypatch, tmp_path):
-    pytest.importorskip("torch"); pytest.importorskip("torchaudio"); pytest.importorskip("transformers"); pytest.importorskip("scipy")
+def _need_stack():
+    for m in ("torch", "torchaudio", "transformers", "scipy"):
+        pytest.importorskip(m)
+
+
+def _pin(monkeypatch, data: bytes):
+    import hashlib
+    monkeypatch.setattr(pella, "SIZE", len(data))
+    monkeypatch.setattr(pella, "SHA256", hashlib.sha256(data).hexdigest())
+
+
+def test_refuses_weights_that_fail_the_hash_even_at_the_right_size(monkeypatch, tmp_path):
+    _need_stack()
     bad = tmp_path / "evil.pt"
-    bad.write_bytes(b"not the pinned weights")
+    bad.write_bytes(b"A" * 64)
+    _pin(monkeypatch, b"B" * 64)                     # same size, so only the HASH can refuse it
     monkeypatch.setenv("PELLA_MODEL", str(bad))
     monkeypatch.setattr(pella, "safe_state_dict", lambda p: (_ for _ in ()).throw(AssertionError("must not even try to load")))
     t = pella.pella_vote(tone(8))
     assert not t.applicable and "SHA-256" in t.evidence
 
 
-def test_verify_accepts_exact_bytes_caches_the_result_and_notices_tampering(monkeypatch, tmp_path):
+def test_verify_hashes_every_time_and_ignores_a_planted_marker(monkeypatch, tmp_path):
     f = tmp_path / "w.pt"
     f.write_bytes(b"pretend weights")
-    import hashlib
-    monkeypatch.setattr(pella, "SIZE", len(b"pretend weights"))
-    monkeypatch.setattr(pella, "SHA256", hashlib.sha256(b"pretend weights").hexdigest())
-    assert pella.verify(f) and (tmp_path / "w.pt.ds-verified").exists()
-    f.write_bytes(b"pretend WEIGHTS")                       # same size, different bytes, but the marker says verified
-    (tmp_path / "w.pt.ds-verified").unlink()
+    _pin(monkeypatch, b"pretend weights")
+    assert pella.verify(f) and not (tmp_path / "w.pt.ds-verified").exists()      # no marker is written any more
+    (tmp_path / "w.pt.ds-verified").write_text(pella.SHA256)                     # an attacker plants one...
+    f.write_bytes(b"pretend WEIGHTS")                                            # ...and swaps in same-size bytes
     assert not pella.verify(f)
+
+
+def test_a_swap_between_the_hash_check_and_the_load_is_refused(monkeypatch, tmp_path):
+    _need_stack()
+    f = tmp_path / "w.pt"
+    f.write_bytes(b"good weights!!!")
+    _pin(monkeypatch, b"good weights!!!")
+    monkeypatch.setenv("PELLA_MODEL", str(f))
+
+    class Fake:
+        def load_state_dict(self, sd): pass
+        def to(self, d): return self
+        def eval(self): return self
+
+    def swap_during_load(path):
+        path.write_bytes(b"evil  weights!!!")           # same size, replaced after the hash passed
+        return {}
+    monkeypatch.setattr(pella, "_build", lambda: Fake())
+    monkeypatch.setattr(pella, "safe_state_dict", swap_during_load)
+    t = pella.pella_vote(tone(8))
+    assert not t.applicable and "changed while loading" in t.evidence
+
+
+def test_backbone_config_bounds_and_pin():
+    import types
+    assert pella.check_config(types.SimpleNamespace(num_hidden_layers=24, hidden_size=1024)) == ""
+    assert "out of bounds" in pella.check_config(types.SimpleNamespace(num_hidden_layers=10**9, hidden_size=1024))
+    assert "out of bounds" in pella.check_config(types.SimpleNamespace(num_hidden_layers=24, hidden_size=10**9))
+    assert "out of bounds" in pella.check_config(types.SimpleNamespace(num_hidden_layers="24", hidden_size=1024))
+    assert len(pella.BACKBONE_REVISION) == 40 and len(pella.BACKBONE_CONFIG_SHA256) == 64
+
+
+def test_old_torch_is_refused(monkeypatch, tmp_path):
+    torch = pytest.importorskip("torch"); _need_stack()
+    f = tmp_path / "w.pt"
+    f.write_bytes(b"x" * 8)
+    _pin(monkeypatch, b"x" * 8)
+    monkeypatch.setenv("PELLA_MODEL", str(f))
+    monkeypatch.setattr(torch, "__version__", "2.5.1")
+    t = pella.pella_vote(tone(8))
+    assert not t.applicable and "too old" in t.evidence
 
 
 def test_safe_loader_refuses_a_pickle_that_would_run_code(tmp_path):

@@ -11,3 +11,4 @@ keyring>=25
 # local neural voters (install on the laptop; heavy):
 #   pip install faster-whisper onnxruntime
 #   pip install torch transformers   (only if HF_SPOOF_MODEL is set)
+# Pellav2 voter needs torch>=2.6 (restricted weights loader; earlier versions had a bypass, CVE-2025-32434)
