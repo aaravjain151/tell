@@ -148,8 +148,8 @@ def test_schema_endpoint_never_loads_models(monkeypatch):
         response = client.get("/ready")
     assert response.status_code == 200
     result = response.json()
-    assert set(result) == {"ready", "degraded", "components", "offline_models", "os_network", "thresholds_version"}
-    assert set(result["components"]) == {"stt", "anti_spoof_hf", "llm", "voicestudio_stt"}
+    assert set(result) == {"ready", "degraded", "components", "offline_models", "os_network", "privacy_posture", "thresholds_version"}
+    assert set(result["components"]) == {"stt", "anti_spoof_hf", "pellav2", "llm", "voicestudio_stt"}
     for component in result["components"].values():
         assert set(component) == {"status", "detail"}
         assert component["status"] in ("ready", "degraded", "off")
@@ -191,3 +191,22 @@ def test_external_engine_url_refused_before_opener(monkeypatch):
     opener = engine(monkeypatch, {})
     assert readiness.report()["components"]["llm"]["status"] == "degraded"
     opener.assert_not_called()
+
+
+def test_report_includes_pellav2_and_the_privacy_posture(monkeypatch):
+    from doublespeak import readiness
+    monkeypatch.delenv("PELLA_MODEL", raising=False)
+    monkeypatch.setenv("DOUBLESPEAK_DEBUG_SAVE", "1")
+    r = readiness.report()
+    assert r["components"]["pellav2"]["status"] == "off"
+    assert r["privacy_posture"]["debug_save"] is True and set(r["privacy_posture"]) >= {"debug_save", "llm_provider_anthropic", "gradium_key_set"}
+
+
+def test_pellav2_never_loads_a_model_while_reporting(monkeypatch):
+    from doublespeak import readiness
+    from doublespeak.signals import pella
+    monkeypatch.setenv("PELLA_MODEL", pella.REPO)
+    monkeypatch.setattr(pella, "_model", None); monkeypatch.setattr(pella, "_error", "")
+    monkeypatch.setattr(pella, "weights_path", lambda: None)
+    monkeypatch.setattr(pella, "_load", lambda: (_ for _ in ()).throw(AssertionError("readiness must not load the model")))
+    assert readiness.report()["components"]["pellav2"] == {"status": "degraded", "detail": "not cached, run make models"}

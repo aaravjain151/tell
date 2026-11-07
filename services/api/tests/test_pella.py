@@ -157,3 +157,9 @@ def test_prep_gives_exactly_four_seconds_in_range():
     for secs in (3.0, 4.0, 4.0):
         x = pella.prep(tone(secs, amp=0.02))
         assert x.dtype == np.float32 and len(x) == 4 * SR and np.isfinite(x).all() and np.abs(x).max() <= 1.0
+
+
+def test_device_defaults_to_mps_when_available_and_cpu_can_be_forced():
+    assert pella.pick_device("", True) == "mps" and pella.pick_device("auto", True) == "mps" and pella.pick_device("mps", True) == "mps"
+    assert pella.pick_device("", False) == "cpu" and pella.pick_device("mps", False) == "cpu"
+    assert pella.pick_device("cpu", True) == "cpu"

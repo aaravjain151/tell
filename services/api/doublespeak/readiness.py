@@ -64,6 +64,18 @@ def _hf() -> dict:
                   ("model.safetensors", "pytorch_model.bin", "model.safetensors.index.json", "pytorch_model.bin.index.json"))
 
 
+def _pella() -> dict:
+    if not os.environ.get("PELLA_MODEL"):
+        return _state("off", "PELLA_MODEL not configured")
+    from .signals import pella
+    if pella._model is not None:
+        return _state("ready", f"loaded in memory on {pella._device}")
+    if pella._error:
+        return _state("degraded", pella._error[:120])
+    path = pella.weights_path()
+    return _state("degraded", "cached but not loaded yet" if path is not None and path.exists() else "not cached, run make models")
+
+
 def _ollama() -> dict:
     provider = os.environ.get("LLM_PROVIDER", "").lower()
     if provider in ("", "stub"):
@@ -107,7 +119,7 @@ def _check(check: Callable[[], dict]) -> dict:
 def report() -> dict:
     """Return a fresh snapshot without changing model state or analysis counters."""
     components = {name: _check(check) for name, check in (
-        ("stt", _stt), ("anti_spoof_hf", _hf), ("llm", _ollama), ("voicestudio_stt", _voicestudio),
+        ("stt", _stt), ("anti_spoof_hf", _hf), ("pellav2", _pella), ("llm", _ollama), ("voicestudio_stt", _voicestudio),
     )}
     degraded = [name for name, component in components.items() if component["status"] == "degraded"]
     stt_ready = any(components[name]["status"] == "ready" for name in ("stt", "voicestudio_stt"))
@@ -123,5 +135,10 @@ def report() -> dict:
         version = str(thresholds.THRESHOLDS_VERSION)
     except Exception:  # noqa: BLE001
         version = "unknown"
+    try:
+        from . import privacy
+        posture = privacy.posture()          # the switches that can move call content off the machine or onto disk
+    except Exception:  # noqa: BLE001
+        posture = {}
     return {"ready": stt_ready and not degraded, "degraded": degraded, "components": components,
-            "offline_models": offline, "os_network": network, "thresholds_version": version}
+            "offline_models": offline, "os_network": network, "privacy_posture": posture, "thresholds_version": version}
