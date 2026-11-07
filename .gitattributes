@@ -1,0 +1,7 @@
+# append-only team docs: keep both sides when branches each add lessons/log lines
+skills.md merge=union
+*/skills.md merge=union
+services/api/skills.md merge=union
+apps/skills.md merge=union
+pm/SESSION_LOG.md merge=union
+.env.example merge=union
