@@ -38,6 +38,8 @@ class Verdict:
     egress: dict = field(default_factory=dict)
     signature: str = ""
     cost: dict = field(default_factory=dict)
+    reasons: list[str] = field(default_factory=list)      # plain sentences from fixed wording (reasons.py), deterministic; safe to speak or show
+    model_notes: list[str] = field(default_factory=list)  # DISPLAY ONLY: sanitised sentences from the local LLM; never a tell, tier, flag or TTS input
     transcript: str = ""   # what was analysed (typed, or from local STT); returned to the local UI only, so it can mark up the phrases that fired
 
     def to_dict(self) -> dict:
@@ -54,5 +56,7 @@ class Verdict:
             "egress": self.egress,
             "signature": self.signature,
             "cost": self.cost,
+            "reasons": list(self.reasons),
+            "model_notes": list(self.model_notes),
             "transcript": self.transcript,
         }

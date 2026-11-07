@@ -7,7 +7,7 @@ import time
 from . import audio as audio_mod, net_monitor
 from . import llm, privacy, scorer
 from . import audio as audio_mod
-from . import llm, privacy, scorer, secure_store
+from . import llm, privacy, reasons, scorer, secure_store
 from . import stt
 from .signals import acoustic, intent, neural, script
 from .types import Tell, Verdict
@@ -45,6 +45,7 @@ def _analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
     script_tells = script.analyze(transcript)
     intent_tells, disclosed = intent.detect(transcript)
     extra, cost = llm.interpret(transcript)
+    notes = list(cost.pop("notes", []) or [])   # display only, see Verdict.model_notes
     for t in extra:
         (script_tells if t.family == "script" else intent_tells).append(t)
         # An LLM `ai_disclosure` tell is shown (applicable=False) but never decides: disclosure comes only from the
@@ -53,6 +54,8 @@ def _analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
 
     v = scorer.fuse(acoustic_tells, script_tells, intent_tells, disclosed, denial, ctx)
     v.transcript = transcript
+    v.reasons = reasons.build(v.tells, v.disclosed_ai)   # fixed wording from deterministic tells
+    v.model_notes = notes                                # display only: never read by scorer, reasons or speak
     v.cost = {**cost, "latency_ms": int(1000 * (time.perf_counter() - t0))}
     v.egress = {**privacy.report(), "context": ctx}
     payload = {"tier": v.tier, "p_ai": round(v.p_ai, 3), "p_scam": round(v.p_scam, 3),
