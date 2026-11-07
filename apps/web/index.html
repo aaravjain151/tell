@@ -562,14 +562,13 @@ async function toggleRecord(){
 async function speak(){
   if (!lastVerdict){ setStatus("Analyze a call first."); return; }
   if (!apiUp){ showError("Spoken verdicts need the local API and a GRADIUM_API_KEY."); return; }
-  const top = lastVerdict.tells.filter(t => t.applicable && t.score >= 0.6).map(t => t.evidence)[0] || "";
-  const fd = new FormData(); fd.append("headline", lastVerdict.headline); fd.append("evidence", top);
+  const fd = new FormData(); fd.append("headline", lastVerdict.headline);          // only our own wording is ever spoken
   setStatus("Asking Gradium for the voice. Only our own text leaves this device.");
   try{
     const r = await fetch(API + "/speak", {method:"POST", body:fd});
     if (!r.ok){ const j = await r.json(); throw new Error(j.detail || r.statusText); }
     new Audio(URL.createObjectURL(await r.blob())).play();
-    log(`POST /speak: ${lastVerdict.headline.length + top.length} characters of our text out, 0 caller audio`); setStatus("");
+    log(`POST /speak: ${lastVerdict.headline.length} characters of our own wording out, 0 caller audio, 0 caller words`); setStatus("");
   }catch(e){ setStatus(""); showError("Couldn't speak the verdict: " + e.message); }
 }
 
