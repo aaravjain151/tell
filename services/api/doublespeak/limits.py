@@ -82,6 +82,14 @@ def _host_only(value: str) -> str:
     return v
 
 
+def handshake_allowed(host_header: str, origin: str | None) -> bool:
+    """Same Host/Origin rules as GuardMiddleware, for WebSocket handshakes (the middleware only sees http scopes).
+    A missing Origin is accepted (non-browser local tools); a browser always sends one."""
+    if _host_only(host_header) not in allowed_hosts():
+        return False
+    return origin is None or origin in allowed_origins()
+
+
 async def _reply(send: Send, status: int, detail: str, headers: list[tuple[bytes, bytes]] | None = None) -> None:
     body = json.dumps({"detail": detail}).encode()
     await send({"type": "http.response.start", "status": status,

@@ -25,15 +25,18 @@ def _warn_debug_save_once() -> None:
             "DOUBLESPEAK_DEBUG_SAVE=1: RAW CALLER AUDIO IS BEING WRITTEN TO data/debug. Never use this in a demo or with real calls.")
 
 
-def analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
-    """Analyse, while asking the OS (not our own counters) whether this process opened any outside connection."""
+def analyze(audio_bytes: bytes | None, transcript: str | None, *, ephemeral: bool = False) -> Verdict:
+    """Analyse, while asking the OS (not our own counters) whether this process opened any outside connection.
+
+    `ephemeral=True` is for live streaming ticks: DOUBLESPEAK_DEBUG_SAVE is ignored (no audio ever reaches disk)
+    and the opt-in history file is not written (a tick every 3 s would flood it)."""
     with net_monitor.watch() as nm:
-        v = _analyze(audio_bytes, transcript)
+        v = _analyze(audio_bytes, transcript, ephemeral)
     v.egress = {**v.egress, **nm.report()}
     return v
 
 
-def _analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
+def _analyze(audio_bytes: bytes | None, transcript: str | None, ephemeral: bool = False) -> Verdict:
     t0 = time.perf_counter()
     ctx: dict = {}
     acoustic_tells: list[Tell] = []
@@ -48,7 +51,7 @@ def _analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
             if local:
                 transcript = local
                 ctx["transcript_source"] = src
-        if os.environ.get("DOUBLESPEAK_DEBUG_SAVE") == "1":  # never in a demo; documented in skills.md
+        if os.environ.get("DOUBLESPEAK_DEBUG_SAVE") == "1" and not ephemeral:  # never in a demo; documented in skills.md
             _warn_debug_save_once()
             os.makedirs("data/debug", exist_ok=True)
             with open(f"data/debug/{privacy.audio_fingerprint(audio_bytes)}.bin", "wb") as f:
@@ -74,5 +77,6 @@ def _analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
     payload = {"tier": v.tier, "p_ai": round(v.p_ai, 3), "p_scam": round(v.p_scam, 3),
                "tells": [(t.name, round(t.score, 3)) for t in v.tells], "thresholds_version": v.thresholds_version}
     v.signature = privacy.sign(payload, privacy.audio_fingerprint(audio_bytes))
-    secure_store.record_verdict(v)   # opt-in (DOUBLESPEAK_HISTORY=1), allowlisted fields only, never raises
+    if not ephemeral:
+        secure_store.record_verdict(v)   # opt-in (DOUBLESPEAK_HISTORY=1), allowlisted fields only, never raises
     return v
