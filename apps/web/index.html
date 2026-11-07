@@ -86,6 +86,21 @@ button,input,textarea{font:inherit;color:inherit}
 .sample:active{transform:scale(.97)}
 .sample[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
 
+.rt{margin:-8px 0 20px}
+.rt-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;column-gap:16px;min-height:36px;margin:0 2px 2px}
+.rt-label{font-size:13px;color:var(--muted)}
+.rt-q{display:inline-flex;align-items:center;gap:8px;min-height:44px;margin:-4px 0;font-size:13px;color:var(--muted);cursor:pointer}
+.rt-q[hidden]{display:none}
+.rt-q input{width:18px;height:18px;margin:0;accent-color:var(--btn);cursor:pointer}
+.rt-q input:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.rt-chips{margin:0;padding:3px;margin:-3px}
+.rt-chips .sample[hidden]{display:none}
+.rt-more{margin-top:2px}
+.rt .sample{background:transparent;font-size:13px;font-weight:500;max-width:100%;text-align:left;padding:6px 14px}
+.rt .sample small{font-size:12px;font-weight:400;color:var(--muted);margin-left:6px;overflow-wrap:anywhere}
+.rt .sample[aria-pressed="true"]{background:var(--btn)}
+.rt .sample[aria-pressed="true"] small{color:inherit;opacity:.72}
+
 .field{position:relative;min-height:240px}
 textarea,.reader{width:100%;min-height:240px;font:400 19px/1.65 var(--serif);letter-spacing:.005em}
 textarea{display:block;resize:vertical;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:var(--paper-2)}
@@ -216,6 +231,14 @@ footer{display:flex;flex-wrap:wrap;gap:8px 24px;margin-top:32px;font-size:13px;c
         <button class="sample" type="button" data-sample="ai_disclosed" aria-pressed="false">Appointment bot</button>
         <button class="sample" type="button" data-sample="human" aria-pressed="false">Friend calling</button>
       </div>
+      <div class="rt" id="rt" hidden>
+        <div class="rt-head">
+          <span class="rt-label" id="rt-label">Generated attacker calls</span>
+          <label class="rt-q" id="rtqwrap" hidden><input type="checkbox" id="rtq">Phone quality (Opus 8 kHz)</label>
+        </div>
+        <div class="samples rt-chips" id="rtchips" role="group" aria-labelledby="rt-label"></div>
+        <button class="link rt-more" id="rtmore" type="button" aria-expanded="false" hidden></button>
+      </div>
       <div class="field" id="call">
         <label class="vh" for="transcript">Transcript of the call</label>
         <textarea id="transcript" placeholder="Paste what the caller said, or record or upload the call. A transcript alone still catches scam wording; audio adds the voice."></textarea>
@@ -278,6 +301,8 @@ const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const pct = x => Math.round(x * 100) + "%";
 const norm = s => s.replace(/[‘’]/g, "'").toLowerCase();
+let rtClips = [], rtCur = null, rtAll = false;
+const rtShown = () => matchMedia("(max-width:480px)").matches ? 4 : 6;
 let apiUp = false, lastVerdict = null, recorder = null, recBlob = null, file = null, logLines = [], busy = false;
 
 /* ---------- small helpers ---------- */
@@ -420,8 +445,54 @@ function pickSample(key){
   $("transcript").value = s.transcript; clearAudio(); showError("");
   if (apiUp) analyze(); else render(s);
 }
-function clearAudio(){ file = null; recBlob = null; $("audio").value = ""; $("attach").classList.remove("show"); }
-function attach(name, meta){ document.querySelectorAll(".sample").forEach(b => b.setAttribute("aria-pressed", "false")); $("attachname").textContent = name; $("attachmeta").textContent = meta; $("attach").classList.add("show"); }
+function clearAudio(){ file = null; recBlob = null; $("audio").value = ""; $("attach").classList.remove("show"); rtCur = null; syncRt(); }
+
+/* ---------- generated red-team clips (local API only) ---------- */
+const ACRONYMS = new Set(["irs", "ai", "ceo", "otp", "ssn", "atm"]);
+function nice(s){ const w = s.replace(/_+/g, " ").trim().split(" ").map(x => ACRONYMS.has(x.toLowerCase()) ? x.toUpperCase() : x); const t = w.join(" "); return t.charAt(0).toUpperCase() + t.slice(1); }
+function clipLabel(c){
+  const parts = c.script.split("__"), human = c.engine === "human" && parts.length > 1;
+  return {name: nice(human ? parts.slice(1).join(" ") : c.script), sub: human ? "human, " + parts[0] : c.engine};
+}
+function syncRt(){
+  document.querySelectorAll("#rtchips .sample").forEach((b, i) => { const on = !!rtCur && b.dataset.rtId === rtCur.id;
+    b.setAttribute("aria-pressed", String(on)); b.hidden = !rtAll && i >= rtShown() && !on; });
+  const m = $("rtmore"); m.hidden = rtClips.length <= rtShown(); m.setAttribute("aria-expanded", String(rtAll));
+  m.textContent = rtAll ? "Show fewer" : `Show all ${rtClips.length}`;
+  $("rtqwrap").hidden = !(rtCur && rtCur.has_opus8k);
+}
+async function loadRedteam(){
+  $("rt").hidden = true;
+  if (!apiUp) return;
+  try{
+    const r = await fetch(API + "/redteam/samples", {cache:"no-store"});
+    if (!r.ok) throw new Error(r.statusText);
+    const rows = await r.json();
+    if (!Array.isArray(rows) || !rows.length) return;
+    rtClips = rows;
+    $("rtchips").innerHTML = rows.map(c => { const l = clipLabel(c);
+      return `<button class="sample" type="button" aria-pressed="false" data-rt-id="${esc(c.id)}" data-engine="${esc(c.engine)}" data-label="${esc(c.label)}" data-has-text="${!!c.has_text}" data-has-opus8k="${!!c.has_opus8k}">${esc(l.name)}<small>· ${esc(l.sub)}</small></button>`; }).join("");
+    document.querySelectorAll("#rtchips .sample").forEach(b => b.addEventListener("click", () => pickClip(b.dataset.rtId)));
+    $("rt").hidden = false; syncRt();
+  }catch(e){ $("rt").hidden = true; rtClips = []; }
+}
+async function pickClip(id){
+  const c = rtClips.find(x => x.id === id); if (!c || busy) return;
+  const phone = $("rtq").checked && c.has_opus8k, u = `${encodeURIComponent(c.engine)}/${encodeURIComponent(c.script)}`, l = clipLabel(c);
+  showError(""); setStatus(`Loading ${l.name} (${l.sub}) from the local API…`);
+  try{
+    const [a, t] = await Promise.all([
+      fetch(`${API}/redteam/clip/${u}${phone ? "?variant=opus8k" : ""}`),
+      c.has_text ? fetch(`${API}/redteam/text/${u}`) : Promise.resolve(null)]);
+    if (!a.ok) throw new Error("clip " + a.status);
+    const blob = await a.blob(), text = t && t.ok ? await t.text() : "";
+    $("transcript").value = text; setMode("edit");
+    file = new File([blob], `${c.engine}-${c.script}${phone ? ".opus8k" : ""}.wav`, {type:"audio/wav"}); recBlob = null; $("audio").value = "";
+    attach(`${l.name} · ${l.sub}`, `${Math.round(blob.size / 1024)} KB · generated clip${phone ? " · phone quality" : ""}`);
+    rtCur = c; syncRt(); setStatus(""); analyze();
+  }catch(e){ setStatus(""); showError("Couldn't load that clip from the local API."); }
+}
+function attach(name, meta){ rtCur = null; syncRt(); document.querySelectorAll(".sample").forEach(b => b.setAttribute("aria-pressed", "false")); $("attachname").textContent = name; $("attachmeta").textContent = meta; $("attach").classList.add("show"); }
 
 async function toggleRecord(){
   const btn = $("rec");
@@ -477,6 +548,8 @@ $("reader").addEventListener("focusout", hideTip);
 /* ---------- wiring ---------- */
 document.querySelectorAll(".sample").forEach(b => b.addEventListener("click", () => pickSample(b.dataset.sample)));
 $("analyze").addEventListener("click", analyze);
+$("rtmore").addEventListener("click", () => { rtAll = !rtAll; syncRt(); });
+$("rtq").addEventListener("change", () => { if (rtCur) pickClip(rtCur.id); });
 $("rec").addEventListener("click", toggleRecord);
 $("speak").addEventListener("click", speak);
 $("toggle").addEventListener("click", () => setMode($("paper").dataset.mode === "read" ? "edit" : "read"));
@@ -492,7 +565,7 @@ $("theme").addEventListener("click", () => {
 });
 try{ const t = new URLSearchParams(location.search).get("theme") || localStorage.getItem("ds-theme"); if (t) document.documentElement.dataset.theme = t; }catch(e){}
 
-probe().then(() => { document.querySelector('[data-sample="scam"]').setAttribute("aria-pressed", "true"); $("transcript").value = SAMPLES.scam.transcript; render(SAMPLES.scam); });
+probe().then(loadRedteam).then(() => { document.querySelector('[data-sample="scam"]').setAttribute("aria-pressed", "true"); $("transcript").value = SAMPLES.scam.transcript; render(SAMPLES.scam); });
 </script>
 </body>
 </html>
