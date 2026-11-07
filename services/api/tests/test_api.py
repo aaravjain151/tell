@@ -27,3 +27,12 @@ def test_analyze_audio_and_transcript():
 def test_bad_audio_is_415():
     r = client.post("/analyze", files={"audio": ("x.bin", b"not audio at all", "application/octet-stream")})
     assert r.status_code == 415
+
+
+def test_verdict_returns_the_analysed_transcript():
+    """The UI marks up the caller's words in place, so the verdict must carry the text that was analysed."""
+    from fastapi.testclient import TestClient
+    from doublespeak.main import app
+    text = "Grandma it's me, I need bail money right now, please don't tell mom."
+    r = TestClient(app).post("/analyze", data={"transcript": text}).json()
+    assert r["transcript"] == text

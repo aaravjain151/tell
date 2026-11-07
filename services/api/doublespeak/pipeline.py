@@ -42,6 +42,7 @@ def analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
     denial = script.ai_denial(transcript) if transcript else False
 
     v = scorer.fuse(acoustic_tells, script_tells, intent_tells, disclosed, denial, ctx)
+    v.transcript = transcript
     v.cost = {**cost, "latency_ms": int(1000 * (time.perf_counter() - t0))}
     v.egress = {**privacy.report(), "context": ctx}
     payload = {"tier": v.tier, "p_ai": round(v.p_ai, 3), "p_scam": round(v.p_scam, 3),
