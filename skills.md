@@ -56,12 +56,16 @@ data/calls/          generated clips (gitignored except .gitkeep)
 
 ## 5. Commands
 ```
-make setup        # venv + pip install -r services/api/requirements.txt
-make test         # pytest services/api/tests
+make setup        # .venv from the pinned services/api/requirements.lock (uv if present, else pip; needs Python >= 3.11)
+make lock         # re-pin both lockfiles after editing requirements*.txt (needs uv); commit the .lock files
+make test         # pytest services/api/tests (CI runs this + make eval on every PR)
 make eval         # golden eval, prints accuracy vs target
-make api          # uvicorn on :8000 (CORS open for file:// and artifacts)
-make web          # serves apps/web on :5173 (python http.server)
+make models       # install the pinned heavy voters (torch, whisper, ...) and download weights once, online
+make api          # uvicorn on :8000 (reads .env when it exists)
+make web          # serves apps/web on 127.0.0.1:5173
+make demo         # api + web on loopback with DOUBLESPEAK_OFFLINE=1; Ctrl-C stops both
 make redteam      # generates attacker clips into data/calls (needs GRADIUM_API_KEY)
+make record       # record a human reading the scripts (capture.py); make wild = degrade + wild eval
 python3 scripts/pm.py status|start <domain>|msg|done|log|decide|audit
 python3 council/ask.py "question" --paste
 ```
@@ -95,6 +99,7 @@ python3 council/ask.py "question" --paste
 - Gradium CLI fails → `uvx gradium --help`; confirm `GRADIUM_API_KEY` in env; the CLI reads `gsk_…` keys.
 
 ## 10. Recent lessons
+- 2026-11-07 · pm · Fresh-clone check for #37: uvicorn exits on a missing `--env-file`, so `make api` must only pass it when `.env` exists; macOS `/usr/bin/python3` is 3.9 and cannot install the lock (setup now picks python3.11+); the red-team tests import `engines.py`, so `tools/redteam/requirements.txt` is part of the lock.
 - 2026-11-07 · backend · Phone-band audio (≤ 4 kHz content) kills spectral tells; always compute `band_limited` first and down-weight spectral signals when true.
 - 2026-11-07 · backend · Breath detection needs ≥ 5 s of audio; shorter clips return `score=0.5, evidence="too short"` so they don't bias the verdict.
 - 2026-11-07 · design · Light primary teal failed 4.5:1 on white; use `signal.600` in light, `signal.400` in dark.
