@@ -70,7 +70,7 @@ def _analyze(audio_bytes: bytes | None, transcript: str | None, ephemeral: bool 
 
     v = scorer.fuse(acoustic_tells, script_tells, intent_tells, disclosed, denial, ctx)
     v.transcript = transcript
-    v.reasons = reasons.build(v.tells, v.disclosed_ai)   # fixed wording from deterministic tells
+    v.reasons = reasons.build(v.tells, v.disclosed_ai, v.p_ai)   # fixed wording from deterministic tells
     v.model_notes = notes                                # display only: never read by scorer, reasons or speak
     v.cost = {**cost, "latency_ms": int(1000 * (time.perf_counter() - t0))}
     v.egress = {**privacy.report(), "context": ctx}

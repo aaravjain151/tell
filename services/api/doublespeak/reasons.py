@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 
+from .thresholds import P_AI_THRESHOLD
 from .types import Tell
 
 MAX_REASONS = 4
@@ -28,16 +29,21 @@ INTENT_REASON = {
 }
 GIFT_CARDS = "They asked you to buy gift cards."
 VOICE = "The voice may be an AI copy, not a real person."
+VOICE_SPLIT = "One voice check leaned toward AI, but the others did not agree."
 SCRIPTED = "The wording sounds scripted."
 
-VOICE_TELLS = {"pause_regularity", "breath_proxy", "pitch_stability", "noise_floor", "high_band", "neural_onnx", "neural_hf"}
+VOICE_TELLS = {"pause_regularity", "breath_proxy", "pitch_stability", "noise_floor", "high_band", "neural_onnx", "neural_hf", "neural_pella"}
 SCRIPT_TELLS = {"llm_isms", "disfluency", "sentence_uniformity", "contraction_rate"}
 MODEL_TELLS = {"llm_assistant_style", "llm_scam_framing"}   # model-made tells never become reasons
 _GIFT = re.compile(r"gift ?card|steam card|itunes card|google play|scratch", re.I)
 
 
-def build(tells: list[Tell], disclosed_ai: bool = False) -> list[str]:
-    """At most MAX_REASONS sentences, strongest first (weight x score), no duplicates."""
+def build(tells: list[Tell], disclosed_ai: bool = False, p_ai: float | None = None) -> list[str]:
+    """At most MAX_REASONS sentences, strongest first (weight x score), no duplicates.
+
+    `p_ai` is the fused score. The plain voice sentence is shown only when the fused score agrees (>= P_AI_THRESHOLD);
+    when a single voice check fired but the fused score is lower, a hedged sentence is shown instead, so the reasons
+    never contradict the headline. `p_ai=None` keeps the old behaviour (every fired check is listed)."""
     ranked: list[tuple[float, str]] = []
     for t in tells:
         if not t.applicable or t.weight <= 0 or t.name in MODEL_TELLS:
@@ -47,7 +53,8 @@ def build(tells: list[Tell], disclosed_ai: bool = False) -> list[str]:
             sentence = GIFT_CARDS if t.name == "payment_rails" and _GIFT.search(t.evidence) else INTENT_REASON[t.name]
             ranked.append((rank, sentence))
         elif t.name in VOICE_TELLS and t.score >= FIRED_VOICE and not disclosed_ai:
-            ranked.append((rank, VOICE))
+            agrees = p_ai is None or p_ai >= P_AI_THRESHOLD
+            ranked.append((rank, VOICE if agrees else VOICE_SPLIT))
         elif t.name in SCRIPT_TELLS and t.score >= FIRED_VOICE and not disclosed_ai:
             ranked.append((rank, SCRIPTED))
     ranked.sort(key=lambda r: -r[0])
