@@ -5,8 +5,8 @@ Issues: [Demo: Sunday 11:00](https://github.com/aaravjain151/doublespeak/milesto
 ## Demo slice (Sunday 11:00), in order
 | # | Issue | Owner | Est h |
 |---|---|---|---|
-| 1 | #22 Merge train (#19, #18, #20, #21) | Aarav | 4 |
-| 2 | #25 Pellav2 voter lands after #19 | Sanath | 3 |
+| 1 | #22 Merge train (#19 and #18 already merged; #20 then #21 remain) | Aarav | 3 |
+| 2 | #25 Pellav2 voter rebased on merged #19 | Sanath | 3 |
 | 3 | #29 Dataset: humans, all engines, Opus 8 kHz | Sanath | 6 |
 | 4 | #23 Hands-on: Continuity relay into BlackHole | Samarth + Aarav | 3 |
 | 5 | #24 Hands-on: voters on relayed/speakerphone audio | Sanath | 4 |
@@ -35,7 +35,7 @@ Issues: [Demo: Sunday 11:00](https://github.com/aaravjain151/doublespeak/milesto
 - **Relay capture may not work** (#23 untested); mitigation: speakerphone + mic and file replay.
 - **Anti-spoof voters unmeasured on phone-band audio** (#24); two easy clips are not evidence. No accuracy claim until #30.
 - **Dataset not ready** (needs people and Gradium credits); thresholds stay as-is if so.
-- **Merge-train conflicts** (#18 and #19 currently conflict) eat time before anything else can start.
+- **Merge-train conflicts** (#20 currently conflicts; #18 and #19 already merged) eat time before anything else can start.
 - **Model downloads and first-load time on demo Macs** (~1.2 GB anti-spoof model); pre-warm with Wi-Fi off in #31.
 - **Legal exposure in all-party-consent states is unanswered** (#33); demo only on consenting callers, avoid unmeasured claims.
 - **Competition:** Google Scam Detection already does free on-device scam detection; our claim rests on the four-way taxonomy, evidence and auditable locality.
