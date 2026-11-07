@@ -1,5 +1,8 @@
 # BOARD
 
+## Issues
+Work is tracked as GitHub issues: [Demo: Sunday 11:00](https://github.com/aaravjain151/doublespeak/milestone/1) and [Post-hackathon](https://github.com/aaravjain151/doublespeak/milestone/2). Order, owners and cut line: `pm/ROADMAP.md`. Labels: `area:*`, `type:*`, `prio:demo|next`, `agent-ok`, `needs-human`, `blocked`, `cursor`.
+
 ## pm
 ### NOW
 - [T-001] ~~Confirm name~~ done: Doublespeak (D-009) — human
