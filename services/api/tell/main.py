@@ -16,6 +16,29 @@ app = FastAPI(title="Tell", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
+@app.on_event("startup")
+def warm_up() -> None:
+    """Load whisper, the anti-spoof model and the Ollama model once, so the first real call isn't 8 s. TELL_WARMUP=0 disables."""
+    if os.environ.get("TELL_WARMUP", "1") == "0":
+        return
+    import time
+
+    import numpy as np
+
+    from . import llm
+    from .signals import neural
+    t0 = time.time()
+    try:
+        x = (np.random.default_rng(0).standard_normal(16_000 * 4) * 0.01).astype(np.float32)
+        from . import stt
+        stt.transcribe(x)
+        neural.analyze(x, 4.0)
+        llm.interpret("hello, this is a warm up")
+        logging.getLogger("tell.main").info("warm-up done in %.1fs", time.time() - t0)
+    except Exception as e:  # noqa: BLE001 — never block startup
+        logging.getLogger("tell.main").warning("warm-up skipped: %s", e)
+
+
 @app.get("/health")
 def health() -> dict:
     return {"ok": True, "thresholds_version": thresholds.THRESHOLDS_VERSION, "egress": privacy.report(),
