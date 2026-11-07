@@ -22,7 +22,7 @@ tests/synth.py          synthetic human/TTS fixtures (mechanics only — not a s
 tests/test_privacy.py   the privacy guarantee as a test
 eval/golden.jsonl       32 transcript cases · eval/run_eval.py (targets 0.85 / 0.90)
 apps/web/build_samples.py  regenerates the 4 inline demo verdicts (deterministic: stub LLM, no heavy models) — run after any thresholds change; tests/test_web_samples.py guards it
-../../tools/redteam/    degrade.sh (opus-8k) · make_calls.py — Gradium attacker clips from scripts/*.txt · capture.py — human takes + speaker→mic replay (runbook: RECORDING.md)
+../../tools/redteam/    degrade.sh (opus-8k) · make_calls.py — Gradium attacker clips from scripts/*.txt
 ```
 
 ## Data model
@@ -69,6 +69,4 @@ curl -s -F audio=@data/calls/scam_grandparent.wav -F transcript="$(cat tools/red
 - 2026-11-07 · backend · The 3B model hallucinates `disclosed_ai: true` on an undisclosed sales script and answers `assistant_style` 1.0 on both sales scripts. That is why disclosure stays in code (`signals/intent.DISCLOSURE`; the LLM `ai_disclosure` tell is applicable=False, weight 0). Scores from the 3B are clamped and non-numeric values fall back to defaults (`llm._score`).
 - 2026-11-07 · backend · Background processes started with `&` die when the Bash call ends in this harness; start `make api` with run_in_background and poll /health.
 - 2026-11-07 · web · Inline samples come from `./.venv/bin/python apps/web/build_samples.py` (refuses to write if a tier changes; `--check` to dry-run). It forces LLM_PROVIDER=stub and unsets HF/ONNX models so the file:// demo is identical on every laptop; live API verdicts will differ (neural + Ollama on). The page's context line reads `egress.context` + `cost.local`; `transcript_source` is absent when the user supplied the transcript.
-- 2026-11-07 · backend · Red-team engines: Gradium (CLI, credits), ElevenLabs (`/v1/text-to-speech/{voice}?output_format=pcm_16000`, header `xi-api-key`, raw PCM wrapped to WAV), VoiceStudio (local app, OpenAI-style `POST :3900/v1/audio/speech`, `response_format: wav`, loopback needs no auth, first call downloads ~2.3 GB model). VoiceStudio is AGPL-3.0: call it over HTTP, never copy its code into this repo.
-- 2026-11-07 · backend · ElevenLabs is IN-DOMAIN for `garystafford/wav2vec2-deepfake-voice-detector` (its card lists ElevenLabs in the training set), so a high catch rate on `ai__elevenlabs__*` proves little; judge generalisation on `ai__gradium__*` and `ai__voicestudio__*`. `run_eval.py --wild` tags this per engine.
-- 2026-11-07 · backend · Voice clones are of consenting teammates only; paid engines get script text only (never caller audio) and live under tools/, outside the analysis package (`test_redteam_engines.py` greps `tell/` for TTS service names).
+- 2026-11-07 · backend · T-018 local scam-talk judge bench (`eval/llm_bench.py`, 32 golden transcripts, full pipeline): llama3.2:3b tier acc 0.78 / p95 665 ms; qwen2.5:3b 1.00 / 911 ms; qwen3:4b 1.00 / 2192 ms (needs `think:false`, set automatically). All: scam recall 1.00, framing false-positive 0.00. llama's drop comes from overconfident `assistant_style` on human and sales scripts. Default is now qwen2.5:3b. Caveat: the golden set is what the regex signals were built against, so 1.00 means no regression, not generalization.

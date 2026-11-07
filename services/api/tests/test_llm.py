@@ -24,3 +24,26 @@ def test_scores_clamped():
 def test_stub_provider_makes_no_calls(monkeypatch):
     monkeypatch.setenv("LLM_PROVIDER", "stub")
     assert llm.interpret("anything")[1]["provider"] == "stub"
+
+
+def test_qwen3_requests_no_thinking(monkeypatch):
+    """Thinking tokens would blow the num_predict budget and the latency target."""
+    import json as _json
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen3:4b")
+    seen = {}
+
+    class R:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return b'{"response": "{}", "prompt_eval_count": 1, "eval_count": 1}'
+
+    def fake(req, timeout=0):
+        seen["body"] = _json.loads(req.data)
+        return R()
+    import urllib.request
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
+    llm._ollama("hello world")
+    assert seen["body"]["think"] is False
+    monkeypatch.setenv("OLLAMA_MODEL", "llama3.2:3b")
+    llm._ollama("hello world")
+    assert "think" not in seen["body"]
