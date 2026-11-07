@@ -206,8 +206,11 @@ def _checked(fn: Callable[..., Any], data: bytes | None, transcript: str | None)
     """Runs in the worker thread: duration cap after decode, then the real analysis."""
     if data:
         from . import audio as audio_mod
-        _x, _sr, dur_ms = audio_mod.decode(data)
         cap = max_audio_s()
+        try:
+            _x, _sr, dur_ms = audio_mod.decode(data)
+        except audio_mod.AudioTooLong:
+            raise HTTPException(413, f"audio too long: limit is {cap:g} s") from None
         if dur_ms / 1000 > cap:
             raise HTTPException(413, f"audio too long: limit is {cap:g} s")
     return fn(data, transcript)

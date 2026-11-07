@@ -76,3 +76,12 @@ def verify(payload: dict, signature: str) -> bool:
     except ValueError:
         return False
     return hmac.compare_digest(sign(payload, fp), signature)
+
+
+def posture() -> dict:
+    """Switches that can move call content off the machine or onto disk. Read at call time; for a readiness page."""
+    return {
+        "debug_save": os.environ.get("DOUBLESPEAK_DEBUG_SAVE") == "1",        # raw caller audio written to data/debug
+        "llm_provider_anthropic": os.environ.get("LLM_PROVIDER", "stub") == "anthropic",   # transcript sent out
+        "gradium_key_set": bool(os.environ.get("GRADIUM_API_KEY")),            # /speak can send fixed wording out
+    }

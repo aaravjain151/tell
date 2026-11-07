@@ -7,10 +7,7 @@ import os
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
-from . import pipeline, privacy, secure_store, speak, thresholds, uploads
-from . import limits, pipeline, privacy, speak, thresholds
-from . import pipeline, privacy, speak, thresholds, net_monitor, offline_guard
-from . import pipeline, privacy, secure_store, speak, thresholds
+from . import limits, net_monitor, offline_guard, pipeline, privacy, secure_store, speak, thresholds, uploads
 from .audio import AudioDecodeError
 from .redteam import router as redteam_router
 
