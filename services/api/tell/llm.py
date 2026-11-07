@@ -64,7 +64,7 @@ def _score(data: dict, key: str, default: float) -> float:
 def _ollama(transcript: str) -> tuple[list[Tell], dict]:
     """Local 3B model via Ollama on localhost (http://127.0.0.1:11434). Transcript text only; nothing leaves the machine."""
     import urllib.request
-    model = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
+    model = os.environ.get("OLLAMA_MODEL", "qwen2.5:3b")
     base = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
     payload = {"model": model, "prompt": PROMPT + cap_words(transcript), "stream": False, "format": "json",
                "options": {"temperature": 0, "num_predict": 200}}
