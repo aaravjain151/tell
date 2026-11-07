@@ -78,7 +78,7 @@ def transcribe(x16k: np.ndarray) -> str | None:
             return None
         size = os.environ.get("DOUBLESPEAK_WHISPER_MODEL", "base.en")
         try:
-            _model = WhisperModel(size, device="cpu", compute_type="int8")
+            _model = WhisperModel(size, device="cpu", compute_type="int8", local_files_only=True)   # cache only: no update check, no download at runtime
         except Exception as e:  # noqa: BLE001 - offline + uncached must mean "no local STT", not a 500
             _model_failed = True
             log.warning("faster-whisper %s unavailable (%s); run `make models` while online", size, e)

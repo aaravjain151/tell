@@ -68,7 +68,8 @@ def hf_vote(x16k: np.ndarray) -> Tell:
         if _hf_error:
             return Tell("neural_hf", "acoustic", 0.5, W_HF, _hf_error, applicable=False)
         try:
-            _hf = (AutoFeatureExtractor.from_pretrained(name), AutoModelForAudioClassification.from_pretrained(name).eval())
+            _hf = (AutoFeatureExtractor.from_pretrained(name, local_files_only=True),   # cache only: no update check, no download at runtime
+                   AutoModelForAudioClassification.from_pretrained(name, local_files_only=True).eval())
         except Exception as e:  # noqa: BLE001 - offline + uncached, bad name, corrupt cache: degrade, never raise
             _hf_error = f"{name.split('/')[-1]} not available ({type(e).__name__}); run `make models` while online"
             log.warning("anti-spoof model unavailable: %s", e)
