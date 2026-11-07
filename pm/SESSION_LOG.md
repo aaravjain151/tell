@@ -33,4 +33,10 @@
 | 2026-11-07 16:57 | backend | - | Streaming backend MVP (issue #26): ring.py, session.py, stream.py (/session, /ws/stream, /panic), tools/stream_wav.py, D-011 PROPOSED. Next: stabiliser consumes raw verdicts, UI source, warm-up before first tick. |
 | 2026-11-07 16:59 | backend | - | Added tools/macos/tap_audio (Core Audio process tap CLI, 16k mono WAV); verified with tone/say over AirPods; next: user runs it during a real iPhone call (see tools/macos/README.md) |
 | 2026-11-07 17:10 | backend | - | integration/merge-train: merged #55 #54 #58 #57 #60 #56 #59 #51 #50 in dependency order; fixed 3 semantic conflicts (one THRESHOLDS_VERSION .3, single import block, /ready schema); Pellav device auto + load time (Sanath #25), /ready pellav2 + privacy posture, Simple view uses server reasons. 394 tests + eval pass. |
+| 2026-11-07 16:33 | frontend | cursor | session start |
+| 2026-11-07 16:33 | frontend | - | msg M-0001 → backend |
+| 2026-11-07 16:33 | frontend | - | PR #16 reviewed (phone+dark, no restyle). Shipped+committed Live Listen on web/live-listen: source picker, 10s ticks, scam latch, livebar. Uses /analyze until /stream exists. |
+| 2026-11-07 16:33 | frontend | - | msg M-0002 → pm |
+| 2026-11-07 16:33 | frontend | - | T-020 spot-check: phone 390 dark + light theme both load; editorial look intact; Live Listen controls visible. |
+| 2026-11-07 16:59 | backend | - | msg M-0003 → frontend |
 | 2026-11-07 17:19 | backend | - | scores: display-only scam/AI-voice/confidence/level (scores.py, Verdict.scores), Tell.detail + ctx.voice_windows, Simple 'How serious' block and Detailed voice strip; golden eval unchanged 0.98/1.00; next: show voice strip with a real Pellav2 run |
