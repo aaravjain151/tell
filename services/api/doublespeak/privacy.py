@@ -15,7 +15,8 @@ import os
 import threading
 
 _lock = threading.Lock()
-_state = {"external_requests": 0, "bytes_sent_external": 0, "caller_audio_bytes_sent": 0}
+_state = {"external_requests": 0, "bytes_sent_external": 0, "caller_audio_bytes_sent": 0,
+          "localhost_requests": 0}   # loopback engines via doublespeak/localhost.py; NOT external egress
 
 
 class AudioEgressError(RuntimeError):
@@ -29,6 +30,12 @@ def record_egress(kind: str, nbytes: int) -> None:
     with _lock:
         _state["external_requests"] += 1
         _state["bytes_sent_external"] += int(nbytes)
+
+
+def record_localhost() -> None:
+    """One request to a loopback engine (VoiceStudio, Ollama). Never touches the external counters."""
+    with _lock:
+        _state["localhost_requests"] += 1
 
 
 def report() -> dict:

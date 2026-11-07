@@ -20,6 +20,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 os.environ.setdefault("LLM_PROVIDER", "stub")
+os.environ.setdefault("DOUBLESPEAK_STT", "whisper")   # eval is deterministic: never probe a local engine
 
 from doublespeak import pipeline  # noqa: E402
 from tests.synth import make_call, to_wav_bytes  # noqa: E402
