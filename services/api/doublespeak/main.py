@@ -5,9 +5,9 @@ import logging
 import os
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
+from . import limits, pipeline, privacy, speak, thresholds
 from . import pipeline, privacy, speak, thresholds, net_monitor, offline_guard
 from . import pipeline, privacy, secure_store, speak, thresholds
 from .audio import AudioDecodeError
@@ -15,7 +15,7 @@ from .redteam import router as redteam_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 app = FastAPI(title="Doublespeak", version="0.1.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+limits.install(app)  # CORS allow-list, Host/Origin guard, body limit (see limits.py)
 app.include_router(redteam_router)
 
 
@@ -60,7 +60,7 @@ async def analyze(audio: UploadFile | None = File(default=None), transcript: str
     if not data and not (transcript and transcript.strip()):
         raise HTTPException(400, "send audio and/or transcript")
     try:
-        v = pipeline.analyze(data, transcript)
+        v = await limits.run_analysis(pipeline.analyze, data, transcript)
     except AudioDecodeError as e:
         raise HTTPException(415, str(e)) from e
     return v.to_dict()
