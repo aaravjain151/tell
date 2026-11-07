@@ -18,6 +18,7 @@ from . import localhost
 
 log = logging.getLogger("doublespeak.stt")
 _model = None
+_model_failed = False
 
 
 def available() -> bool:
@@ -68,13 +69,20 @@ def transcribe_with_source(x16k: np.ndarray, opener=None) -> tuple[str | None, s
 
 def transcribe(x16k: np.ndarray) -> str | None:
     """x16k: float32 mono at 16 kHz. Returns text or None if no local STT is installed."""
-    global _model
+    global _model, _model_failed
     if not available():
         return None
     from faster_whisper import WhisperModel
     if _model is None:
+        if _model_failed:
+            return None
         size = os.environ.get("DOUBLESPEAK_WHISPER_MODEL", "base.en")
-        _model = WhisperModel(size, device="cpu", compute_type="int8")
+        try:
+            _model = WhisperModel(size, device="cpu", compute_type="int8")
+        except Exception as e:  # noqa: BLE001 - offline + uncached must mean "no local STT", not a 500
+            _model_failed = True
+            log.warning("faster-whisper %s unavailable (%s); run `make models` while online", size, e)
+            return None
         log.info("loaded faster-whisper %s", size)
     segments, _ = _model.transcribe(x16k, beam_size=1, vad_filter=True)
     return " ".join(s.text.strip() for s in segments).strip()

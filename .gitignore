@@ -16,3 +16,4 @@ council/sessions/*
 .env.local
 .claude/worktrees/
 .venv
+data/history/

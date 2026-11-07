@@ -8,6 +8,8 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
 from . import limits, pipeline, privacy, speak, thresholds
+from . import pipeline, privacy, speak, thresholds, net_monitor, offline_guard
+from . import pipeline, privacy, secure_store, speak, thresholds
 from .audio import AudioDecodeError
 from .redteam import router as redteam_router
 
@@ -43,6 +45,7 @@ def warm_up() -> None:
 @app.get("/health")
 def health() -> dict:
     return {"ok": True, "thresholds_version": thresholds.THRESHOLDS_VERSION, "egress": privacy.report(),
+            "os_network": net_monitor.snapshot_report(), "offline_models": offline_guard.is_enforced(),
             "llm_provider": os.environ.get("LLM_PROVIDER", "stub")}
 
 
@@ -71,3 +74,25 @@ async def speak_verdict(headline: str = Form(...), evidence: str = Form(default=
     except speak.SpeakUnavailable as e:
         raise HTTPException(503, str(e)) from e
     return Response(content=wav, media_type="audio/wav")
+
+
+@app.get("/history/status")
+def history_status() -> dict:
+    return secure_store.status()
+
+
+@app.get("/history")
+def history_get() -> dict:
+    """Decrypted opt-in alert history, newest first (cap 200). No audio, transcript or evidence is ever stored."""
+    if not secure_store.enabled():
+        return {"records": [], "skipped": 0, "status": "disabled"}
+    try:
+        records, skipped = secure_store.read_all()
+    except secure_store.HistoryUnavailable as e:
+        return {"records": [], "skipped": 0, "status": f"unavailable: {e}"}
+    return {"records": records, "skipped": skipped, "status": "ok"}
+
+
+@app.delete("/history")
+def history_wipe() -> dict:
+    return {"deleted": secure_store.wipe()}
