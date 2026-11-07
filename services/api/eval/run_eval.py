@@ -70,14 +70,16 @@ def run_audio(verbose: bool) -> float:
 IN_DOMAIN = {"elevenlabs": "garystafford/wav2vec2-deepfake-voice-detector was trained on ElevenLabs output"}
 
 
-def _engine(base: str) -> str:
-    """ai__<engine>__<script> -> engine; anything else -> 'other'."""
+def _engine(rel: Path, base: str) -> str:
+    """Engine = folder under the wild dir (data/calls/<engine>/x.wav), else ai__<engine>__<script> in the filename."""
+    if len(rel.parts) > 1 and rel.parts[0] != "human":
+        return rel.parts[0]
     parts = base.split("__")
     return parts[1] if parts[0] == "ai" and len(parts) >= 3 else "other"
 
 
-def _label(stem: str) -> str:
-    return "human" if stem.startswith("human") else "ai"
+def _label(rel: Path, base: str) -> str:
+    return "human" if "human" in rel.parts[:-1] or base.startswith("human") else "ai"
 
 
 def _condition(stem: str) -> tuple[str, str]:
@@ -88,49 +90,69 @@ def _condition(stem: str) -> tuple[str, str]:
 def _transcript(wav: Path, base: str) -> str | None:
     """Same text for human and AI readings of one script, so the comparison isolates the voice."""
     root = HERE.parents[2] / "tools" / "redteam" / "scripts"
-    for c in (wav.with_suffix(".txt"), wav.parent / f"{base}.txt", root / f"{base.split('__')[-1]}.txt"):
-        if c.exists():
-            return c.read_text().strip()
+    sib = wav.with_suffix(".txt")
+    if sib.exists():
+        return sib.read_text().strip()
+    names = sorted((p.stem for p in root.glob("*.txt")), key=len, reverse=True)
+    hay = "__".join([base, *wav.parent.parts[-2:]])          # script name may sit in the filename or a folder
+    for n in names:
+        if n in hay:
+            return (root / f"{n}.txt").read_text().strip()
     return None
 
 
-def run_wild(folder: str, verbose: bool) -> None:
-    """Per-condition FPR at 90% TPR for p_ai on real recordings. Human = filename starts with 'human'.
+def _f(x: float | None, nd: int = 2) -> str:
+    return "n/a" if x is None else f"{x:.{nd}f}"
 
-    Naming: <script>.wav (AI) · human__<speaker>__<script>.wav (human) · <stem>.opus8k.wav (tools/redteam/degrade.sh).
+
+def run_wild(folder: str, verbose: bool) -> None:
+    """Per-condition AUC / EER / FPR@90%TPR for p_ai on real recordings, plus each generator held out in turn.
+
+    Layout: <folder>/<engine>/<script>.wav (AI) · <folder>/human/**.wav (human) · <stem>.opus8k.wav from
+    tools/redteam/degrade.sh. Flat names `ai__<engine>__<script>.wav` / `human__<speaker>__<script>.wav` also work.
     """
-    from eval.metrics import fpr_at_tpr
+    from eval.metrics import auc, eer, fpr_at_tpr, loeo
+    from tell.thresholds import P_AI_THRESHOLD, THRESHOLDS_VERSION
+    root = Path(folder)
     rows: dict[str, list[dict]] = {}
-    for wav in sorted(Path(folder).glob("*.wav")):
+    for wav in sorted(root.rglob("*.wav")):
+        rel = wav.relative_to(root)
         cond, base = _condition(wav.stem)
         v = pipeline.analyze(wav.read_bytes(), _transcript(wav, base))
         fired = [f"{t.name}={t.score:.2f}" for t in v.tells if t.applicable and t.score >= 0.5]
-        rows.setdefault(cond, []).append({"name": wav.stem, "label": _label(base), "engine": _engine(base), "p_ai": v.p_ai, "tier": v.tier, "fired": fired})
+        rows.setdefault(cond, []).append({"name": str(rel), "label": _label(rel, base), "engine": _engine(rel, base),
+                                          "p_ai": v.p_ai, "tier": v.tier, "fired": fired})
     if not rows:
-        print(f"no .wav clips in {folder} (run make redteam / record humans / tools/redteam/degrade.sh)")
+        print(f"no .wav clips under {folder} (make redteam ARGS='--engine all' / record humans into {folder}/human / tools/redteam/degrade.sh)")
         return
-    from tell.thresholds import P_AI_THRESHOLD, THRESHOLDS_VERSION
     print(f"wild eval ({folder}) · thresholds {THRESHOLDS_VERSION} · shipping p_ai threshold {P_AI_THRESHOLD}")
     for cond in sorted(rows):
         ai = [r for r in rows[cond] if r["label"] == "ai"]
         hu = [r for r in rows[cond] if r["label"] == "human"]
-        fpr, thr = fpr_at_tpr([r["p_ai"] for r in ai], [r["p_ai"] for r in hu])
-        head = f"[{cond}] AI n={len(ai)}  human n={len(hu)}  "
-        print(head + (f"FPR@90%TPR = {fpr:.2f} (threshold p_ai >= {thr:.2f})" if fpr is not None else "FPR undefined (need both classes)"))
-        for eng in sorted({r["engine"] for r in ai}):
-            sub = [r for r in ai if r["engine"] == eng]
-            caught = sum(r["p_ai"] >= P_AI_THRESHOLD for r in sub)
-            note = f"   [in-domain: {IN_DOMAIN[eng]}]" if eng in IN_DOMAIN else ""
-            print(f"   engine {eng:12} caught {caught}/{len(sub)} at p_ai >= {P_AI_THRESHOLD}{note}")
+        a, h = [r["p_ai"] for r in ai], [r["p_ai"] for r in hu]
+        fpr, thr = fpr_at_tpr(a, h)
+        print(f"\n[{cond}] AI n={len(ai)}  human n={len(hu)}   AUC {_f(auc(a, h))}  EER {_f(eer(a, h))}  "
+              f"FPR@90%TPR {_f(fpr)}" + (f" (p_ai >= {thr:.2f})" if thr is not None else "  (need both classes)"))
+        by_engine: dict[str, list[float]] = {}
+        for r in ai:
+            by_engine.setdefault(r["engine"], []).append(r["p_ai"])
+        held = loeo(by_engine, h) if len(by_engine) > 1 else {}
+        for eng in sorted(by_engine):
+            sc = by_engine[eng]
+            note = f"  [in-domain: {IN_DOMAIN[eng]}]" if eng in IN_DOMAIN else ""
+            ho = held.get(eng)
+            ho_s = (f"held-out: thr {ho['threshold']:.2f} -> TPR {ho['tpr']:.2f}, FPR {ho['fpr']:.2f}" if ho else "held-out: need >= 2 engines")
+            print(f"   {eng:12} n={len(sc):2}  caught {sum(x >= P_AI_THRESHOLD for x in sc)}/{len(sc)} at {P_AI_THRESHOLD}  "
+                  f"AUC {_f(auc(sc, h))}  {ho_s}{note}")
         for r in ai:
             if r["p_ai"] < P_AI_THRESHOLD:
-                print(f"   MISS  {r['name']}: p_ai {r['p_ai']:.2f}, tier {r['tier']}; fired: {r['fired'] or 'none'}")
+                print(f"   MISS  {r['name']}: p_ai {r['p_ai']:.3f}, tier {r['tier']}; fired: {r['fired'] or 'none'}")
         for r in hu:
             if r["p_ai"] >= P_AI_THRESHOLD:
-                print(f"   FALSE ALARM  {r['name']}: p_ai {r['p_ai']:.2f}, tier {r['tier']}; fired: {r['fired'] or 'none'}")
+                print(f"   FALSE ALARM  {r['name']}: p_ai {r['p_ai']:.3f}, tier {r['tier']}; fired: {r['fired'] or 'none'}")
         if verbose:
             for r in rows[cond]:
-                print(f"   {r['label']:5} {r['name']}: p_ai {r['p_ai']:.2f}")
+                print(f"   {r['label']:5} {r['engine']:12} {r['name']}: p_ai {r['p_ai']:.2f}")
 
 
 if __name__ == "__main__":
