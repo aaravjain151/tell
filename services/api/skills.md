@@ -15,7 +15,8 @@ tell/scorer.py          deterministic fusion → tier (DANGEROUS)
 tell/thresholds.py      every weight/threshold + THRESHOLDS_VERSION (DANGEROUS)
 tell/privacy.py         egress meter, AudioEgressError, HMAC verdict signatures (DANGEROUS)
 tell/llm.py             transcript interpreter: stub | ollama (localhost 3B, the product) | anthropic (dev); logs tokens
-tell/stt.py             local faster-whisper; fills transcript when none was given (ctx.transcript_source)
+tell/stt.py             local STT: VoiceStudio on loopback first, then faster-whisper; fills transcript when none was given (ctx.transcript_source = local_voicestudio | local_whisper); DOUBLESPEAK_STT=auto|voicestudio|whisper
+tell/localhost.py       the ONLY socket opener for local engines (VoiceStudio STT, Ollama): loopback-only (NotLoopbackError otherwise), counts `localhost_requests` (D-009)
 tell/signals/neural.py  neural voters: ANTI_SPOOF_MODEL (ONNX) and HF_SPOOF_MODEL (transformers); applicable=False if absent
 tell/speak.py           spoken verdict via Gradium CLI (only our text leaves)
 tests/synth.py          synthetic human/TTS fixtures (mechanics only — not a stand-in for real clips)
@@ -37,12 +38,12 @@ Acoustic/script scores point toward AI; intent scores toward scam. `applicable=F
 - Short input → `applicable=False`, never a guess. Clip < 4 s skips acoustics; breath needs ≥ 5 s; transcript < 25 words skips disfluency.
 - Disclosure wins: a caller that says it's AI is `ai_disclosed` unless scam cues fire.
 - Changing `thresholds.py`: bump `THRESHOLDS_VERSION`, run `make eval`, note the before/after in the commit body.
-- Network imports are forbidden on the analysis path (`tests/test_privacy.py` scans for them). Only `llm.py` and `speak.py` may talk to the network, and only with text.
+- Network imports are forbidden on the analysis path (`tests/test_privacy.py` scans for them). Only `localhost.py` (loopback, audio or text), `llm.py` and `speak.py` may open a socket (exact allowlist in `test_privacy.py`); everything else stays network-free.
 - Gradium credits: never call TTS in tests; `make_calls.py` caps at `--max 20` clips per run.
 
 ## Validation
 ```
-make test                      # 17 tests incl. privacy + API
+make test                      # 58 tests incl. privacy + localhost + API
 make eval  (ARGS=--verbose)    # transcript ≥0.85, synthetic audio ≥0.90
 make api && curl -s localhost:8000/health
 curl -s -F audio=@data/calls/scam_grandparent.wav -F transcript="$(cat tools/redteam/scripts/scam_grandparent.txt)" localhost:8000/analyze | jq .tier,.tells[].evidence
@@ -76,3 +77,8 @@ curl -s -F audio=@data/calls/scam_grandparent.wav -F transcript="$(cat tools/red
 - 2026-11-07 · backend · Wild-eval layout is `data/calls/<engine>/<script>.wav`, `data/calls/human/<speaker>/<script>.wav`, and `*.opus8k.wav` beside each (recursive `degrade.sh`; ffmpeg needs `-nostdin` inside a `while read` loop or it eats the file list). `run_eval.py --wild DIR` prints per condition AUC / EER / FPR@90%TPR, then per engine caught-count, AUC and a leave-one-engine-out row (threshold from the OTHER engines' 90% TPR, applied to the held-out engine; humans are one pool). The old flat glob silently skipped engine folders.
 - 2026-11-07 · backend · Qwen3-TTS (`pip install -U qwen-tts`, Apache-2.0): `Qwen3TTSModel.from_pretrained("Qwen/Qwen3-TTS-12Hz-0.6B-Base", device_map="mps"|"cpu", dtype=...)` then `generate_voice_clone(text, language, ref_audio, ref_text)` -> `(wavs, sr)`; sr is 24 kHz, not 16 kHz (eval resamples). `ref_text` must be the exact words in the reference clip. Engine lives in `tools/redteam/engines.py`; tested with a fake model, never downloaded in tests.
 - 2026-11-07 · backend · `run_eval --wild` compares raw p_ai to the threshold; a clip at 0.5999 prints as 0.60 but is below 0.6. MISS/FALSE ALARM lines now print 3 decimals.
+- 2026-11-07 · backend · VoiceStudio STT is OpenAI-compatible: `POST :3900/v1/audio/transcriptions`, multipart `file` + `model` (default `whisper-1`; a VoiceStudio engine id must match the active engine, else 400), `response_format=json` returns `{"text": ...}` (per its OpenAPI; the response schema is untyped, so `stt._voicestudio` only trusts a non-empty string `text`). UNVERIFIED against a running app. AGPL-3.0: HTTP only.
+- 2026-11-07 · backend · urllib has one timeout for connect and reads, so VoiceStudio STT gets `VOICESTUDIO_TIMEOUT_S` (default 3 s total); a slower engine just falls back to whisper. Do not add a raw socket probe in stt.py: only localhost.py may open sockets.
+- 2026-11-07 · backend · `localhost.py` checks the hostname against the loopback allowlist BEFORE any DNS and then requires every resolved address to be loopback, so `127.0.0.1.evil.com` and RFC1918 IPs never get a lookup or a request. Attempted loopback requests count even when the engine is down.
+- 2026-11-07 · backend · tests/conftest.py and eval/run_eval.py default `DOUBLESPEAK_STT=whisper` so no test or eval run probes :3900; tests that cover VoiceStudio set `auto|voicestudio` and monkeypatch `urllib.request.urlopen` with a fake opener.
+- 2026-11-07 · backend · `test_redteam_engines` used to ban the word "voicestudio" anywhere in `tell/`; it now bans only the TTS endpoint `/v1/audio/speech`, because VoiceStudio STT is a sanctioned loopback engine (D-009). TTS clients stay in tools/.

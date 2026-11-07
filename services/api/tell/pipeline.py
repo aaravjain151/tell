@@ -22,10 +22,10 @@ def analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
         ctx.update(actx)
         acoustic_tells += neural.analyze(x, dur_ms / 1000)
         if not (transcript or "").strip():
-            local = stt.transcribe(x)   # local whisper; None if not installed
+            local, src = stt.transcribe_with_source(x)   # VoiceStudio (loopback) → local whisper → None
             if local:
                 transcript = local
-                ctx["transcript_source"] = "local_whisper"
+                ctx["transcript_source"] = src
         if os.environ.get("TELL_DEBUG_SAVE") == "1":  # never in a demo; documented in skills.md
             os.makedirs("data/debug", exist_ok=True)
             with open(f"data/debug/{privacy.audio_fingerprint(audio_bytes)}.bin", "wb") as f:

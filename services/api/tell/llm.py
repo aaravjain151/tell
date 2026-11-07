@@ -10,7 +10,7 @@ import json
 import logging
 import os
 
-from . import privacy
+from . import localhost, privacy
 from .types import Tell
 
 log = logging.getLogger("tell.llm")
@@ -63,18 +63,14 @@ def _score(data: dict, key: str, default: float) -> float:
 
 def _ollama(transcript: str) -> tuple[list[Tell], dict]:
     """Local 3B model via Ollama on localhost (http://127.0.0.1:11434). Transcript text only; nothing leaves the machine."""
-    import urllib.request
     model = os.environ.get("OLLAMA_MODEL", "qwen2.5:3b")
     base = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
     payload = {"model": model, "prompt": PROMPT + cap_words(transcript), "stream": False, "format": "json",
                "options": {"temperature": 0, "num_predict": 200}}
     if "qwen3" in model.lower() or os.environ.get("OLLAMA_THINK") == "0":
         payload["think"] = False   # reasoning tokens would eat num_predict and the 3 s budget
-    body = json.dumps(payload).encode()
-    req = urllib.request.Request(base + "/api/generate", data=body, headers={"content-type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=float(os.environ.get('OLLAMA_TIMEOUT_S', '10'))) as r:
-            resp = json.loads(r.read())
+        resp = localhost.post_json(base + "/api/generate", payload, timeout=float(os.environ.get("OLLAMA_TIMEOUT_S", "10")))
     except Exception as e:  # noqa: BLE001
         log.warning("ollama unavailable: %s", e)
         return [], {"provider": "ollama", "model": model, "error": str(e)[:80], "usd": 0.0}
