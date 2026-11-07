@@ -49,7 +49,7 @@ curl -s -F audio=@data/calls/scam_grandparent.wav -F transcript="$(cat tools/red
 ```
 
 ## Red team (tools/redteam)
-`python3 tools/redteam/make_calls.py --out data/calls [--voice-id <id>] [--max 20]` runs `uvx gradium tts` on every `scripts/*.txt` → `data/calls/<name>.wav` + `<name>.txt` (gitignored). Clone a teammate in Gradium Studio, pass its voice id, and the demo is "fresh clone vs Tell". Record a *human* teammate reading the same scripts for the paired baseline.
+`make redteam ARGS="--engine all"` (or `python3 tools/redteam/make_calls.py --engine gradium|elevenlabs|voicestudio|all [--voice-id <id>] [--max 20]`) → `data/calls/ai__<engine>__<script>.wav` + `.txt` (gitignored). `--engine all` skips engines with no key / app not running and says why. Engines live in `tools/redteam/engines.py` (stdlib HTTP, injectable opener, tested without network). Clone a teammate in Gradium Studio, pass its voice id, and the demo is "fresh clone vs Doublespeak". Record a *human* teammate reading the same scripts for the paired baseline.
 
 ## Recent lessons
 - 2026-11-07 · backend · Spectral flatness over the full FFT collapses to ~0 on band-limited audio (zeros above 3.4 kHz); compute it over 100 Hz–3.4 kHz only. Breath detection was blind on phone-band clips until this fix.
