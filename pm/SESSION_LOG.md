@@ -40,3 +40,4 @@
 | 2026-11-07 16:33 | frontend | - | T-020 spot-check: phone 390 dark + light theme both load; editorial look intact; Live Listen controls visible. |
 | 2026-11-07 16:59 | backend | - | msg M-0003 → frontend |
 | 2026-11-07 17:19 | backend | - | scores: display-only scam/AI-voice/confidence/level (scores.py, Verdict.scores), Tell.detail + ctx.voice_windows, Simple 'How serious' block and Detailed voice strip; golden eval unchanged 0.98/1.00; next: show voice strip with a real Pellav2 run |
+| 2026-11-07 18:00 | frontend | - | voice x content quadrant: quadrant.py (display-only, additive), 2x2 grid in Simple, one line in Detailed, samples regenerated; PR stacked on #62; next: review wording with owner |

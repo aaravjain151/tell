@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from typing import Literal
 
+from .quadrant import quadrant_for
 from .scores import scores_for
 
 Tier = Literal["human", "ai_disclosed", "ai_undisclosed", "scam", "unsure"]
@@ -64,4 +65,5 @@ class Verdict:
             "model_notes": list(self.model_notes),
             "transcript": self.transcript,
             "scores": scores_for(self),   # additive, display only
+            "quadrant": quadrant_for(self),   # additive, display only: voice x content
         }
