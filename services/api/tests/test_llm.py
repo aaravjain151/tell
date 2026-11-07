@@ -40,8 +40,9 @@ def test_qwen3_requests_no_thinking(monkeypatch):
     def fake(req, timeout=0):
         seen["body"] = _json.loads(req.data)
         return R()
-    import urllib.request
-    monkeypatch.setattr(urllib.request, "urlopen", fake)
+    import types
+    from doublespeak import localhost
+    monkeypatch.setattr(localhost, "_OPENER", types.SimpleNamespace(open=fake))
     llm._ollama("hello world")
     assert seen["body"]["think"] is False
     monkeypatch.setenv("OLLAMA_MODEL", "llama3.2:3b")
