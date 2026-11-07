@@ -12,6 +12,7 @@ from . import limits, pipeline, privacy, speak, thresholds
 from . import pipeline, privacy, speak, thresholds, net_monitor, offline_guard
 from . import pipeline, privacy, secure_store, speak, thresholds
 from .audio import AudioDecodeError
+from . import readiness
 from .redteam import router as redteam_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
@@ -49,6 +50,11 @@ def health() -> dict:
     return {"ok": True, "thresholds_version": thresholds.THRESHOLDS_VERSION, "egress": privacy.report(),
             "os_network": net_monitor.snapshot_report(), "offline_models": offline_guard.is_enforced(),
             "llm_provider": os.environ.get("LLM_PROVIDER", "stub")}
+
+
+@app.get("/ready")
+def ready() -> dict:
+    return readiness.report()
 
 
 @app.get("/thresholds")
