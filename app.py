@@ -82,7 +82,15 @@ _ALERT_SUB = {
 @st.cache_resource(show_spinner="Getting the detector ready (runs on this "
                                 "computer only)...")
 def _pipeline():
-    return get_pipeline()
+    # Prefer the engine wired to the trained voice + scam-text models. If any
+    # trained artifact is missing or fails to load, fall back to the base
+    # pipeline so the app always runs.
+    try:
+        from doublespeak.engine import build_engine_pipeline
+
+        return build_engine_pipeline()
+    except Exception:
+        return get_pipeline()
 
 
 def _render_result(result) -> None:  # noqa: ANN001
