@@ -16,6 +16,8 @@ import os
 import numpy as np
 
 from ..types import Tell
+from . import windows
+from .pella import pella_vote
 
 log = logging.getLogger("doublespeak.neural")
 W_ONNX, W_HF = 1.8, 1.4
@@ -75,17 +77,26 @@ def hf_vote(x16k: np.ndarray) -> Tell:
             return Tell("neural_hf", "acoustic", 0.5, W_HF, _hf_error, applicable=False)
         log.info("loaded %s (labels %s)", name, _hf[1].config.id2label)
     fe, model = _hf
-    with torch.no_grad():
-        inputs = fe(x16k, sampling_rate=16_000, return_tensors="pt")
-        probs = torch.softmax(model(**inputs).logits, dim=-1)[0].tolist()
     fake_idx = fake_label_index(model.config.id2label)
     if fake_idx is None:
         return Tell("neural_hf", "acoustic", 0.5, W_HF, f"cannot tell which label is synthetic in {model.config.id2label}", applicable=False)
-    p_fake = probs[fake_idx]
-    return Tell("neural_hf", "acoustic", float(p_fake), W_HF, f"{name.split('/')[-1]}: P(synthetic) = {p_fake:.2f}")
+
+    def prob(chunk: np.ndarray) -> float:
+        with torch.no_grad():
+            inputs = fe(chunk, sampling_rate=16_000, return_tensors="pt")
+            return float(torch.softmax(model(**inputs).logits, dim=-1)[0].tolist()[fake_idx])
+
+    # long calls: a few evenly spaced non-silent windows instead of one huge input (bounds latency and memory)
+    chunks = [c for _, c in windows.windows(x16k, 16_000, win_s=6.0, hop_s=3.0, max_n=3)] if len(x16k) > 12 * 16_000 else [x16k]
+    if not chunks:
+        return Tell("neural_hf", "acoustic", 0.5, W_HF, "no speech found for the anti-spoof model (all windows silent)", applicable=False)
+    ps = [prob(c) for c in chunks]
+    p_fake = float(np.mean(ps))
+    over = f" over {len(ps)} windows" if len(ps) > 1 else ""
+    return Tell("neural_hf", "acoustic", p_fake, W_HF, f"{name.split('/')[-1]}: P(synthetic) = {p_fake:.2f}{over}")
 
 
 def analyze(x16k: np.ndarray, dur_s: float) -> list[Tell]:
     if dur_s < 3.0:
         return [Tell("neural", "acoustic", 0.5, 1.0, "clip too short for neural voters (< 3 s)", applicable=False)]
-    return [onnx_vote(x16k), hf_vote(x16k)]
+    return [onnx_vote(x16k), hf_vote(x16k), pella_vote(x16k)]
