@@ -1,0 +1,43 @@
+"""analyze(audio_bytes, transcript) → Verdict. Pure function over inputs; no I/O except optional LLM."""
+from __future__ import annotations
+
+import os
+import time
+
+from . import audio as audio_mod
+from . import llm, privacy, scorer
+from .signals import acoustic, intent, script
+from .types import Tell, Verdict
+
+
+def analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
+    t0 = time.perf_counter()
+    ctx: dict = {}
+    acoustic_tells: list[Tell] = []
+    if audio_bytes:
+        x, orig_sr, dur_ms = audio_mod.decode(audio_bytes)
+        ctx["original_sample_rate"] = orig_sr
+        acoustic_tells, actx = acoustic.analyze(x, dur_ms)
+        ctx.update(actx)
+        if os.environ.get("TELL_DEBUG_SAVE") == "1":  # never in a demo; documented in skills.md
+            os.makedirs("data/debug", exist_ok=True)
+            with open(f"data/debug/{privacy.audio_fingerprint(audio_bytes)}.bin", "wb") as f:
+                f.write(audio_bytes)
+
+    transcript = (transcript or "").strip()
+    script_tells = script.analyze(transcript)
+    intent_tells, disclosed = intent.detect(transcript)
+    extra, cost = llm.interpret(transcript)
+    for t in extra:
+        (script_tells if t.family == "script" else intent_tells).append(t)
+        if t.name == "ai_disclosure":
+            disclosed = True
+    denial = script.ai_denial(transcript) if transcript else False
+
+    v = scorer.fuse(acoustic_tells, script_tells, intent_tells, disclosed, denial, ctx)
+    v.cost = {**cost, "latency_ms": int(1000 * (time.perf_counter() - t0))}
+    v.egress = {**privacy.report(), "context": ctx}
+    payload = {"tier": v.tier, "p_ai": round(v.p_ai, 3), "p_scam": round(v.p_scam, 3),
+               "tells": [(t.name, round(t.score, 3)) for t in v.tells], "thresholds_version": v.thresholds_version}
+    v.signature = privacy.sign(payload, privacy.audio_fingerprint(audio_bytes))
+    return v

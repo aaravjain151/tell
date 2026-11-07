@@ -1,0 +1,55 @@
+# services/api — skills.md (backend domain; also owns tools/redteam)
+
+## Purpose
+`POST /analyze` turns audio and/or a transcript into a signed verdict with evidence. Everything runs locally; caller audio is never written or sent.
+
+## Layout
+```
+tell/main.py            FastAPI routes: /health /thresholds /analyze /speak
+tell/pipeline.py        analyze(audio_bytes, transcript) → Verdict   (the only orchestration)
+tell/audio.py           wav decode (stdlib) / ffmpeg pipe for webm-ogg-mp3 / resample to 16k mono
+tell/signals/acoustic.py  pause_regularity · breath_proxy · pitch_stability · noise_floor · band_limited flag
+tell/signals/script.py    llm_isms · disfluency · sentence_uniformity · contraction_rate · ai_denial()
+tell/signals/intent.py    urgency · payment_rails · impersonation · credential_ask · secrecy · DISCLOSURE
+tell/scorer.py          deterministic fusion → tier (DANGEROUS)
+tell/thresholds.py      every weight/threshold + THRESHOLDS_VERSION (DANGEROUS)
+tell/privacy.py         egress meter, AudioEgressError, HMAC verdict signatures (DANGEROUS)
+tell/llm.py             optional transcript interpreter (stub by default); logs tokens + USD
+tell/speak.py           spoken verdict via Gradium CLI (only our text leaves)
+tests/synth.py          synthetic human/TTS fixtures (mechanics only — not a stand-in for real clips)
+tests/test_privacy.py   the privacy guarantee as a test
+eval/golden.jsonl       32 transcript cases · eval/run_eval.py (targets 0.85 / 0.90)
+../../tools/redteam/    make_calls.py — Gradium attacker clips from scripts/*.txt
+```
+
+## Data model
+`Tell(name, family ∈ acoustic|script|intent, score 0..1, weight, evidence, applicable)` →
+`Verdict(tier, p_ai, p_scam, confidence, disclosed_ai, headline, advice, tells[], thresholds_version, egress, signature, cost)`.
+Acoustic/script scores point toward AI; intent scores toward scam. `applicable=False` tells are shown but excluded from fusion.
+
+## Rules
+- Models interpret, code decides: an LLM may only add `Tell`s; it never sets the tier.
+- New signal = new function returning a `Tell` with a human-readable `evidence`, a weight in `thresholds.py`, a unit test, and a line in this file.
+- Any acoustic signal must say what it does on phone-band audio (`ctx["band_limited"]`). Prefer behavioral cues (timing, breath, pitch wander) over codec artifacts.
+- Short input → `applicable=False`, never a guess. Clip < 4 s skips acoustics; breath needs ≥ 5 s; transcript < 25 words skips disfluency.
+- Disclosure wins: a caller that says it's AI is `ai_disclosed` unless scam cues fire.
+- Changing `thresholds.py`: bump `THRESHOLDS_VERSION`, run `make eval`, note the before/after in the commit body.
+- Network imports are forbidden on the analysis path (`tests/test_privacy.py` scans for them). Only `llm.py` and `speak.py` may talk to the network, and only with text.
+- Gradium credits: never call TTS in tests; `make_calls.py` caps at `--max 20` clips per run.
+
+## Validation
+```
+make test                      # 17 tests incl. privacy + API
+make eval  (ARGS=--verbose)    # transcript ≥0.85, synthetic audio ≥0.90
+make api && curl -s localhost:8000/health
+curl -s -F audio=@data/calls/scam_grandparent.wav -F transcript="$(cat tools/redteam/scripts/scam_grandparent.txt)" localhost:8000/analyze | jq .tier,.tells[].evidence
+```
+
+## Red team (tools/redteam)
+`python3 tools/redteam/make_calls.py --out data/calls [--voice-id <id>] [--max 20]` runs `uvx gradium tts` on every `scripts/*.txt` → `data/calls/<name>.wav` + `<name>.txt` (gitignored). Clone a teammate in Gradium Studio, pass its voice id, and the demo is "fresh clone vs Tell". Record a *human* teammate reading the same scripts for the paired baseline.
+
+## Recent lessons
+- 2026-11-07 · backend · Spectral flatness over the full FFT collapses to ~0 on band-limited audio (zeros above 3.4 kHz); compute it over 100 Hz–3.4 kHz only. Breath detection was blind on phone-band clips until this fix.
+- 2026-11-07 · backend · Brick-wall low-pass (FFT mask) pre-rings before every onset and looks like a breath; the fixture now uses a raised-cosine roll-off, and breath candidates must sit ≥30 ms before onset.
+- 2026-11-07 · backend · Transcript-only "ai_undisclosed" depends almost entirely on `llm_isms` + `disfluency`; short, clean, non-templated scripts land in "unsure". Pair audio with transcript whenever you can.
+- 2026-11-07 · backend · `disclosed_ai` must short-circuit to `ai_disclosed` (not depend on p_ai) — three legit IVR scripts scored p_ai ≈ 0.5 and were "unsure" before this rule.

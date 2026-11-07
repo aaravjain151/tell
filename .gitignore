@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+.ruff_cache/
+data/calls/*
+!data/calls/.gitkeep
+council/sessions/*
+!council/sessions/.gitkeep
+*.wav
+*.webm
+*.ogg
+!services/api/tests/fixtures/*.wav
+.DS_Store

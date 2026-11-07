@@ -1,0 +1,49 @@
+"""Tell API — runs on localhost only. Caller audio is analyzed in memory and never stored or forwarded."""
+from __future__ import annotations
+
+import logging
+import os
+
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
+
+from . import pipeline, privacy, speak, thresholds
+from .audio import AudioDecodeError
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+app = FastAPI(title="Tell", version="0.1.0")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+@app.get("/health")
+def health() -> dict:
+    return {"ok": True, "thresholds_version": thresholds.THRESHOLDS_VERSION, "egress": privacy.report(),
+            "llm_provider": os.environ.get("LLM_PROVIDER", "stub")}
+
+
+@app.get("/thresholds")
+def get_thresholds() -> dict:
+    return {k: v for k, v in vars(thresholds).items() if k.isupper()}
+
+
+@app.post("/analyze")
+async def analyze(audio: UploadFile | None = File(default=None), transcript: str | None = Form(default=None)) -> dict:
+    data = await audio.read() if audio is not None else None
+    if not data and not (transcript and transcript.strip()):
+        raise HTTPException(400, "send audio and/or transcript")
+    try:
+        v = pipeline.analyze(data, transcript)
+    except AudioDecodeError as e:
+        raise HTTPException(415, str(e)) from e
+    return v.to_dict()
+
+
+@app.post("/speak")
+async def speak_verdict(headline: str = Form(...), evidence: str = Form(default="")) -> Response:
+    """Spoken verdict via Gradium TTS. Only the verdict *text* leaves the device, never audio."""
+    try:
+        wav = speak.verdict_wav(headline, evidence)
+    except speak.SpeakUnavailable as e:
+        raise HTTPException(503, str(e)) from e
+    return Response(content=wav, media_type="audio/wav")
