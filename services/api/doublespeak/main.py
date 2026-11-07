@@ -7,9 +7,8 @@ import os
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
-from . import limits, net_monitor, offline_guard, pipeline, privacy, secure_store, speak, thresholds, uploads
+from . import limits, net_monitor, offline_guard, pipeline, privacy, readiness, secure_store, speak, thresholds, uploads
 from .audio import AudioDecodeError
-from . import readiness
 from .redteam import router as redteam_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")

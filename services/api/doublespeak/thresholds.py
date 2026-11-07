@@ -3,7 +3,7 @@
 Scores are in [0, 1]. Acoustic/script scores point *toward AI*; intent scores point *toward scam*.
 """
 
-THRESHOLDS_VERSION = "2026-11-07.2"
+THRESHOLDS_VERSION = "2026-11-07.3"   # .2 = fusion re-weight (#57), call-understanding families (#58); .3 = both merged together
 
 # --- fusion weights (normalised at runtime over the signals that actually ran) ---
 ACOUSTIC_WEIGHTS = {
