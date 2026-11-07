@@ -19,6 +19,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import os
+import time
 from pathlib import Path
 
 import numpy as np
@@ -137,10 +138,16 @@ def _build():
     return Detector()
 
 
+def pick_device(want: str, mps_available: bool) -> str:
+    """PELLA_DEVICE: "" / "auto" / "mps" → MPS when the machine has it, else CPU; "cpu" forces CPU."""
+    return "mps" if want in ("", "auto", "mps") and mps_available else "cpu"
+
+
 def _load():
     global _model, _device, _error
     if _model is not None or _error:
         return
+    t0 = time.perf_counter()
     path = weights_path()
     if path is None or not path.exists():
         _error = "Pellav2 weights not cached; run `make models` while online"
@@ -153,10 +160,9 @@ def _load():
         import torch
         m = _build()
         m.load_state_dict(safe_state_dict(path))
-        want = os.environ.get("PELLA_DEVICE", "cpu")
-        _device = "mps" if want in ("mps", "auto") and torch.backends.mps.is_available() else "cpu"
+        _device = pick_device(os.environ.get("PELLA_DEVICE", "").strip().lower(), torch.backends.mps.is_available())
         _model = m.to(_device).eval()
-        log.info("loaded Pellav2 on %s", _device)
+        log.info("loaded Pellav2 on %s in %.1fs", _device, time.perf_counter() - t0)
     except Exception as e:  # noqa: BLE001 - missing deps, uncached backbone config, bad file: degrade, never raise
         _error = f"Pellav2 unavailable ({type(e).__name__}: {str(e)[:80]}); run `make models` while online"
         log.warning(_error)

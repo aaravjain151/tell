@@ -106,3 +106,29 @@ def test_prep_gives_exactly_four_seconds_in_range():
     for secs in (3.0, 4.0, 4.0):
         x = pella.prep(tone(secs, amp=0.02))
         assert x.dtype == np.float32 and len(x) == 4 * SR and np.isfinite(x).all() and np.abs(x).max() <= 1.0
+
+
+@pytest.mark.parametrize("want,mps,expected", [
+    ("", True, "mps"),          # default: MPS whenever it is there (#25)
+    ("", False, "cpu"),
+    ("auto", True, "mps"),
+    ("mps", False, "cpu"),      # asked for MPS on a machine without it: fall back, never raise
+    ("cpu", True, "cpu"),       # explicit CPU always wins
+])
+def test_device_prefers_mps_when_available(want, mps, expected):
+    assert pella.pick_device(want, mps_available=mps) == expected
+
+
+def test_load_logs_device_and_seconds(monkeypatch, tmp_path, caplog):
+    torch = pytest.importorskip("torch")
+    weights = tmp_path / "w.pt"
+    weights.write_bytes(b"x")
+    monkeypatch.setenv("PELLA_WEIGHTS", str(weights))
+    monkeypatch.setenv("PELLA_DEVICE", "cpu")
+    monkeypatch.setattr(pella, "verify", lambda p: True)
+    monkeypatch.setattr(pella, "_build", lambda: torch.nn.Linear(1, 1))
+    monkeypatch.setattr(pella, "safe_state_dict", lambda p: torch.nn.Linear(1, 1).state_dict())
+    with caplog.at_level("INFO", logger="doublespeak.pella"):
+        pella._load()
+    assert pella._model is not None
+    assert any("loaded Pellav2 on cpu in" in r.getMessage() and r.getMessage().endswith("s") for r in caplog.records)
