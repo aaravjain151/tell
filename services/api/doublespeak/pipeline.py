@@ -47,8 +47,8 @@ def _analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
     extra, cost = llm.interpret(transcript)
     for t in extra:
         (script_tells if t.family == "script" else intent_tells).append(t)
-        if t.name == "ai_disclosure":
-            disclosed = True
+        # An LLM `ai_disclosure` tell is shown (applicable=False) but never decides: disclosure comes only from the
+        # deterministic detector (intent.DISCLOSURE). A hallucinating 3B model must not be able to flip the tier.
     denial = script.ai_denial(transcript) if transcript else False
 
     v = scorer.fuse(acoustic_tells, script_tells, intent_tells, disclosed, denial, ctx)
