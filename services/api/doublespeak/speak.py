@@ -18,11 +18,17 @@ class SpeakUnavailable(RuntimeError):
     pass
 
 
+def known_headlines() -> set[str]:
+    from . import scorer
+    return {h for h, _advice in scorer.COPY.values()}
+
+
 def verdict_text(headline: str, evidence: str = "") -> str:
-    text = f"Heads up. {headline}."
-    if evidence:
-        text += f" {evidence.rstrip('.')}."
-    return text[:400]
+    """Only Doublespeak's own fixed verdict wording may be spoken. `evidence` is accepted for client compatibility
+    and deliberately ignored: evidence strings quote the caller's words, which must never reach a third-party TTS."""
+    if headline not in known_headlines():
+        raise ValueError("only Doublespeak's own verdict wording can be spoken")
+    return f"Heads up. {headline}."
 
 
 def verdict_wav(headline: str, evidence: str = "") -> bytes:

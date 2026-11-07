@@ -7,6 +7,7 @@ import os
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
+from . import pipeline, privacy, secure_store, speak, thresholds, uploads
 from . import limits, pipeline, privacy, speak, thresholds
 from . import pipeline, privacy, speak, thresholds, net_monitor, offline_guard
 from . import pipeline, privacy, secure_store, speak, thresholds
@@ -14,6 +15,7 @@ from .audio import AudioDecodeError
 from .redteam import router as redteam_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+uploads.keep_uploads_in_memory()   # caller audio never touches disk, even for large uploads
 app = FastAPI(title="Doublespeak", version="0.1.0")
 limits.install(app)  # CORS allow-list, Host/Origin guard, body limit (see limits.py)
 app.include_router(redteam_router)
@@ -73,6 +75,8 @@ async def speak_verdict(headline: str = Form(...), evidence: str = Form(default=
         wav = speak.verdict_wav(headline, evidence)
     except speak.SpeakUnavailable as e:
         raise HTTPException(503, str(e)) from e
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
     return Response(content=wav, media_type="audio/wav")
 
 
