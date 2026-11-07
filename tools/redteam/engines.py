@@ -3,7 +3,7 @@
 Each engine turns *our script text* into a WAV file. Caller audio is never sent anywhere.
 
   gradium     `uvx gradium tts` CLI            needs GRADIUM_API_KEY (+ uv)            cloud, credits
-  elevenlabs  POST api.elevenlabs.io           needs ELEVENLABS_API_KEY                cloud, credits
+  elevenlabs  `elevenlabs` SDK (text_to_speech.convert) ELEVENLABS_API_KEY in .env.local (from the ElevenLabs CLI)   cloud, credits
   voicestudio POST localhost:3900/v1/audio/speech   VoiceStudio app running locally   local, free, AGPL-3.0 (used over HTTP only; no code vendored)
   qwen3tts    `qwen-tts` package, Qwen3-TTS Base  pip install -U qwen-tts; clones from a ref wav + its exact words   local, free, Apache-2.0; slow on Mac (mps), minutes per clip
 
@@ -21,6 +21,16 @@ import wave
 from pathlib import Path
 
 Opener = urllib.request.urlopen   # injectable in tests
+
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def load_env() -> None:
+    """Load .env.local (written by the ElevenLabs CLI), then .env, into os.environ; real environment variables win. Never prints values."""
+    from dotenv import load_dotenv
+    load_dotenv(ROOT / ".env.local")
+    load_dotenv(ROOT / ".env")
 
 
 def wrap_pcm16(pcm: bytes, sr: int = 16_000) -> bytes:
@@ -48,12 +58,14 @@ def gradium(text: str, out: Path, voice_id: str = "", **_) -> None:
         raise RuntimeError((p.stderr or p.stdout)[:300])
 
 
-def elevenlabs(text: str, out: Path, voice_id: str = "", opener=None, **_) -> None:
-    voice = voice_id or os.environ.get("ELEVENLABS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM")   # stock "Rachel"; override with your clone
-    model = os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2")
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice}?output_format=pcm_16000"
-    pcm = _post(url, {"text": text, "model_id": model}, {"xi-api-key": os.environ["ELEVENLABS_API_KEY"]}, opener)
-    out.write_bytes(wrap_pcm16(pcm, 16_000))
+def elevenlabs(text: str, out: Path, voice_id: str = "", client=None, **_) -> None:
+    """ElevenLabs SDK (`pip install elevenlabs`). The key is read from ELEVENLABS_API_KEY by the SDK, never passed here."""
+    from elevenlabs import ElevenLabs
+    load_env()   # the SDK reads ELEVENLABS_API_KEY from the environment; it lives in .env.local
+    voice = voice_id or os.environ.get("ELEVENLABS_VOICE_ID", "JBFqnCBsd6RMkjVDRZzb")   # stock "George"; override with a consenting teammate's clone
+    model = os.environ.get("ELEVENLABS_MODEL", "eleven_v4")
+    audio = (client or ElevenLabs()).text_to_speech.convert(text=text, voice_id=voice, model_id=model, output_format="pcm_16000")
+    out.write_bytes(wrap_pcm16(b"".join(audio), 16_000))
 
 
 def voicestudio(text: str, out: Path, voice_id: str = "", opener=None, **_) -> None:
@@ -104,8 +116,11 @@ def unavailable_reason(engine: str, opener=None) -> str | None:
         if not shutil.which("uvx"):
             return "`uvx` not found (brew install uv)"
     elif engine == "elevenlabs":
+        import importlib.util
         if not os.environ.get("ELEVENLABS_API_KEY"):
-            return "ELEVENLABS_API_KEY not set"
+            return "ELEVENLABS_API_KEY not set (run `npx -y @elevenlabs/cli@latest onboard init`; the key lands in .env.local)"
+        if importlib.util.find_spec("elevenlabs") is None:
+            return "elevenlabs SDK not installed (pip install -r tools/redteam/requirements.txt)"
     elif engine == "qwen3tts":
         import importlib.util
         if importlib.util.find_spec("qwen_tts") is None:
