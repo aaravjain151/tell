@@ -10,10 +10,12 @@ from fastapi.responses import Response
 
 from . import pipeline, privacy, speak, thresholds
 from .audio import AudioDecodeError
+from .redteam import router as redteam_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 app = FastAPI(title="Doublespeak", version="0.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.include_router(redteam_router)
 
 
 @app.on_event("startup")
