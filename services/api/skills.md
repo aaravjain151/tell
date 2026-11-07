@@ -19,19 +19,7 @@ doublespeak/stt.py             local STT: VoiceStudio on loopback first, then fa
 doublespeak/localhost.py       the ONLY socket opener for local engines (VoiceStudio STT, Ollama): loopback-only (NotLoopbackError otherwise), counts `localhost_requests` (D-009)
 doublespeak/signals/neural.py  neural voters: ANTI_SPOOF_MODEL (ONNX) and HF_SPOOF_MODEL (transformers); applicable=False if absent
 doublespeak/speak.py           spoken verdict via Gradium CLI (only our text leaves)
-doublespeak/main.py            FastAPI routes: /health /thresholds /analyze /speak
-doublespeak/pipeline.py        analyze(audio_bytes, transcript) → Verdict   (the only orchestration)
-doublespeak/audio.py           wav decode (stdlib) / ffmpeg pipe for webm-ogg-mp3 / resample to 16k mono
-doublespeak/signals/acoustic.py  pause_regularity · breath_proxy · pitch_stability · noise_floor · band_limited flag
-doublespeak/signals/script.py    llm_isms · disfluency · sentence_uniformity · contraction_rate · ai_denial()
-doublespeak/signals/intent.py    urgency · payment_rails · impersonation · credential_ask · secrecy · DISCLOSURE
-doublespeak/scorer.py          deterministic fusion → tier (DANGEROUS)
-doublespeak/thresholds.py      every weight/threshold + THRESHOLDS_VERSION (DANGEROUS)
-doublespeak/privacy.py         egress meter, AudioEgressError, HMAC verdict signatures (DANGEROUS)
-doublespeak/llm.py             transcript interpreter: stub | ollama (localhost 3B, the product) | anthropic (dev); logs tokens
-doublespeak/stt.py             local faster-whisper; fills transcript when none was given (ctx.transcript_source)
-doublespeak/signals/neural.py  neural voters: ANTI_SPOOF_MODEL (ONNX) and HF_SPOOF_MODEL (transformers); applicable=False if absent
-doublespeak/speak.py           spoken verdict via Gradium CLI (only our text leaves)
+doublespeak/secure_store.py    opt-in (DOUBLESPEAK_HISTORY=1) AES-256-GCM alert history, key in OS keychain only; API: GET/DELETE /history, GET /history/status (T-016)
 tests/synth.py          synthetic human/TTS fixtures (mechanics only — not a stand-in for real clips)
 tests/test_privacy.py   the privacy guarantee as a test
 eval/golden.jsonl       32 transcript cases · eval/run_eval.py (targets 0.85 / 0.90)
@@ -91,3 +79,6 @@ curl -s -F audio=@data/calls/scam_grandparent.wav -F transcript="$(cat tools/red
 - 2026-11-07 · backend · Qwen3-TTS (`pip install -U qwen-tts`, Apache-2.0): `Qwen3TTSModel.from_pretrained("Qwen/Qwen3-TTS-12Hz-0.6B-Base", device_map="mps"|"cpu", dtype=...)` then `generate_voice_clone(text, language, ref_audio, ref_text)` -> `(wavs, sr)`; sr is 24 kHz, not 16 kHz (eval resamples). `ref_text` must be the exact words in the reference clip. Engine lives in `tools/redteam/engines.py`; tested with a fake model, never downloaded in tests.
 - 2026-11-07 · backend · `run_eval --wild` compares raw p_ai to the threshold; a clip at 0.5999 prints as 0.60 but is below 0.6. MISS/FALSE ALARM lines now print 3 decimals.
 - 2026-11-07 · backend · `/redteam/samples|clip|text` (`doublespeak/redteam.py`) serve data/calls (override `DOUBLESPEAK_CALLS_DIR`, repo-relative). Safety is by index lookup, not path joining: scan the dir, key clips by (engine, script), and answer only for keys that exist; also require `^[A-Za-z0-9_.-]{1,64}$`, no `..`, and `resolve()` inside the calls dir (a symlink to outside is skipped, including the .txt and .opus8k siblings). Human clips live in `human/<speaker>/<script>.wav` and are exposed as script `speaker__script`. Encoded slashes (`..%2f`) decode before routing and 404; tests cover them.
+- 2026-11-07 · backend · History records are built only by `secure_store.record_from_verdict` (allowlist: ts, tier, p_ai, p_scam, thresholds_version, top-3 fired tell NAMES). Never add `evidence`, `transcript`, `headline` or `advice`: evidence strings quote the caller. `test_secure_store.py` plants a sentinel in all of them and greps file bytes plus decrypted output.
+- 2026-11-07 · backend · No key on disk, ever: the AES key exists only in the OS keychain (service "doublespeak"). Missing cryptography/keyring or a locked keychain means history is off (`unavailable: <reason>`), never a plaintext fallback. Tests inject a key by monkeypatching `secure_store.keyring_key_provider`; never touch the real keychain in tests. Both libs are imported lazily so a clean checkout stays green.
+- 2026-11-07 · backend · History file is append-only AES-GCM lines: a tampered or garbage line fails authentication and is skipped and counted (`skipped`), not fatal; a wrong key skips every line. `pipeline.analyze` calls `record_verdict`, which swallows all errors so history can never fail an analysis. `data/history/` is gitignored (only `data/calls/*` was before).
