@@ -1,4 +1,4 @@
-.PHONY: setup test eval api web redteam record wild audit
+.PHONY: setup test eval api web redteam record wild audit models
 PY=./.venv/bin/python
 setup:
 	python3 -m venv .venv && ./.venv/bin/pip install -q -r services/api/requirements.txt
@@ -14,3 +14,6 @@ redteam:
 	$(PY) tools/redteam/make_calls.py --out data/calls $(ARGS)
 audit:
 	python3 scripts/pm.py audit
+
+models:
+	$(PY) tools/models/prefetch.py

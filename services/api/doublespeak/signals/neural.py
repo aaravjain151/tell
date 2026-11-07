@@ -21,6 +21,7 @@ log = logging.getLogger("doublespeak.neural")
 W_ONNX, W_HF = 1.8, 1.4
 _onnx = None
 _hf = None
+_hf_error = ""
 
 
 def onnx_vote(x16k: np.ndarray) -> Tell:
@@ -54,7 +55,7 @@ def fake_label_index(id2label: dict) -> int | None:
 
 
 def hf_vote(x16k: np.ndarray) -> Tell:
-    global _hf
+    global _hf, _hf_error
     name = os.environ.get("HF_SPOOF_MODEL", "")
     if not name:
         return Tell("neural_hf", "acoustic", 0.5, W_HF, "no HF anti-spoof model configured (HF_SPOOF_MODEL)", applicable=False)
@@ -64,7 +65,14 @@ def hf_vote(x16k: np.ndarray) -> Tell:
     except ImportError:
         return Tell("neural_hf", "acoustic", 0.5, W_HF, "transformers/torch not installed", applicable=False)
     if _hf is None:
-        _hf = (AutoFeatureExtractor.from_pretrained(name), AutoModelForAudioClassification.from_pretrained(name).eval())
+        if _hf_error:
+            return Tell("neural_hf", "acoustic", 0.5, W_HF, _hf_error, applicable=False)
+        try:
+            _hf = (AutoFeatureExtractor.from_pretrained(name), AutoModelForAudioClassification.from_pretrained(name).eval())
+        except Exception as e:  # noqa: BLE001 - offline + uncached, bad name, corrupt cache: degrade, never raise
+            _hf_error = f"{name.split('/')[-1]} not available ({type(e).__name__}); run `make models` while online"
+            log.warning("anti-spoof model unavailable: %s", e)
+            return Tell("neural_hf", "acoustic", 0.5, W_HF, _hf_error, applicable=False)
         log.info("loaded %s (labels %s)", name, _hf[1].config.id2label)
     fe, model = _hf
     with torch.no_grad():
