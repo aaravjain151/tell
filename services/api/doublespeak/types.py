@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from typing import Literal
 
+from .scores import scores_for
+
 Tier = Literal["human", "ai_disclosed", "ai_undisclosed", "scam", "unsure"]
 Family = Literal["acoustic", "script", "intent"]
 
@@ -17,9 +19,11 @@ class Tell:
     weight: float
     evidence: str         # one line a non-engineer can read
     applicable: bool = True  # False → excluded from fusion (e.g. clip too short)
+    detail: dict | None = None  # DISPLAY ONLY (e.g. per-window voice scores): never serialised, never signed, never fused
 
     def to_dict(self) -> dict:
         d = asdict(self)
+        d.pop("detail", None)
         d["score"] = round(self.score, 3)
         return d
 
@@ -59,4 +63,5 @@ class Verdict:
             "reasons": list(self.reasons),
             "model_notes": list(self.model_notes),
             "transcript": self.transcript,
+            "scores": scores_for(self),   # additive, display only
         }
