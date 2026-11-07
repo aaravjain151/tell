@@ -23,13 +23,24 @@ class AudioEgressError(RuntimeError):
     pass
 
 
+ALLOWED_EGRESS_KINDS = frozenset({"text", "verdict_tts"})   # llm.py (anthropic, dev) and speak.py (Gradium TTS)
+
+
 def record_egress(kind: str, nbytes: int) -> None:
-    """kind ∈ {"text", "verdict_tts"}; "audio" is forbidden by construction."""
-    if kind == "audio":
+    """kind must be one of ALLOWED_EGRESS_KINDS; anything audio-like or unknown is refused, as are bad counts."""
+    if not isinstance(kind, str):
+        raise ValueError(f"egress kind must be a str, got {type(kind).__name__}")
+    if "audio" in kind.lower():
         raise AudioEgressError("caller audio must never leave the device")
+    if kind not in ALLOWED_EGRESS_KINDS:
+        raise ValueError(f"unknown egress kind {kind!r}; allowed: {sorted(ALLOWED_EGRESS_KINDS)}")
+    if isinstance(nbytes, bool) or not isinstance(nbytes, int):
+        raise TypeError(f"egress byte count must be an int, got {type(nbytes).__name__}")
+    if nbytes < 0:
+        raise ValueError("egress byte count must not be negative")
     with _lock:
         _state["external_requests"] += 1
-        _state["bytes_sent_external"] += int(nbytes)
+        _state["bytes_sent_external"] += nbytes
 
 
 def record_localhost() -> None:

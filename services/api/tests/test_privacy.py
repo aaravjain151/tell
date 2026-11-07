@@ -1,41 +1,19 @@
 """The privacy guarantee is a test, not a promise.
 
-1. No module on the analysis path imports anything that can open a network connection.
+1. No module under doublespeak/ imports a network library outside the allowlist (test_import_scan.py).
 2. The egress recorder refuses audio by construction.
 3. Verdict signatures verify and are bound to the clip fingerprint.
 """
 import io
 import json
 import types
-import re
-from pathlib import Path
 
 import pytest
 
 from doublespeak import localhost, privacy, pipeline, stt
 from tests.synth import make_call, to_wav_bytes
 
-ANALYSIS_PATH = ["doublespeak/audio.py", "doublespeak/stt.py", "doublespeak/pipeline.py", "doublespeak/scorer.py", "doublespeak/thresholds.py", "doublespeak/types.py",
-                 "doublespeak/signals/acoustic.py", "doublespeak/signals/script.py", "doublespeak/signals/intent.py"]
-NETWORK = re.compile(r"^\s*(import|from)\s+(socket|http|urllib|requests|httpx|aiohttp|websockets|ssl)\b", re.M)
-
-
-def test_analysis_path_has_no_network_imports():
-    root = Path(__file__).resolve().parents[1]
-    for rel in ANALYSIS_PATH:
-        src = (root / rel).read_text()
-        assert not NETWORK.search(src), f"{rel} imports a network library"
-
-
-SOCKET_ALLOWLIST = {"localhost.py", "llm.py", "speak.py"}
-
-
-def test_only_allowlisted_modules_may_open_sockets():
-    """Strict: any module under doublespeak/ with a network import must be in the allowlist (D-009)."""
-    root = Path(__file__).resolve().parents[1] / "doublespeak"
-    offenders = {p.name for p in root.rglob("*.py") if NETWORK.search(p.read_text())}
-    assert offenders <= SOCKET_ALLOWLIST, f"unexpected network imports: {offenders - SOCKET_ALLOWLIST}"
-    assert "localhost.py" in offenders
+# The network-import scan is AST based and lives in tests/test_import_scan.py; the runtime guard is tests/test_network_guard.py.
 
 
 class FakeResp:
