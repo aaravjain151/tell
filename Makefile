@@ -7,7 +7,7 @@ test:
 eval:
 	cd services/api && ../../.venv/bin/python eval/run_eval.py $(ARGS)
 api:
-	cd services/api && ../../.venv/bin/python -m uvicorn tell.main:app --reload --port 8000
+	cd services/api && ../../.venv/bin/python -m uvicorn tell.main:app --reload --port 8000 --env-file ../../.env
 web:
 	cd apps/web && python3 -m http.server 5173
 redteam:

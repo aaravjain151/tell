@@ -39,12 +39,26 @@ def _to_tells(data: dict, src: str) -> list[Tell]:
     if not data:
         return []
     tells = [
-        Tell("llm_assistant_style", "script", float(data.get("assistant_style", 0.5)), 0.8, f"{src}: " + str(data.get("assistant_style_reason", ""))[:140]),
-        Tell("llm_scam_framing", "intent", float(data.get("scam_framing", 0.0)), 1.0, f"{src}: " + str(data.get("scam_framing_reason", ""))[:140]),
+        Tell("llm_assistant_style", "script", _score(data, "assistant_style", 0.5), 0.8, f"{src}: " + str(data.get("assistant_style_reason", ""))[:140]),
+        Tell("llm_scam_framing", "intent", _score(data, "scam_framing", 0.0), 1.0, f"{src}: " + str(data.get("scam_framing_reason", ""))[:140]),
     ]
     if data.get("disclosed_ai"):
         tells.append(Tell("ai_disclosure", "intent", 0.0, 0.0, f"{src}: caller disclosed it is AI", applicable=False))
     return tells
+
+
+def cap_words(transcript: str, limit: int | None = None) -> str:
+    """Keep only the last `limit` words (default TELL_LLM_MAX_WORDS=120): the latest turns carry the ask, and it bounds local latency."""
+    limit = limit or int(os.environ.get("TELL_LLM_MAX_WORDS", "120"))
+    words = transcript.split()
+    return transcript if len(words) <= limit else " ".join(words[-limit:])
+
+
+def _score(data: dict, key: str, default: float) -> float:
+    try:
+        return min(1.0, max(0.0, float(data.get(key, default))))
+    except (TypeError, ValueError):   # 3B models sometimes answer "high" or null
+        return default
 
 
 def _ollama(transcript: str) -> tuple[list[Tell], dict]:
@@ -52,11 +66,11 @@ def _ollama(transcript: str) -> tuple[list[Tell], dict]:
     import urllib.request
     model = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
     base = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
-    body = json.dumps({"model": model, "prompt": PROMPT + transcript, "stream": False, "format": "json",
+    body = json.dumps({"model": model, "prompt": PROMPT + cap_words(transcript), "stream": False, "format": "json",
                        "options": {"temperature": 0, "num_predict": 200}}).encode()
     req = urllib.request.Request(base + "/api/generate", data=body, headers={"content-type": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=60) as r:
+        with urllib.request.urlopen(req, timeout=float(os.environ.get('OLLAMA_TIMEOUT_S', '10'))) as r:
             resp = json.loads(r.read())
     except Exception as e:  # noqa: BLE001
         log.warning("ollama unavailable: %s", e)
@@ -93,9 +107,9 @@ def interpret(transcript: str) -> tuple[list[Tell], dict]:
     except (ValueError, json.JSONDecodeError):
         return [], usage
     tells = [
-        Tell("llm_assistant_style", "script", float(data.get("assistant_style", 0.5)), 0.8,
+        Tell("llm_assistant_style", "script", _score(data, "assistant_style", 0.5), 0.8,
              "model: " + str(data.get("assistant_style_reason", ""))[:140]),
-        Tell("llm_scam_framing", "intent", float(data.get("scam_framing", 0.0)), 1.0,
+        Tell("llm_scam_framing", "intent", _score(data, "scam_framing", 0.0), 1.0,
              "model: " + str(data.get("scam_framing_reason", ""))[:140]),
     ]
     if data.get("disclosed_ai"):
