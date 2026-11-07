@@ -1,0 +1,13 @@
+# Heavy, optional local neural voters. `make models` installs these (pinned in requirements-models.lock)
+# and then downloads the weights once, while online. Never needed for `make test` / `make eval` / CI:
+# every voter degrades to applicable=False when its package or weights are missing.
+-r requirements.txt
+faster-whisper>=1.0       # local STT (stt.py)
+onnxruntime>=1.17         # ANTI_SPOOF_MODEL (neural.onnx_vote)
+torch>=2.2                # HF_SPOOF_MODEL and PELLA_MODEL
+torchaudio>=2.2           # Pellav2 fbank features
+transformers>=4.40
+huggingface_hub>=0.23
+scipy>=1.11               # Pellav2 preprocessing
+pyloudnorm>=0.1           # Pellav2 loudness normalisation (optional; RMS fallback)
+python-dotenv>=1.0        # tools/models/prefetch.py reads .env
