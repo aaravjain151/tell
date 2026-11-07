@@ -1,4 +1,4 @@
-# Tell — Claude Code pointer
+# Doublespeak — Claude Code pointer
 
 Read `skills.md` (root), then the `skills.md` of the domain you're working in, then `pm/inbox/<domain>.md`.
 

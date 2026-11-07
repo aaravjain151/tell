@@ -140,6 +140,7 @@ python run_pipeline_tests.py
 ---
 
 # Tell
+# Doublespeak
 
 *Every voice has a tell.* A privacy-first detector that classifies the voice on a call as **Human · AI (identified itself) · AI (undisclosed) · Scam pattern**, shows the exact tells that fired, and never sends caller audio off the device.
 
@@ -147,7 +148,7 @@ Built at HACK1984 (Privacy-First track · Best use of Gradium).
 
 ## Run it
 ```
-make setup && make test && make eval     # 17 tests · eval ≥ 0.85 / 0.90
+make setup && make test && make eval     # pinned deps · eval ≥ 0.85 / 0.90 · same as CI
 make api                                 # http://localhost:8000  (docs at /docs)
 make web                                 # http://localhost:5173
 ```

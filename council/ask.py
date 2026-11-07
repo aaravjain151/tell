@@ -22,7 +22,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-PROJECT = "Tell"
+PROJECT = "Doublespeak"
 ONELINER = "a privacy-first detector that tells you whether a caller is human, a disclosed AI, an undisclosed AI, or a scam, without caller audio ever leaving the device"
 ROOT = Path(__file__).resolve().parent.parent
 HERE = ROOT / "council"

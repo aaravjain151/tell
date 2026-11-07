@@ -4,7 +4,11 @@ python-multipart>=0.0.9
 numpy>=1.26
 pytest>=8
 httpx>=0.27
+# opt-in encrypted history (DOUBLESPEAK_HISTORY=1)
+cryptography>=42
+keyring>=25
 # optional: anthropic>=0.40  (LLM_PROVIDER=anthropic)
 # local neural voters (install on the laptop; heavy):
 #   pip install faster-whisper onnxruntime
 #   pip install torch transformers   (only if HF_SPOOF_MODEL is set)
+# Pellav2 voter needs torch>=2.6 (restricted weights loader; earlier versions had a bypass, CVE-2025-32434)

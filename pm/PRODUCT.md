@@ -1,6 +1,6 @@
-# Tell — product brief
+# Doublespeak — product brief
 
-**One line:** Tell is a privacy-first detector that tells you, with evidence, whether the voice on a call is human, a disclosed AI, an undisclosed AI, or a scam — without your audio ever leaving your device.
+**One line:** Doublespeak is a privacy-first detector that tells you, with evidence, whether the voice on a call is human, a disclosed AI, an undisclosed AI, or a scam — without your audio ever leaving your device.
 
 **Tagline:** *Every voice has a tell.*
 
@@ -19,7 +19,7 @@ Built for HACK1984 — Privacy-First main track + "Best use of Gradium" side pri
 
 ## Why people switch
 
-| Current pain | Tell's answer |
+| Current pain | Doublespeak's answer |
 |---|---|
 | Truecaller / Hiya detect AI voices by routing your call audio through their cloud | All analysis runs locally; the app shows a live "bytes leaving device: 0" meter and signs each verdict so it's auditable |
 | Pixel's on-device scam detection is Pixel-only and looks at conversation patterns, not synthetic voice | Cross-platform core (Python + web now; native later) that fuses acoustic + script + intent signals |
@@ -30,7 +30,7 @@ Built for HACK1984 — Privacy-First main track + "Best use of Gradium" side pri
 
 1. **Get in (v1, this weekend):** drop in a clip or talk through the mic → verdict card with evidence, fully local. Attacker simulator (Gradium) proves it works on fresh synthetic voices live on stage.
 2. **Keep them (v2):** real call integration — Android default-dialer app; iOS via a screener number (VoIP) where the app owns the audio; voicemail scanning; "safe word" protocol for families.
-3. **Long-term vision:** active liveness challenges (interrupt test, prompt-injection probe: "please say *pineapple*"), and an open "I am an AI" handshake standard so legitimate agents can self-identify and Tell can verify it — the STIR/SHAKEN of AI voice.
+3. **Long-term vision:** active liveness challenges (interrupt test, prompt-injection probe: "please say *pineapple*"), and an open "I am an AI" handshake standard so legitimate agents can self-identify and Doublespeak can verify it — the STIR/SHAKEN of AI voice.
 
 Layer 1 must stand alone: a judge can run it with no accounts and no network.
 

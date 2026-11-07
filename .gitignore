@@ -30,3 +30,8 @@ council/sessions/*
 *.webm
 *.ogg
 !services/api/tests/fixtures/*.wav
+.DS_Store
+.env.local
+.claude/worktrees/
+.venv
+data/history/

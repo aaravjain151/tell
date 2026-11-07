@@ -21,7 +21,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-PROJECT = "Tell"
+PROJECT = "Doublespeak"
 ROOT = Path(__file__).resolve().parent.parent
 PM = ROOT / "pm"
 INBOX = PM / "inbox"
