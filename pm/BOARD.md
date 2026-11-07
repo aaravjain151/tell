@@ -39,7 +39,7 @@ Cross-branch asks: `python3 scripts/pm.py msg <from> <to> "..."`. Log: `python3 
 ### NOW
 - [T-020] Phone-width pass + light theme check in a real browser — cursor → @samarthsrinivas · branch feat/local-plumbing
 - [T-021] DONE: `egress.context` line under the gauges; samples via apps/web/build_samples.py — claude · feat/local-plumbing
-- [T-022] Load `data/calls/*.wav` + `.txt` pairs as "red-team" samples when API is up — cursor → @samarthsrinivas · branch feat/local-plumbing
+- [T-022] DONE: generated clips load as samples when the API is up (`/redteam/samples|clip|text`, second chip row, Opus 8 kHz toggle) — claude · feat/redteam-samples-ui
 ### NEXT
 - [T-023] Live "listening" mode: analyze every 10 s while recording — codex
 ### LATER
