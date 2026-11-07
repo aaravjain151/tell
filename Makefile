@@ -11,6 +11,6 @@ api:
 web:
 	cd apps/web && python3 -m http.server 5173
 redteam:
-	$(PY) tools/redteam/make_calls.py --out data/calls
+	$(PY) tools/redteam/make_calls.py --out data/calls $(ARGS)
 audit:
 	python3 scripts/pm.py audit
