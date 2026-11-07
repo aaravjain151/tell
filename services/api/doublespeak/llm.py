@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 
 from . import localhost, privacy
 from .types import Tell
@@ -18,9 +19,11 @@ log = logging.getLogger("doublespeak.llm")
 PROMPT = """You read a phone-call transcript and extract structured signals. Output ONLY JSON:
 {"assistant_style": 0-1, "assistant_style_reason": "...",
  "scam_framing": 0-1, "scam_framing_reason": "...",
- "disclosed_ai": true|false}
+ "disclosed_ai": true|false,
+ "reasons": ["short plain sentence", "..."]}
 assistant_style: how much the caller's language reads like a scripted LLM/IVR (templated politeness, no hesitation, formal register).
 scam_framing: pressure, isolation, payment/credential asks, impersonation, too-good-to-be-true.
+reasons: at most 3 short plain sentences (under 15 words each) for an older listener saying what the caller asked for or claimed. No phone numbers, no advice.
 Transcript:
 """
 
@@ -33,6 +36,44 @@ def _parse(text: str) -> dict:
         return json.loads(text[text.find("{"): text.rfind("}") + 1])
     except (ValueError, json.JSONDecodeError):
         return {}
+
+
+MAX_NOTES = 3
+MAX_NOTE_CHARS = 120
+_URL = re.compile(r"(https?://|www\.)\S+|\b[\w-]+\.(com|org|net|gov|io|co|info|biz)\b\S*", re.I)
+_PHONE = re.compile(r"\+?\d[\d\s().-]{5,}\d")
+_DIGITS = re.compile(r"\d{4,}")
+_ACTION = re.compile(r"\b(call|dial|phone|text|contact|email|visit|click|hang up|report|reach out)\b", re.I)
+_ADVICE = re.compile(r"\b(should|must|please|recommend|advise|suggest|try|make sure|best to|better to|you can|you need to)\b", re.I)
+_REASSURE = re.compile(r"\b(is|are|seems|appears|looks|sounds)\s+(safe|legit|legitimate|genuine|fine|trustworthy|real)\b", re.I)
+
+
+def sanitise_notes(raw) -> list[str]:
+    """Model text is untrusted display text: <=3 short sentences, no URLs, phone numbers or digit runs of 4+,
+    nothing that reads as advice to call a number or as reassurance. Anything odd is dropped, never repaired into something new."""
+    if isinstance(raw, str):
+        raw = [raw]
+    if not isinstance(raw, list):
+        return []
+    out: list[str] = []
+    for item in raw:
+        if not isinstance(item, str):
+            continue
+        t = "".join(ch for ch in item if ch.isprintable())
+        t = _PHONE.sub("", _URL.sub("", t))
+        t = _DIGITS.sub("", t)
+        t = re.sub(r"\s+", " ", t).strip(" -*\u2022\"'")
+        if len(t.split()) < 3:
+            continue
+        if _REASSURE.search(t) or (_ACTION.search(t) and (_ADVICE.search(t) or _ACTION.match(t))):
+            continue
+        if len(t) > MAX_NOTE_CHARS:
+            t = t[:MAX_NOTE_CHARS - 1].rstrip() + "\u2026"
+        if t not in out:
+            out.append(t)
+        if len(out) == MAX_NOTES:
+            break
+    return out
 
 
 def _to_tells(data: dict, src: str) -> list[Tell]:
@@ -61,41 +102,54 @@ def _score(data: dict, key: str, default: float) -> float:
         return default
 
 
-def _ollama(transcript: str) -> tuple[list[Tell], dict]:
+def _ollama_full(transcript: str) -> tuple[list[Tell], dict, list[str]]:
     """Local 3B model via Ollama on localhost (http://127.0.0.1:11434). Transcript text only; nothing leaves the machine."""
     model = os.environ.get("OLLAMA_MODEL", "qwen2.5:3b")
     base = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
     payload = {"model": model, "prompt": PROMPT + cap_words(transcript), "stream": False, "format": "json",
-               "options": {"temperature": 0, "num_predict": 200}}
+               "options": {"temperature": 0, "num_predict": 260}}
     if "qwen3" in model.lower() or os.environ.get("OLLAMA_THINK") == "0":
         payload["think"] = False   # reasoning tokens would eat num_predict and the 3 s budget
     try:
         resp = localhost.post_json(base + "/api/generate", payload, timeout=float(os.environ.get("OLLAMA_TIMEOUT_S", "10")))
     except Exception as e:  # noqa: BLE001
         log.warning("ollama unavailable: %s", e)
-        return [], {"provider": "ollama", "model": model, "error": str(e)[:80], "usd": 0.0}
+        return [], {"provider": "ollama", "model": model, "error": str(e)[:80], "usd": 0.0}, []
     usage = {"provider": "ollama", "model": model, "input_tokens": resp.get("prompt_eval_count", 0),
              "output_tokens": resp.get("eval_count", 0), "usd": 0.0, "local": True}
-    return _to_tells(_parse(resp.get("response", "")), model), usage
+    data = _parse(resp.get("response", ""))
+    return _to_tells(data, model), usage, sanitise_notes(data.get("reasons"))
+
+
+def _ollama(transcript: str) -> tuple[list[Tell], dict]:
+    tells, usage, _ = _ollama_full(transcript)
+    return tells, usage
 
 
 def interpret(transcript: str) -> tuple[list[Tell], dict]:
+    """(tells, cost). The sanitised display-only notes ride in cost["notes"]; pipeline pops them before the cost is returned."""
+    tells, cost, notes = interpret_with_notes(transcript)
+    return tells, {**cost, "notes": notes}
+
+
+def interpret_with_notes(transcript: str) -> tuple[list[Tell], dict, list[str]]:
+    """Like interpret, plus sanitised display-only `notes`. Notes never become tells."""
     provider = os.environ.get("LLM_PROVIDER", "stub")
     if not transcript or not transcript.strip():
-        return [], {"provider": "stub", "input_tokens": 0, "output_tokens": 0, "usd": 0.0}
+        return [], {"provider": "stub", "input_tokens": 0, "output_tokens": 0, "usd": 0.0}, []
     if provider == "ollama":
-        return _ollama(transcript)
+        return _ollama_full(transcript)
     if provider != "anthropic":
-        return [], {"provider": "stub", "input_tokens": 0, "output_tokens": 0, "usd": 0.0}
+        return [], {"provider": "stub", "input_tokens": 0, "output_tokens": 0, "usd": 0.0}, []
     try:
         import anthropic  # optional dependency
     except ImportError:
         log.warning("LLM_PROVIDER=anthropic but `anthropic` not installed; skipping")
-        return [], {"provider": "stub", "input_tokens": 0, "output_tokens": 0, "usd": 0.0}
+        return [], {"provider": "stub", "input_tokens": 0, "output_tokens": 0, "usd": 0.0}, []
     client = anthropic.Anthropic()
     model = os.environ.get("DOUBLESPEAK_LLM_MODEL", "claude-sonnet-5-5")
     privacy.record_egress("text", len(transcript.encode()))
-    msg = client.messages.create(model=model, max_tokens=300, messages=[{"role": "user", "content": PROMPT + transcript}])
+    msg = client.messages.create(model=model, max_tokens=400, messages=[{"role": "user", "content": PROMPT + transcript}])
     text = "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
     usage = {"provider": "anthropic", "model": model, "input_tokens": msg.usage.input_tokens,
              "output_tokens": msg.usage.output_tokens}
@@ -104,7 +158,7 @@ def interpret(transcript: str) -> tuple[list[Tell], dict]:
     try:
         data = json.loads(text[text.find("{"): text.rfind("}") + 1])
     except (ValueError, json.JSONDecodeError):
-        return [], usage
+        return [], usage, []
     tells = [
         Tell("llm_assistant_style", "script", _score(data, "assistant_style", 0.5), 0.8,
              "model: " + str(data.get("assistant_style_reason", ""))[:140]),
@@ -113,4 +167,4 @@ def interpret(transcript: str) -> tuple[list[Tell], dict]:
     ]
     if data.get("disclosed_ai"):
         tells.append(Tell("ai_disclosure", "intent", 0.0, 0.0, "model: caller disclosed it is AI", applicable=False))
-    return tells, usage
+    return tells, usage, sanitise_notes(data.get("reasons"))
