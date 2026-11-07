@@ -20,7 +20,7 @@ from . import windows
 from .pella import pella_vote
 
 log = logging.getLogger("doublespeak.neural")
-W_ONNX, W_HF = 1.8, 1.4
+W_ONNX, W_HF = 1.8, 0.7   # W_HF 1.4 -> 0.7 (2026-11-07.2): ~chance on Qwen3-TTS (AUC 0.55/0.48 alone); kept non-zero so it can still vote
 _onnx = None
 _hf = None
 _hf_error = ""

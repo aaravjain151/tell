@@ -27,7 +27,7 @@ from ..types import Tell
 from . import windows as win
 
 log = logging.getLogger("doublespeak.pella")
-W_PELLA = 1.6                       # placeholder until the wild eval; weights live here, tier logic is untouched
+W_PELLA = 4.0                       # 1.6 -> 4.0 (2026-11-07.2) from the wild eval, see pm/AUDITS.md; tier logic untouched
 REPO, FILENAME = "Sadanie/pellav2-audio-deepfake-detector", "pellav2_detector.pt"
 REVISION = "b668eb4dfe4719665692c73c1d70383680afff6b"
 SHA256 = "d21aedfb52e2f87706c2753715a29665482b0f4a034800c31579df5d458559ac"
