@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Local caches kept on the D drive (pip, Hugging Face)
+.cache/
+
+# Local secrets / config
+.env
+
+# Local-only data: encrypted alert history must never be committed
+data/
+
+# Large model weights fetched by setup_models.py
+models/
