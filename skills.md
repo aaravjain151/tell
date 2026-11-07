@@ -1,6 +1,6 @@
 # Doublespeak — root skills.md (source of truth)
 
-Every tool and every human reads this first. Edit *this* file; `CLAUDE.md`, `AGENTS.md` and `.cursor/rules/tell.mdc` are thin pointers.
+Every tool and every human reads this first. Edit *this* file; `CLAUDE.md`, `AGENTS.md` and `.cursor/rules/doublespeak.mdc` are thin pointers.
 
 ## 1. Overview
 Doublespeak is a privacy-first detector that classifies the voice on a call as **Human · AI (disclosed) · AI (undisclosed) · Scam**, with the specific "tells" that fired, and never sends caller audio off-device. Built at HACK1984 (Privacy-First track + Gradium side prize). Product brief: `pm/PRODUCT.md`. Decisions: `pm/DECISIONS.md`.
@@ -37,7 +37,7 @@ Core loop: user feeds a clip or mic → local analysis → verdict card with evi
                                                           │
                                        verdict card  ◄────┘      (+ optional spoken verdict via Gradium)
 ```
-Rule: **models interpret, code decides.** Audio bytes are never written to disk or sent anywhere unless `TELL_DEBUG_SAVE=1`.
+Rule: **models interpret, code decides.** Audio bytes are never written to disk or sent anywhere unless `DOUBLESPEAK_DEBUG_SAVE=1`.
 
 ## 4. Folder structure
 ```
@@ -69,7 +69,7 @@ python3 council/ask.py "question" --paste
 ## 6. Conventions
 - Python: type hints, `ruff`-clean, no classes where a function will do. Tells are `Tell(name, weight, score, evidence)` records.
 - Every signal returns a score in [0,1] *toward AI* (acoustic/script) or *toward scam* (intent) plus a one-line evidence string a non-engineer can read.
-- Thresholds and weights live only in `services/api/tell/thresholds.py` (versioned; bump `THRESHOLDS_VERSION` when changed).
+- Thresholds and weights live only in `services/api/doublespeak/thresholds.py` (versioned; bump `THRESHOLDS_VERSION` when changed).
 - Frontend: vanilla JS, CSS vars from `design/tokens.json`, no frameworks.
 - Commits: `backend:`, `web:`, `design:`, `pm:`, `redteam:`, `marketing:` prefixes.
 
@@ -81,7 +81,7 @@ python3 council/ask.py "question" --paste
 - No secrets in code. `.env.example` lists every env name.
 
 ## 8. Dangerous areas
-- **Privacy guarantee** (`services/api/tell/privacy.py`, `tests/test_privacy.py`): any code path that could send audio bytes over the network. Changing it requires a decision in `pm/DECISIONS.md`.
+- **Privacy guarantee** (`services/api/doublespeak/privacy.py`, `tests/test_privacy.py`): any code path that could send audio bytes over the network. Changing it requires a decision in `pm/DECISIONS.md`.
 - **Scorer thresholds**: a 0.05 change flips verdicts on real family-emergency calls. Only change with the eval green and a note.
 - **Verdict copy**: never "safe", never "illegal". See `design/skills.md` voice rules.
 - **Gradium credits**: `tools/redteam` and spoken verdict spend credits; cap batch sizes, never loop TTS in tests.

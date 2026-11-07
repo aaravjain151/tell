@@ -38,6 +38,7 @@ class Verdict:
     egress: dict = field(default_factory=dict)
     signature: str = ""
     cost: dict = field(default_factory=dict)
+    transcript: str = ""   # what was analysed (typed, or from local STT); returned to the local UI only, so it can mark up the phrases that fired
 
     def to_dict(self) -> dict:
         return {
@@ -53,4 +54,5 @@ class Verdict:
             "egress": self.egress,
             "signature": self.signature,
             "cost": self.cost,
+            "transcript": self.transcript,
         }

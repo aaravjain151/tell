@@ -9,11 +9,11 @@ from pathlib import Path
 
 import pytest
 
-from tell import privacy, pipeline
+from doublespeak import privacy, pipeline
 from tests.synth import make_call, to_wav_bytes
 
-ANALYSIS_PATH = ["tell/audio.py", "tell/pipeline.py", "tell/scorer.py", "tell/thresholds.py", "tell/types.py",
-                 "tell/signals/acoustic.py", "tell/signals/script.py", "tell/signals/intent.py"]
+ANALYSIS_PATH = ["doublespeak/audio.py", "doublespeak/pipeline.py", "doublespeak/scorer.py", "doublespeak/thresholds.py", "doublespeak/types.py",
+                 "doublespeak/signals/acoustic.py", "doublespeak/signals/script.py", "doublespeak/signals/intent.py"]
 NETWORK = re.compile(r"^\s*(import|from)\s+(socket|http|urllib|requests|httpx|aiohttp|websockets|ssl)\b", re.M)
 
 

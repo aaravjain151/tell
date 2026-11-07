@@ -17,7 +17,7 @@ import numpy as np
 
 from ..types import Tell
 
-log = logging.getLogger("tell.neural")
+log = logging.getLogger("doublespeak.neural")
 W_ONNX, W_HF = 1.8, 1.4
 _onnx = None
 _hf = None

@@ -10,7 +10,7 @@ import os
 
 import numpy as np
 
-log = logging.getLogger("tell.stt")
+log = logging.getLogger("doublespeak.stt")
 _model = None
 
 
@@ -29,7 +29,7 @@ def transcribe(x16k: np.ndarray) -> str | None:
         return None
     from faster_whisper import WhisperModel
     if _model is None:
-        size = os.environ.get("TELL_WHISPER_MODEL", "base.en")
+        size = os.environ.get("DOUBLESPEAK_WHISPER_MODEL", "base.en")
         _model = WhisperModel(size, device="cpu", compute_type="int8")
         log.info("loaded faster-whisper %s", size)
     segments, _ = _model.transcribe(x16k, beam_size=1, vad_filter=True)

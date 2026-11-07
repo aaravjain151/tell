@@ -26,7 +26,7 @@ def analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
             if local:
                 transcript = local
                 ctx["transcript_source"] = "local_whisper"
-        if os.environ.get("TELL_DEBUG_SAVE") == "1":  # never in a demo; documented in skills.md
+        if os.environ.get("DOUBLESPEAK_DEBUG_SAVE") == "1":  # never in a demo; documented in skills.md
             os.makedirs("data/debug", exist_ok=True)
             with open(f"data/debug/{privacy.audio_fingerprint(audio_bytes)}.bin", "wb") as f:
                 f.write(audio_bytes)
@@ -42,6 +42,7 @@ def analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
     denial = script.ai_denial(transcript) if transcript else False
 
     v = scorer.fuse(acoustic_tells, script_tells, intent_tells, disclosed, denial, ctx)
+    v.transcript = transcript
     v.cost = {**cost, "latency_ms": int(1000 * (time.perf_counter() - t0))}
     v.egress = {**privacy.report(), "context": ctx}
     payload = {"tier": v.tier, "p_ai": round(v.p_ai, 3), "p_scam": round(v.p_scam, 3),
