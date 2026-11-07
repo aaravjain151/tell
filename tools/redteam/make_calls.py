@@ -22,16 +22,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
-from engines import ENGINES, PAID, VOICE_ENV, unavailable_reason  # noqa: E402
-
-
-def load_env() -> None:
-    env = ROOT / ".env"
-    if env.exists():
-        for line in env.read_text().splitlines():
-            if "=" in line and not line.strip().startswith("#"):
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip().strip('"'))
+from engines import ENGINES, PAID, VOICE_ENV, load_env, unavailable_reason  # noqa: E402
 
 
 def main() -> int:
