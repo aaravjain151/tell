@@ -75,6 +75,48 @@ streamlit run app.py
   chart.
 - An always-visible network-proof panel.
 
+## Sample clips
+
+The app has a third tab, **Sample clips**, for trying the detector without
+recording anything yourself. It lists any audio placed under `data/calls/`
+grouped by dataset folder, so you can pick a clip and run it through the exact
+same on-device pipeline as a live call.
+
+The example datasets are kept on the dedicated `data/sanath-voice-clips` branch
+(they are not committed to the code branches, and `data/` is git-ignored). Pull
+them into your working copy with:
+
+```bash
+git checkout origin/data/sanath-voice-clips -- data/calls
+```
+
+That drops clips under `data/calls/` such as:
+
+| Folder | Voice | Use for |
+| --- | --- | --- |
+| `human/sanath` | real recordings | should score ~0 on fake-voice |
+| `gradium`, `gradium_stock` | AI-cloned | fake-voice score should rise |
+| `qwen3tts` | AI-generated (TTS) | fake-voice score should rise |
+
+Each folder has matching scenarios (`scam_irs`, `scam_bank_otp`,
+`scam_grandparent`, `casual_clone`, `long_appointment`, ...), so you can load the
+real and the cloned version of the same script and compare the fake-voice
+column. The 8 kHz `*.opus8k.wav` variants are hidden from the picker to keep the
+menu short.
+
+### Running fully locally (notes)
+
+- Use **Python 3.11** in a virtual environment; this is a NumPy 1.x stack
+  (`torch`, `faster-whisper`, `librosa`). Do not upgrade to NumPy 2 - packages
+  that require it (e.g. `pyarrow>=18`) are pinned below that line on purpose.
+- In-app recording (the **Record now** tab) needs **Streamlit >= 1.40**
+  (`st.audio_input`). On older versions the tab degrades to a message pointing
+  at **Upload a file**.
+- Ollama is optional. Without it, scam scoring uses the regex safety net, so
+  obvious scams are still flagged - they may land at *Medium* rather than *High*
+  because the fused risk (`0.4*voice + 0.6*scam`) stays just under the High
+  threshold when the voice is a real human (score ~0).
+
 ## Test
 
 ```bash
