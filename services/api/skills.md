@@ -19,12 +19,16 @@ doublespeak/stt.py             local STT: VoiceStudio on loopback first, then fa
 doublespeak/localhost.py       the ONLY socket opener for local engines (VoiceStudio STT, Ollama): loopback-only (NotLoopbackError otherwise), counts `localhost_requests` (D-009)
 doublespeak/limits.py          API hardening, no effect on verdicts: CORS allow-list, Host/Origin guard, streaming body limit, 1-at-a-time analysis in a worker thread, timeout, generic errors. Env: DOUBLESPEAK_CORS_ORIGINS (default localhost/127.0.0.1 :5173,:8000; `null` only if listed), DOUBLESPEAK_ALLOWED_HOSTS, DOUBLESPEAK_MAX_UPLOAD_MB=25, DOUBLESPEAK_MAX_AUDIO_S=180, DOUBLESPEAK_ANALYZE_TIMEOUT_S=60 (transcript cap 20000 chars, queue wait 20 s then 503 + Retry-After)
 doublespeak/signals/neural.py  neural voters: ANTI_SPOOF_MODEL (ONNX) and HF_SPOOF_MODEL (transformers); applicable=False if absent
+doublespeak/ring.py            RAM-only float32 ring buffer (wrap-around, `last(s)` copy, `wipe()` zeroes in place + drops the array)
+doublespeak/session.py         live Session (audio-clock ticks, one in-flight job, dropped_ms, lag_report) + Registry (max 2 sessions, 256-bit single-use 60 s tokens)
+doublespeak/stream.py          POST /session · WS /ws/stream · DELETE /session/{id} · POST /panic (issue #26, D-011 PROPOSED)
 doublespeak/speak.py           spoken verdict via Gradium CLI (only our text leaves)
 doublespeak/secure_store.py    opt-in (DOUBLESPEAK_HISTORY=1) AES-256-GCM alert history, key in OS keychain only; API: GET/DELETE /history, GET /history/status (T-016)
 tests/synth.py          synthetic human/TTS fixtures (mechanics only — not a stand-in for real clips)
 tests/test_privacy.py   the privacy guarantee as a test
 eval/golden.jsonl       32 transcript cases · eval/run_eval.py (targets 0.85 / 0.90)
 apps/web/build_samples.py  regenerates the 4 inline demo verdicts (deterministic: stub LLM, no heavy models) — run after any thresholds change; tests/test_web_samples.py guards it
+../../tools/stream_wav.py  replays a WAV over /ws/stream in real time (--speed N); tests + demo fallback
 ../../tools/redteam/    degrade.sh (opus-8k) · make_calls.py — Gradium attacker clips from scripts/*.txt
 ```
 
@@ -42,6 +46,19 @@ Acoustic/script scores point toward AI; intent scores toward scam. `applicable=F
 - Changing `thresholds.py`: bump `THRESHOLDS_VERSION`, run `make eval`, note the before/after in the commit body.
 - Network and process use is policed two ways. Static: `tests/test_import_scan.py` AST-scans EVERY `.py` under `doublespeak/` (no file list) for network libs, `subprocess`, `os.system/popen/exec*/spawn*`, `importlib.import_module`/`__import__`, `exec/eval`, and checks it against an exact `ALLOWLIST` (localhost.py, llm.py, speak.py, audio.py). Runtime: `tests/test_network_guard.py` runs the whole pipeline and API with every non-loopback socket call recorded and refused. A new file or new banned use must fail the scan until a reviewer adds it, with a reason, to the allowlist.
 - Gradium credits: never call TTS in tests; `make_calls.py` caps at `--max 20` clips per run.
+
+## Streaming contract (`stream.py`, D-011 PROPOSED)
+1. `POST /session` (Origin must be an allowed UI origin; 429 when 2 sessions exist) -> `{session_id, token, ws_path:"/ws/stream", params}`. Token: random 256-bit, single use, expires in 60 s, never in a URL.
+2. WebSocket FIRST message within 5 s: `{"type":"hello","token":...,"sample_rate":16000,"format":"pcm_s16le","side":"far|near|mix"}`. Audio/anything else first, or an unknown/reused/expired token, gets `{"type":"error","code":"hello_required"|"auth_failed"}` and a close. Host/Origin are re-checked on the handshake (the HTTP middleware does not see websocket scopes).
+3. Server -> `{"type":"ready"}`. Client then sends binary PCM16 LE mono 16 kHz frames (even length, <= 128 KiB) and may send text `{"type":"ping"}` (-> `pong`), `{"type":"stop"}`, `{"type":"kill"}`. Any message is a heartbeat; silence for 15 s ends the session.
+4. Every hop (3 s of NEW audio, audio clock) with no job in flight, `pipeline.analyze(last 10 s as in-memory WAV, ephemeral=True)` runs in the shared worker thread and pushes the RAW per-tick verdict (no smoothing, no alert logic; the stabiliser is another branch):
+   `{"type":"verdict","seq","t","window":[t0,t1],"tier","p_ai","p_scam","confidence","headline","degraded":[non-applicable tell names],"lag_s","side","confidence_capped","dropped_ms"}`.
+   Also `{"type":"warn","code":"lagging"|"overloaded"}` (throttled to one per code per 5 s), `{"type":"final","ticks":n,"reason":"stop|kill|max_length|deleted|panic"}`, `{"type":"error","code":...}`.
+5. Backpressure: one job in flight per session; ticks that come due meanwhile are counted (`skipped_ticks`), the next window covers the newest audio, and the audio nobody analysed is dropped oldest-first and added to `dropped_ms`. A finished job immediately catches up.
+6. Wipe on: stop, kill, disconnect, heartbeat timeout, 2 h max length, error close, `DELETE /session/{id}`, `POST /panic` (all sessions + pending tokens). A result that finishes after a wipe is discarded.
+7. `side=mix` (both speakers in one signal) caps DISPLAYED confidence at 0.6 (`session.MIX_CONF_CAP`) and sets `confidence_capped`; tier/p_ai/p_scam are untouched, scorer.py is not edited.
+8. Env (read per call): `DOUBLESPEAK_STREAM_{WINDOW_S,HOP_S,RING_S (cap 120),HEARTBEAT_S,HELLO_TIMEOUT_S,TOKEN_TTL_S,MAX_SESSION_S}`.
+9. Privacy: audio lives only in the ring (zeroed on close) and the one window copy the worker holds until its analysis returns; `pipeline.analyze(..., ephemeral=True)` ignores `DOUBLESPEAK_DEBUG_SAVE` and skips the opt-in history file. Tests: `test_stream.py::test_no_file_is_created_during_a_session`, `::test_debug_save_is_ignored_by_real_pipeline`.
 
 ## Validation
 ```
@@ -97,3 +114,4 @@ curl -s -F audio=@data/calls/scam_grandparent.wav -F transcript="$(cat tools/red
 - 2026-11-07 · backend · FastAPI wraps any `Exception` raised while parsing the body into a 400, which swallowed the 413 raised from the wrapped `receive`; the body-limit signal is a `BaseException` subclass on purpose. The limit counts bytes as they stream (and checks Content-Length first), so an endless upload is cut at limit + 1 MiB.
 - 2026-11-07 · backend · One dedicated worker thread runs `pipeline.analyze`; on timeout the route returns 504 but the thread cannot be killed, so the gate is released only when the thread ends (a following request gets 503 until then). Asyncio semaphores are per event loop (TestClient/asyncio.run create new loops), so `limits._gate()` is keyed by loop. Logs carry exception class and stack frames only, never messages (they can echo transcript text).
 - 2026-11-07 · backend · Found by the runtime network guard once it ran in suite order: a fully CACHED faster-whisper or transformers load still connects to huggingface.co (update check) and falls back to the cache, so "no outside connections" was false at every cold start. Runtime loads now pass `local_files_only=True` (Whisper, the HF anti-spoof voter, and Pellav2 already did); `make models` is the only place that downloads. First run on a fresh clone therefore needs `make models` first, otherwise the voters report "not available, run make models" instead of silently downloading. (`DOUBLESPEAK_OFFLINE=1` stays as belt and braces.)
+- 2026-11-07 · backend · Streaming: the tick clock is the AUDIO clock (samples received), not wall time, so `tools/stream_wav.py --speed 4` and the tests need no sleeps; only heartbeat/hello/max-length are wall-clock. `GuardMiddleware` ignores websocket scopes, so `stream.py` re-applies Host/Origin via `limits.handshake_allowed`. Starlette `TestClient` needs `with TestClient(app)` for websockets plus a teardown that closes open sockets, or one failing test hangs the whole run. The first tick on a cold server lagged 11 s (model load) in a real replay: warm up before a demo.
