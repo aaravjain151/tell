@@ -19,8 +19,10 @@ SCRIPT_WEIGHTS = {
     "sentence_uniformity": 0.6,
     "contraction_rate": 0.5,
 }
-# how much of p_ai comes from acoustic vs script when both present
-ACOUSTIC_SHARE = 0.6
+# how much of p_ai comes from acoustic vs script when both present.
+# 0.6 -> 0.8 (2026-11-07.2): in the paired wild set the script tells are identical across classes (same text read by human
+# and AI), so they only add a constant. Real undisclosed-agent calls still carry script signal, so this stays well below 1.
+ACOUSTIC_SHARE = 0.8
 
 INTENT_WEIGHTS = {
     "urgency": 0.8,
