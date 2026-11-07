@@ -3,7 +3,8 @@
 
     ./.venv/bin/python services/api/eval/llm_bench.py --models llama3.2:3b qwen2.5:3b qwen3:4b [--limit N]
 
-Reports per model: 4-tier accuracy (same half-credit rule as run_eval), llm_scam_framing recall on scam cases and
+Reports per model (also: notes_rate = share of cases with at least one sanitised display-only model note, and p95 latency, target < 3000 ms):
+ 4-tier accuracy (same half-credit rule as run_eval), llm_scam_framing recall on scam cases and
 false-positive rate on the rest at 0.5, parse failures (no llm tells returned), and median / p95 latency of the LLM call.
 Needs `ollama serve` and the models pulled. Everything is on localhost; the models only see transcript text.
 """
@@ -25,7 +26,7 @@ from doublespeak import pipeline  # noqa: E402
 
 def bench(model: str, cases: list[dict]) -> dict:
     os.environ["OLLAMA_MODEL"] = model
-    hits, lat, fails = 0.0, [], 0
+    hits, lat, fails, with_notes, n_notes = 0.0, [], 0, 0, 0
     scam_hit = scam_n = fp = non_n = 0
     for c in cases:
         v = pipeline.analyze(None, c["transcript"])
@@ -33,6 +34,8 @@ def bench(model: str, cases: list[dict]) -> dict:
         if framing is None:
             fails += 1
         lat.append(v.cost.get("latency_ms", 0))
+        with_notes += bool(v.model_notes)
+        n_notes += len(v.model_notes)
         ok = v.tier == c["expected"]
         hits += 1 if ok else (0.5 if v.tier == "unsure" and c["expected"] != "scam" else 0)
         flagged = framing is not None and framing.score >= 0.5
@@ -44,7 +47,7 @@ def bench(model: str, cases: list[dict]) -> dict:
             fp += flagged
     lat.sort()
     return {"model": model, "acc": hits / len(cases), "scam_recall": scam_hit / max(scam_n, 1), "framing_fp": fp / max(non_n, 1),
-            "parse_fail": fails, "p50_ms": int(statistics.median(lat)), "p95_ms": lat[min(len(lat) - 1, int(0.95 * len(lat)))]}
+            "parse_fail": fails, "notes_rate": with_notes / len(cases), "notes_avg": n_notes / len(cases), "p50_ms": int(statistics.median(lat)), "p95_ms": lat[min(len(lat) - 1, int(0.95 * len(lat)))]}
 
 
 if __name__ == "__main__":
@@ -55,7 +58,7 @@ if __name__ == "__main__":
     cases = [json.loads(l) for l in (HERE / "golden.jsonl").read_text().splitlines() if l.strip()]
     cases = cases[: a.limit] if a.limit else cases
     print(f"{len(cases)} golden cases, local Ollama only")
-    print(f"{'model':16} {'tier acc':>8} {'scam recall':>11} {'framing FP':>10} {'parse fail':>10} {'p50 ms':>7} {'p95 ms':>7}")
+    print(f"{'model':16} {'tier acc':>8} {'scam recall':>11} {'framing FP':>10} {'parse fail':>10} {'notes rate':>10} {'notes/call':>10} {'p50 ms':>7} {'p95 ms':>7}")
     for m in a.models:
         r = bench(m, cases)
-        print(f"{r['model']:16} {r['acc']:8.2f} {r['scam_recall']:11.2f} {r['framing_fp']:10.2f} {r['parse_fail']:10d} {r['p50_ms']:7d} {r['p95_ms']:7d}", flush=True)
+        print(f"{r['model']:16} {r['acc']:8.2f} {r['scam_recall']:11.2f} {r['framing_fp']:10.2f} {r['parse_fail']:10d} {r['notes_rate']:10.2f} {r['notes_avg']:10.2f} {r['p50_ms']:7d} {r['p95_ms']:7d}", flush=True)
