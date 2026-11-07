@@ -91,6 +91,26 @@ class DeepfakeConfig:
     fake_threshold: float = 0.5
     target_lufs: float = -23.0
     crop_seconds: int = 4
+    #: Load the fine-tuned head (see finetune/) instead of the base weights.
+    #: Enabled by env var DOUBLESPEAK_FINETUNED=1 or by constructing a config
+    #: with this set. The model falls back to base weights if neither a full
+    #: fine-tuned checkpoint nor a head-delta file is present, so turning it on
+    #: can never break inference.
+    use_finetuned_head: bool = False
+    #: Optional full fine-tuned checkpoint (backbone + trained head), 2.2 GB.
+    #: Produced by train_head.py; usually NOT committed (too large).
+    finetuned_weights_path: Path = MODELS_DIR / "pellav2_detector_finetuned.pt"
+    #: Tiny head-only delta (layer_weights + head, ~6 KB) committed in finetune/.
+    #: When present it is applied on top of the base backbone, so the full
+    #: fine-tuned model is reconstructed without shipping 2.2 GB.
+    finetuned_head_path: Path = PROJECT_ROOT / "finetune" / "pellav2_qwen_head.pt"
+
+    @property
+    def active_weights_path(self) -> Path:
+        """The base weights file to load (the backbone always comes from here)."""
+        if self.use_finetuned_head and self.finetuned_weights_path.exists():
+            return self.finetuned_weights_path
+        return self.weights_path
 
 
 # --------------------------------------------------------------------------- #
@@ -133,6 +153,14 @@ KEYRING_USERNAME: str = "alert-history-key"
 #: Rolling voice-analysis window and hop, in seconds (pellav2 scores 4 s crops).
 VOICE_WINDOW_SECONDS: float = 4.0
 VOICE_HOP_SECONDS: float = 2.0
+
+#: How to aggregate per-window fake-voice scores into one call-level score.
+#: A cloned voice does not become "real" because other windows are silent or
+#: ambient, so we must NOT average every window (that dilutes a strong, local
+#: AI signal). Instead we take the mean of the strongest ``VOICE_AGG_TOPK``
+#: fraction of windows - robust to a single spurious spike, but it surfaces a
+#: sustained synthetic segment even in a long clip that is mostly quiet/real.
+VOICE_AGG_TOPK: float = 0.3
 
 #: RMS energy below which a window counts as silent and is skipped.
 SILENCE_RMS: float = 0.01
@@ -197,5 +225,9 @@ def _optional_dir(path: Path) -> Path | None:
 
 # Instantiate the default configs once for convenient import.
 WHISPER = WhisperConfig()
-DEEPFAKE = DeepfakeConfig()
+#: Honour DOUBLESPEAK_FINETUNED=1 so the fine-tuned head can be enabled without
+#: code changes. Falls back to base weights if the fine-tuned file is absent.
+DEEPFAKE = DeepfakeConfig(
+    use_finetuned_head=os.environ.get("DOUBLESPEAK_FINETUNED", "") == "1"
+)
 OLLAMA = OllamaConfig()

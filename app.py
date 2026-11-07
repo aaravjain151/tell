@@ -25,7 +25,17 @@ from doublespeak.detector import (
     load_audio,
 )
 
-st.set_page_config(page_title="DoubleSpeak", page_icon="🛡️", layout="centered")
+# Optional brand logo. If assets/logo.png exists it is used for the browser-tab
+# icon and the in-app header; otherwise we fall back to the shield emoji so the
+# app still runs with no image present.
+_LOGO_PATH = config.PROJECT_ROOT / "assets" / "logo.png"
+_LOGO = str(_LOGO_PATH) if _LOGO_PATH.exists() else None
+
+st.set_page_config(
+    page_title="DoubleSpeak",
+    page_icon=_LOGO or "🛡️",
+    layout="centered",
+)
 
 # --------------------------------------------------------------------------- #
 # Large-font / high-contrast styling
@@ -164,7 +174,14 @@ def _discover_samples() -> dict[str, list[tuple[str, str]]]:
 
 
 def main() -> None:
-    st.title("🛡️ DoubleSpeak")
+    if _LOGO is not None:
+        logo_col, title_col = st.columns([1, 5], vertical_alignment="center")
+        with logo_col:
+            st.image(_LOGO, width=96)
+        with title_col:
+            st.title("DoubleSpeak")
+    else:
+        st.title("🛡️ DoubleSpeak")
     st.write("A friendly helper that spots fake voices and scam calls.")
 
     # Always-visible network proof.

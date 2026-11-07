@@ -73,6 +73,22 @@ def _rms(x: np.ndarray) -> float:
     return float(np.sqrt(np.mean(np.square(x)))) if x.size else 0.0
 
 
+def _aggregate_windows(scores: list[float]) -> float:
+    """Call-level P(fake) = mean of the strongest top-k fraction of windows.
+
+    Averaging every window lets a short synthetic segment be diluted by quiet
+    or genuine-sounding windows in a long clip. Taking the top-k strongest
+    windows keeps the detector sensitive to a cloned voice that appears in only
+    part of the call, while using a small set (not a single max) guards against
+    one spurious window flipping the result.
+    """
+    if not scores:
+        return 0.0
+    ordered = sorted(scores, reverse=True)
+    k = max(1, round(len(ordered) * config.VOICE_AGG_TOPK))
+    return float(np.mean(ordered[:k]))
+
+
 class VoiceChecker:
     """Scores AI-cloning over rolling 4 s / 2 s windows using pellav2.
 
@@ -95,7 +111,15 @@ class VoiceChecker:
             return float(torch.sigmoid(model(x)).item())
 
     def score(self, audio: np.ndarray) -> VoiceResult:
-        """Return mean + per-window P(fake), skipping silent windows."""
+        """Return a call-level P(fake) plus the per-window scores.
+
+        The call-level score is the mean of the strongest windows (top-k by
+        ``config.VOICE_AGG_TOPK``), NOT the mean of all windows. Averaging every
+        window hides a cloned voice whenever a long clip also contains silence,
+        ambient noise or genuine-sounding passages: a scammer's AI segment must
+        still raise the alarm. Top-k is robust to a lone spurious window while
+        surfacing a sustained synthetic region.
+        """
         win = int(config.VOICE_WINDOW_SECONDS * _SR)
         hop = int(config.VOICE_HOP_SECONDS * _SR)
 
@@ -115,7 +139,7 @@ class VoiceChecker:
 
         if not scores:
             return VoiceResult(0.0, [])
-        return VoiceResult(float(np.mean(scores)), scores)
+        return VoiceResult(_aggregate_windows(scores), scores)
 
 
 # --------------------------------------------------------------------------- #

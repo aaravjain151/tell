@@ -146,21 +146,44 @@ class DeepfakeDetector:
         self._device = None
 
     def _ensure_model(self):
-        """Load backbone + local weights once. Raises if weights are missing."""
+        """Load backbone + local weights once. Raises if weights are missing.
+
+        Weight selection when ``cfg.use_finetuned_head`` is set:
+          1. a full fine-tuned checkpoint (``finetuned_weights_path``) if present;
+          2. else the base backbone plus the tiny committed head delta
+             (``finetuned_head_path``: layer_weights + head only, ~6 KB);
+          3. else the base weights (safe fallback - never breaks inference).
+        """
         if self._model is not None:
             return self._model
         import torch
 
-        if not self.cfg.weights_path.exists():
+        weights_path = self.cfg.active_weights_path
+        if not weights_path.exists():
             raise FileNotFoundError(
-                f"pellav2 weights not found at {self.cfg.weights_path}. Run the "
+                f"pellav2 weights not found at {weights_path}. Run the "
                 "one-time setup to place 'pellav2_detector.pt' there (see README)."
             )
         device = "cpu"  # product targets CPU-only, offline machines
         Detector = _build_detector_class()
         model = Detector().to(device)
-        state = torch.load(self.cfg.weights_path, map_location=device)
+        state = torch.load(weights_path, map_location=device)
         model.load_state_dict(state)
+
+        # Apply the lightweight head delta if requested and no full checkpoint
+        # was used. This reconstructs the fine-tuned detector from base backbone
+        # + the ~6 KB trained head, so the big file never needs shipping.
+        if (
+            self.cfg.use_finetuned_head
+            and weights_path == self.cfg.weights_path
+            and self.cfg.finetuned_head_path.exists()
+        ):
+            head = torch.load(self.cfg.finetuned_head_path, map_location=device)
+            with torch.no_grad():
+                model.layer_weights.copy_(head["layer_weights"])
+                model.head.weight.copy_(head["head.weight"])
+                model.head.bias.copy_(head["head.bias"])
+
         model.eval()
         self._model = model
         self._device = device
