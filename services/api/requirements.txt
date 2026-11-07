@@ -1,0 +1,10 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+numpy>=1.26
+pytest>=8
+httpx>=0.27
+# optional: anthropic>=0.40  (LLM_PROVIDER=anthropic)
+# local neural voters (install on the laptop; heavy):
+#   pip install faster-whisper onnxruntime
+#   pip install torch transformers   (only if HF_SPOOF_MODEL is set)

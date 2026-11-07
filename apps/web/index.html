@@ -1,0 +1,269 @@
+<title>Tell</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a two-column instrument panel — input on the left, verdict + evidence on the right; stacks on phones.
+   Dark-first (stage demo). Tokens mirror design/tokens.json. */
+:root{
+  --bg:#0b0f13; --surface:#141a20; --surface-alt:#262d35; --border:#3c4650;
+  --fg:#f6f8f9; --muted:#b9c2ca; --primary:#22bfb4; --primary-fg:#0b0f13; --primary-hover:#55d6cc;
+  --human:#5fd48a; --ai-disclosed:#f0b64a; --ai-undisclosed:#ff9a5c; --scam:#ff6b7a; --unsure:#b9c2ca;
+  --track:#262d35;
+  --display:'Bricolage Grotesque','IBM Plex Sans',system-ui,sans-serif;
+  --body:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#f6f8f9; --surface:#ffffff; --surface-alt:#eceff2; --border:#d9dee3;
+  --fg:#141a20; --muted:#4f5a64; --primary:#0b857e; --primary-fg:#ffffff; --primary-hover:#0a6a65;
+  --human:#1b7f3b; --ai-disclosed:#8a5a00; --ai-undisclosed:#b3470e; --scam:#b41e2c; --unsure:#4f5a64;
+  --track:#eceff2; color-scheme:light; } }
+:root[data-theme="light"]{
+  --bg:#f6f8f9; --surface:#ffffff; --surface-alt:#eceff2; --border:#d9dee3;
+  --fg:#141a20; --muted:#4f5a64; --primary:#0b857e; --primary-fg:#ffffff; --primary-hover:#0a6a65;
+  --human:#1b7f3b; --ai-disclosed:#8a5a00; --ai-undisclosed:#b3470e; --scam:#b41e2c; --unsure:#4f5a64;
+  --track:#eceff2; color-scheme:light; }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+h1,h2,h3{font-family:var(--display);line-height:1.1;margin:0;text-wrap:balance}
+.wrap{max-width:1120px;margin:0 auto;display:grid;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px;border-bottom:1px solid var(--border);padding-bottom:14px}
+header h1{font-size:30px;letter-spacing:-.01em}
+header h1 span{color:var(--primary)}
+.tag{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.cols{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px}
+@media (max-width:780px){.cols{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;min-width:0;display:grid;gap:14px;align-content:start}
+.panel h2{font-size:18px}
+label.lbl{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+textarea{width:100%;min-height:150px;resize:vertical;background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:10px;padding:12px;font:14px/1.5 var(--body)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font:500 14px var(--body);border-radius:999px;border:1px solid var(--border);background:var(--surface-alt);color:var(--fg);padding:10px 16px;cursor:pointer;transition:background 160ms cubic-bezier(.2,.8,.2,1)}
+button:hover{background:var(--border)}
+button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+button.primary{background:var(--primary);color:var(--primary-fg);border-color:transparent;font-weight:600}
+button.primary:hover{background:var(--primary-hover)}
+button.rec[aria-pressed="true"]{background:var(--scam);color:#fff;border-color:transparent}
+button:disabled{opacity:.5;cursor:default}
+.samples{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.samples button{text-align:left;border-radius:10px;padding:10px 12px;display:grid;gap:2px}
+.samples small{color:var(--muted);font-size:12px}
+.file{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+input[type=file]{font:13px var(--body);color:var(--muted);max-width:100%}
+.note{font-size:13px;color:var(--muted);margin:0}
+#status{font-family:var(--mono);font-size:12px;color:var(--muted);min-height:1.2em}
+
+.verdict{display:grid;gap:10px;border-left:6px solid var(--unsure);padding-left:14px}
+.verdict .tier{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;display:inline-flex;align-items:center;gap:8px}
+.verdict .tier::before{content:"";width:10px;height:10px;border-radius:50%;background:currentColor}
+.verdict h2{font-size:34px;letter-spacing:-.015em}
+.verdict p{margin:0;color:var(--muted);max-width:60ch}
+.verdict[data-tier="human"]{border-color:var(--human)} .verdict[data-tier="human"] .tier{color:var(--human)}
+.verdict[data-tier="ai_disclosed"]{border-color:var(--ai-disclosed)} .verdict[data-tier="ai_disclosed"] .tier{color:var(--ai-disclosed)}
+.verdict[data-tier="ai_undisclosed"]{border-color:var(--ai-undisclosed)} .verdict[data-tier="ai_undisclosed"] .tier{color:var(--ai-undisclosed)}
+.verdict[data-tier="scam"]{border-color:var(--scam)} .verdict[data-tier="scam"] .tier{color:var(--scam)}
+.verdict[data-tier="unsure"]{border-color:var(--unsure)} .verdict[data-tier="unsure"] .tier{color:var(--unsure)}
+.gauges{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:480px){.gauges{grid-template-columns:1fr}}
+.gauge{display:grid;gap:6px}
+.gauge .k{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.gauge .v{font-family:var(--display);font-size:26px;font-variant-numeric:tabular-nums;line-height:1}
+.bar{height:6px;border-radius:999px;background:var(--track);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--primary);transition:width 400ms cubic-bezier(.2,.8,.2,1)}
+.bar.scam i{background:var(--scam)}
+
+.tells{display:grid;gap:14px}
+.fam{display:grid;gap:6px}
+.fam h3{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.tell{display:grid;grid-template-columns:minmax(0,1fr) 72px;gap:4px 12px;align-items:center;padding:8px 0;border-top:1px solid var(--border)}
+.tell:last-child{border-bottom:1px solid var(--border)}
+.tell .n{font-family:var(--mono);font-size:12px}
+.tell .e{grid-column:1 / -1;font-size:13px;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.tell .m{height:4px;border-radius:999px;background:var(--track);overflow:hidden}
+.tell .m i{display:block;height:100%;background:var(--ai-undisclosed)}
+.tell.intent .m i{background:var(--scam)}
+.tell.na{opacity:.55}
+.tell.na .n::after{content:" · n/a";color:var(--muted)}
+
+.proof{display:grid;gap:10px;border:1px dashed var(--border);border-radius:12px;padding:14px;background:var(--surface-alt)}
+.proof .big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.proof .big b{font-family:var(--display);font-size:40px;color:var(--primary);font-variant-numeric:tabular-nums;line-height:1}
+.proof .big span{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.proof code{font-family:var(--mono);font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.log{font-family:var(--mono);font-size:11px;color:var(--muted);display:grid;gap:2px;max-height:110px;overflow:auto}
+.log div::before{content:"→ ";color:var(--primary)}
+footer{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Tell<span>.</span></h1>
+    <div class="tag">Every voice has a tell · analysis runs on this machine</div>
+  </header>
+
+  <div class="cols">
+    <section class="panel" aria-label="Input">
+      <h2>What did the caller say?</h2>
+      <div>
+        <label class="lbl" for="samples">Try a sample</label>
+        <div class="samples" id="samples">
+          <button type="button" data-sample="scam"><b>Grandparent scam</b><small>cloned voice · bail money · "don't tell mom"</small></button>
+          <button type="button" data-sample="ai_undisclosed"><b>Sales bot, no disclosure</b><small>templated politeness, zero hesitation</small></button>
+          <button type="button" data-sample="ai_disclosed"><b>Appointment bot</b><small>says it's AI · allowed</small></button>
+          <button type="button" data-sample="human"><b>Friend calling</b><small>ums, restarts, a real room</small></button>
+        </div>
+      </div>
+      <div>
+        <label class="lbl" for="transcript">Transcript</label>
+        <textarea id="transcript" placeholder="Paste or type what the caller said. Audio is optional; transcript alone still catches scam patterns."></textarea>
+      </div>
+      <div class="file">
+        <input type="file" id="audio" accept="audio/*">
+        <button type="button" id="rec" class="rec" aria-pressed="false">● Record mic</button>
+      </div>
+      <div class="row">
+        <button type="button" id="analyze" class="primary">Analyze</button>
+        <button type="button" id="speak">🔊 Speak verdict</button>
+        <span id="status"></span>
+      </div>
+      <p class="note" id="apinote">Looking for the local API…</p>
+    </section>
+
+    <section class="panel" aria-label="Verdict">
+      <div class="verdict" id="verdict" data-tier="unsure">
+        <span class="tier" id="tierlabel">waiting</span>
+        <h2 id="headline">Pick a sample or analyze a call</h2>
+        <p id="advice">You'll get a four-tier verdict (Human · AI, identified · AI, undisclosed · Scam) and every tell that fired, with the evidence in plain words.</p>
+      </div>
+      <div class="gauges">
+        <div class="gauge"><span class="k">synthetic voice</span><span class="v" id="pai">–</span><div class="bar"><i id="paibar"></i></div></div>
+        <div class="gauge"><span class="k">scam intent</span><span class="v" id="pscam">–</span><div class="bar scam"><i id="pscambar"></i></div></div>
+        <div class="gauge"><span class="k">confidence</span><span class="v" id="conf">–</span><div class="bar"><i id="confbar"></i></div></div>
+      </div>
+      <div class="tells" id="tells"></div>
+      <div class="proof">
+        <div class="big"><b id="bytes">0</b><span>bytes of caller audio left this device</span></div>
+        <code id="sig">signature: —</code>
+        <div class="log" id="log"><div>no network requests yet</div></div>
+      </div>
+    </section>
+  </div>
+  <footer>
+    <span>Tell · HACK1984 · Privacy-First track</span>
+    <span id="thr">thresholds —</span>
+    <span>Legit AI callers must identify themselves; "AI, undisclosed" is a flag on its own.</span>
+  </footer>
+</div>
+
+<script id="samples-data" type="application/json">{"human":{"tier":"human","p_ai":0.269,"p_scam":0.0,"confidence":1.0,"disclosed_ai":false,"headline":"Sounds human","advice":"No synthetic-voice tells found. If money or codes come up, hang up and call back on a number you already have.","tells":[{"name":"pause_regularity","family":"acoustic","score":0.853,"weight":1.0,"evidence":"6 pauses, lengths fairly even (CV 0.27; humans \u22730.55, TTS \u22720.25)","applicable":true},{"name":"breath_proxy","family":"acoustic","score":0.1,"weight":1.2,"evidence":"7 breath-like events before phrases in 7s of speech","applicable":true},{"name":"pitch_stability","family":"acoustic","score":0.253,"weight":0.9,"evidence":"pitch moderate (F0 \u2248 141 Hz, variability 0.12)","applicable":true},{"name":"noise_floor","family":"acoustic","score":0.132,"weight":0.8,"evidence":"background is very quiet background (-56 dBFS, varies \u00b14.4 dB)","applicable":true},{"name":"band_limited","family":"acoustic","score":0.5,"weight":0.0,"evidence":"phone-band audio (no content above 4 kHz) \u2014 spectral tells disabled, behavioral tells only","applicable":false},{"name":"llm_isms","family":"script","score":0.15,"weight":1.2,"evidence":"no assistant-style phrasing","applicable":true},{"name":"disfluency","family":"script","score":0.1,"weight":1.0,"evidence":"4 fillers/restarts in 44 words (9.1/100)","applicable":true},{"name":"sentence_uniformity","family":"script","score":0.386,"weight":0.6,"evidence":"6 sentences, lengths varied (CV 0.46)","applicable":true},{"name":"contraction_rate","family":"script","score":0.1,"weight":0.5,"evidence":"4 contractions in 44 words","applicable":true},{"name":"urgency","family":"intent","score":0.0,"weight":0.8,"evidence":"no urgency cues","applicable":true},{"name":"payment_rails","family":"intent","score":0.0,"weight":1.5,"evidence":"no payment rails cues","applicable":true},{"name":"impersonation","family":"intent","score":0.0,"weight":1.0,"evidence":"no impersonation cues","applicable":true},{"name":"credential_ask","family":"intent","score":0.0,"weight":1.3,"evidence":"no credential ask cues","applicable":true},{"name":"secrecy","family":"intent","score":0.0,"weight":1.0,"evidence":"no secrecy cues","applicable":true}],"thresholds_version":"2026-11-07.1","egress":{"external_requests":0,"bytes_sent_external":0,"caller_audio_bytes_sent":0,"context":{"original_sample_rate":16000,"duration_s":14.0,"band_limited":true,"high_band_ratio":0.0,"speech_ratio":0.514}},"signature":"tell1:78a95d922ef757f4:5b372a6f74d31a882e642cfe4389210f","cost":{"provider":"stub","input_tokens":0,"output_tokens":0,"usd":0.0,"latency_ms":36},"transcript":"Hey, um, it's Priya. So I was gonna swing by later but, uh, the T is a mess. Are you around after six? Okay cool, I'll text you when I'm close. Oh wait, do you still have my charger? Never mind, I'll grab it."},"ai_undisclosed":{"tier":"ai_undisclosed","p_ai":0.867,"p_scam":0.0,"confidence":1.0,"disclosed_ai":false,"headline":"Likely synthetic, didn't say so","advice":"Legitimate AI callers are required to identify themselves. Treat this as untrusted: hang up and call back on a known number.","tells":[{"name":"pause_regularity","family":"acoustic","score":0.9,"weight":1.0,"evidence":"6 pauses, lengths metronomic (CV 0.02; humans \u22730.55, TTS \u22720.25)","applicable":true},{"name":"breath_proxy","family":"acoustic","score":0.9,"weight":1.2,"evidence":"0 breath-like events before phrases in 11s of speech \u2014 none at all","applicable":true},{"name":"pitch_stability","family":"acoustic","score":0.9,"weight":0.9,"evidence":"pitch unusually steady (F0 \u2248 128 Hz, variability 0.00)","applicable":true},{"name":"noise_floor","family":"acoustic","score":0.58,"weight":0.8,"evidence":"background is digital silence (-108 dBFS, varies \u00b17.1 dB)","applicable":true},{"name":"band_limited","family":"acoustic","score":0.5,"weight":0.0,"evidence":"phone-band audio (no content above 4 kHz) \u2014 spectral tells disabled, behavioral tells only","applicable":false},{"name":"llm_isms","family":"script","score":0.95,"weight":1.2,"evidence":"assistant-style phrasing \u00d75: \u201cGreat question\u201d; \u201cAbsolutely,\u201d; \u201cIs there anything else I can help\u201d","applicable":true},{"name":"disfluency","family":"script","score":0.9,"weight":1.0,"evidence":"no fillers, restarts or hesitations in 48 words \u2014 unusually clean","applicable":true},{"name":"sentence_uniformity","family":"script","score":0.892,"weight":0.6,"evidence":"6 sentences, lengths very uniform (CV 0.20)","applicable":true},{"name":"contraction_rate","family":"script","score":0.9,"weight":0.5,"evidence":"0 contractions in 48 words \u2014 formal, written-sounding","applicable":true},{"name":"urgency","family":"intent","score":0.0,"weight":0.8,"evidence":"no urgency cues","applicable":true},{"name":"payment_rails","family":"intent","score":0.0,"weight":1.5,"evidence":"no payment rails cues","applicable":true},{"name":"impersonation","family":"intent","score":0.0,"weight":1.0,"evidence":"no impersonation cues","applicable":true},{"name":"credential_ask","family":"intent","score":0.0,"weight":1.3,"evidence":"no credential ask cues","applicable":true},{"name":"secrecy","family":"intent","score":0.0,"weight":1.0,"evidence":"no secrecy cues","applicable":true}],"thresholds_version":"2026-11-07.1","egress":{"external_requests":0,"bytes_sent_external":0,"caller_audio_bytes_sent":0,"context":{"original_sample_rate":16000,"duration_s":14.0,"band_limited":true,"high_band_ratio":0.0,"speech_ratio":0.793}},"signature":"tell1:ce7219fee40d4eaf:e6df6868f4c1c89b58a6907f4f74e609","cost":{"provider":"stub","input_tokens":0,"output_tokens":0,"usd":0.0,"latency_ms":31},"transcript":"Hi, this is Sarah from Bright Horizons Insurance. I hope you are doing well today. I would be glad to walk you through our updated plans. Great question, the premium is very competitive. Absolutely, I can send the details. Is there anything else I can help you with?"},"ai_disclosed":{"tier":"ai_disclosed","p_ai":0.789,"p_scam":0.0,"confidence":0.878,"disclosed_ai":true,"headline":"AI \u2014 identified itself","advice":"The caller said it's automated. Fine for appointment reminders and sales; never share codes or payment with an automated caller.","tells":[{"name":"pause_regularity","family":"acoustic","score":0.9,"weight":1.0,"evidence":"6 pauses, lengths metronomic (CV 0.04; humans \u22730.55, TTS \u22720.25)","applicable":true},{"name":"breath_proxy","family":"acoustic","score":0.9,"weight":1.2,"evidence":"0 breath-like events before phrases in 11s of speech \u2014 none at all","applicable":true},{"name":"pitch_stability","family":"acoustic","score":0.9,"weight":0.9,"evidence":"pitch unusually steady (F0 \u2248 133 Hz, variability 0.00)","applicable":true},{"name":"noise_floor","family":"acoustic","score":0.58,"weight":0.8,"evidence":"background is digital silence (-108 dBFS, varies \u00b111.2 dB)","applicable":true},{"name":"band_limited","family":"acoustic","score":0.5,"weight":0.0,"evidence":"phone-band audio (no content above 4 kHz) \u2014 spectral tells disabled, behavioral tells only","applicable":false},{"name":"llm_isms","family":"script","score":0.79,"weight":1.2,"evidence":"assistant-style phrasing \u00d72: \u201cI am here to help\u201d; \u201cIs there anything else I can help\u201d","applicable":true},{"name":"disfluency","family":"script","score":0.9,"weight":1.0,"evidence":"no fillers, restarts or hesitations in 46 words \u2014 unusually clean","applicable":true},{"name":"sentence_uniformity","family":"script","score":0.621,"weight":0.6,"evidence":"5 sentences, lengths varied (CV 0.34)","applicable":true},{"name":"contraction_rate","family":"script","score":0.32,"weight":0.5,"evidence":"1 contractions in 46 words","applicable":true},{"name":"urgency","family":"intent","score":0.0,"weight":0.8,"evidence":"no urgency cues","applicable":true},{"name":"payment_rails","family":"intent","score":0.0,"weight":1.5,"evidence":"no payment rails cues","applicable":true},{"name":"impersonation","family":"intent","score":0.0,"weight":1.0,"evidence":"no impersonation cues","applicable":true},{"name":"credential_ask","family":"intent","score":0.0,"weight":1.3,"evidence":"no credential ask cues","applicable":true},{"name":"secrecy","family":"intent","score":0.0,"weight":1.0,"evidence":"no secrecy cues","applicable":true},{"name":"ai_disclosure","family":"intent","score":0.0,"weight":0.0,"evidence":"caller identified itself as AI/automated","applicable":false}],"thresholds_version":"2026-11-07.1","egress":{"external_requests":0,"bytes_sent_external":0,"caller_audio_bytes_sent":0,"context":{"original_sample_rate":16000,"duration_s":14.0,"band_limited":true,"high_band_ratio":0.0,"speech_ratio":0.797}},"signature":"tell1:5e6efd41696b60b3:2ac9d4c8d2b3a6ca6fbf6d2b220adea5","cost":{"provider":"stub","input_tokens":0,"output_tokens":0,"usd":0.0,"latency_ms":30},"transcript":"Hello, I'm an AI assistant calling on behalf of Summit Realty. This call is AI generated. I am here to help schedule a showing for the unit you inquired about. Would Wednesday at noon work for you? Is there anything else I can help you with?"},"scam":{"tier":"scam","p_ai":0.677,"p_scam":0.953,"confidence":0.976,"disclosed_ai":false,"headline":"Scam pattern","advice":"Hang up. Do not send money, cards, or codes. Call the person or organisation back on a number you already have.","tells":[{"name":"pause_regularity","family":"acoustic","score":0.9,"weight":1.0,"evidence":"6 pauses, lengths metronomic (CV 0.03; humans \u22730.55, TTS \u22720.25)","applicable":true},{"name":"breath_proxy","family":"acoustic","score":0.9,"weight":1.2,"evidence":"0 breath-like events before phrases in 11s of speech \u2014 none at all","applicable":true},{"name":"pitch_stability","family":"acoustic","score":0.9,"weight":0.9,"evidence":"pitch unusually steady (F0 \u2248 158 Hz, variability 0.00)","applicable":true},{"name":"noise_floor","family":"acoustic","score":0.58,"weight":0.8,"evidence":"background is digital silence (-108 dBFS, varies \u00b19.4 dB)","applicable":true},{"name":"band_limited","family":"acoustic","score":0.5,"weight":0.0,"evidence":"phone-band audio (no content above 4 kHz) \u2014 spectral tells disabled, behavioral tells only","applicable":false},{"name":"llm_isms","family":"script","score":0.15,"weight":1.2,"evidence":"no assistant-style phrasing","applicable":true},{"name":"disfluency","family":"script","score":0.9,"weight":1.0,"evidence":"no fillers, restarts or hesitations in 48 words \u2014 unusually clean","applicable":true},{"name":"sentence_uniformity","family":"script","score":0.548,"weight":0.6,"evidence":"5 sentences, lengths varied (CV 0.38)","applicable":true},{"name":"contraction_rate","family":"script","score":0.1,"weight":0.5,"evidence":"5 contractions in 48 words","applicable":true},{"name":"urgency","family":"intent","score":0.75,"weight":0.8,"evidence":"urgency: \u201cright now\u201d, \u201cwithin the hour\u201d","applicable":true},{"name":"payment_rails","family":"intent","score":0.75,"weight":1.5,"evidence":"payment rails: \u201cwire the money\u201d, \u201cbail money\u201d","applicable":true},{"name":"impersonation","family":"intent","score":0.75,"weight":1.0,"evidence":"impersonation: \u201cthis is your grandson\u201d, \u201cofficer\u201d","applicable":true},{"name":"credential_ask","family":"intent","score":0.0,"weight":1.3,"evidence":"no credential ask cues","applicable":true},{"name":"secrecy","family":"intent","score":0.55,"weight":1.0,"evidence":"secrecy: \u201cdon't tell mom\u201d","applicable":true}],"thresholds_version":"2026-11-07.1","egress":{"external_requests":0,"bytes_sent_external":0,"caller_audio_bytes_sent":0,"context":{"original_sample_rate":16000,"duration_s":14.0,"band_limited":true,"high_band_ratio":0.0,"speech_ratio":0.821}},"signature":"tell1:91322285d7016f61:7c02ca552838cf4aced33f7b009d0e35","cost":{"provider":"stub","input_tokens":0,"output_tokens":0,"usd":0.0,"latency_ms":29},"transcript":"Grandma, it's me, this is your grandson. I'm in trouble, I got in an accident and I'm at the police station. I need bail money right now, please don't tell mom or dad. The officer says you can wire the money within the hour. Please hurry, I'm scared."}}</script>
+<script>
+const API = (location.protocol === "file:" || /localhost|127\.0\.0\.1/.test(location.hostname)) ? "http://localhost:8000" : "http://localhost:8000";
+const SAMPLES = JSON.parse(document.getElementById("samples-data").textContent);
+const $ = id => document.getElementById(id);
+const TIER = {human:"Human", ai_disclosed:"AI · identified itself", ai_undisclosed:"AI · undisclosed", scam:"Scam pattern", unsure:"Unsure"};
+let apiUp = false, lastVerdict = null, recorder = null, chunks = [], recBlob = null, logLines = [];
+
+function log(line){ logLines.unshift(line); logLines = logLines.slice(0, 12);
+  $("log").innerHTML = logLines.map(l => `<div>${l}</div>`).join(""); }
+
+async function probe(){
+  try{ const r = await fetch(API + "/health", {cache:"no-store"}); const j = await r.json();
+    apiUp = j.ok; $("apinote").textContent = "Local API connected at localhost:8000 — every byte stays on this machine.";
+    $("thr").textContent = "thresholds " + j.thresholds_version;
+  }catch(e){ apiUp = false; $("apinote").textContent = "No local API found — demo mode shows verdicts the engine produced earlier. Start it with `make api`."; }
+}
+
+function pct(x){ return Math.round(x*100) + "%"; }
+function render(v){
+  lastVerdict = v;
+  const vd = $("verdict"); vd.dataset.tier = v.tier;
+  $("tierlabel").textContent = TIER[v.tier] || v.tier;
+  $("headline").textContent = v.headline; $("advice").textContent = v.advice;
+  $("pai").textContent = pct(v.p_ai); $("paibar").style.width = pct(v.p_ai);
+  $("pscam").textContent = pct(v.p_scam); $("pscambar").style.width = pct(v.p_scam);
+  $("conf").textContent = pct(v.confidence); $("confbar").style.width = pct(v.confidence);
+  const fams = {acoustic:"Voice tells", script:"Script tells", intent:"Intent tells"};
+  const groups = {};
+  for (const t of v.tells) (groups[t.family] ||= []).push(t);
+  $("tells").innerHTML = Object.entries(fams).filter(([k]) => groups[k]).map(([k,label]) => `
+    <div class="fam"><h3>${label}</h3>${groups[k].map(t => `
+      <div class="tell ${k} ${t.applicable ? "" : "na"}">
+        <span class="n">${t.name.replace(/_/g," ")}</span>
+        <div class="m"><i style="width:${t.applicable ? pct(t.score) : "0"}"></i></div>
+        <span class="e">${t.evidence}</span>
+      </div>`).join("")}</div>`).join("");
+  const eg = v.egress || {};
+  $("bytes").textContent = (eg.caller_audio_bytes_sent ?? 0).toString();
+  $("sig").textContent = "signature: " + (v.signature || "—") + "  · verdict bound to the clip's hash, clip never stored";
+  if (v.cost && v.cost.latency_ms != null) log(`verdict in ${v.cost.latency_ms} ms · ${eg.external_requests ?? 0} external requests · ${eg.bytes_sent_external ?? 0} bytes out`);
+}
+
+async function analyze(){
+  const text = $("transcript").value.trim();
+  const file = $("audio").files[0] || recBlob;
+  if (!text && !file){ $("status").textContent = "add a transcript or audio first"; return; }
+  if (!apiUp){
+    const key = Object.keys(SAMPLES).find(k => SAMPLES[k].transcript === text);
+    if (key){ render(SAMPLES[key]); log("demo mode: showing stored verdict for this sample"); }
+    else { $("status").textContent = "demo mode can only score the samples — start the local API to score your own"; }
+    return;
+  }
+  $("status").textContent = "analyzing locally…"; $("analyze").disabled = true;
+  const fd = new FormData();
+  if (text) fd.append("transcript", text);
+  if (file) fd.append("audio", file, file.name || "clip.webm");
+  try{
+    const r = await fetch(API + "/analyze", {method:"POST", body:fd});
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.detail || r.statusText);
+    log(`POST localhost:8000/analyze (${file ? Math.round((file.size||0)/1024) + " KB audio, " : ""}${text.length} chars) — loopback only`);
+    render(j); $("status").textContent = "";
+  }catch(e){ $("status").textContent = "error: " + e.message; }
+  $("analyze").disabled = false;
+}
+
+document.querySelectorAll("[data-sample]").forEach(b => b.addEventListener("click", () => {
+  const s = SAMPLES[b.dataset.sample]; $("transcript").value = s.transcript; $("audio").value = ""; recBlob = null;
+  if (apiUp){ analyze(); } else { render(s); log("demo mode: stored verdict (engine output, synthetic phone-band clip + transcript)"); }
+}));
+$("analyze").addEventListener("click", analyze);
+
+$("rec").addEventListener("click", async () => {
+  const btn = $("rec");
+  if (recorder && recorder.state === "recording"){ recorder.stop(); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ $("status").textContent = "mic not available here — open apps/web/index.html locally (make web)"; return; }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    recorder = new MediaRecorder(stream); chunks = [];
+    recorder.ondataavailable = e => chunks.push(e.data);
+    recorder.onstop = () => { recBlob = new Blob(chunks, {type: recorder.mimeType}); recBlob.name = "mic.webm";
+      stream.getTracks().forEach(t => t.stop()); btn.setAttribute("aria-pressed","false"); btn.textContent = "● Record mic";
+      $("status").textContent = `recorded ${Math.round(recBlob.size/1024)} KB (needs ffmpeg on the API box)`; };
+    recorder.start(); btn.setAttribute("aria-pressed","true"); btn.textContent = "■ Stop";
+    $("status").textContent = "recording — speak for 8–15 s";
+  }catch(e){ $("status").textContent = "mic refused: " + e.message; }
+});
+
+$("speak").addEventListener("click", async () => {
+  if (!lastVerdict){ $("status").textContent = "analyze something first"; return; }
+  if (!apiUp){ $("status").textContent = "spoken verdict needs the local API + GRADIUM_API_KEY"; return; }
+  const fd = new FormData(); fd.append("headline", lastVerdict.headline);
+  const top = lastVerdict.tells.filter(t => t.applicable && t.score >= 0.6).map(t => t.evidence)[0] || "";
+  fd.append("evidence", top);
+  $("status").textContent = "asking Gradium for the voice (only our text leaves)…";
+  try{
+    const r = await fetch(API + "/speak", {method:"POST", body:fd});
+    if (!r.ok){ const j = await r.json(); throw new Error(j.detail || r.statusText); }
+    const url = URL.createObjectURL(await r.blob()); new Audio(url).play();
+    log(`POST /speak → Gradium TTS, ${lastVerdict.headline.length + top.length} chars of our text out, 0 caller audio`);
+    $("status").textContent = "";
+  }catch(e){ $("status").textContent = "speak: " + e.message; }
+});
+
+probe().then(() => { render(SAMPLES.scam); $("transcript").value = SAMPLES.scam.transcript; log("showing stored verdict for the grandparent-scam sample"); });
+</script>

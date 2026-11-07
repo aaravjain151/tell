@@ -1,10 +1,13 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyc
 *.egg-info/
 .venv/
 venv/
 .pytest_cache/
+.ruff_cache/
+.DS_Store
 
 # Local caches kept on the D drive (pip, Hugging Face)
 .cache/
@@ -12,8 +15,18 @@ venv/
 # Local secrets / config
 .env
 
+# --- DoubleSpeak ---
 # Local-only data: encrypted alert history must never be committed
 data/
-
-# Large model weights fetched by setup_models.py
+# Large model weights fetched by download_models.py
 models/
+
+# --- Tell ---
+data/calls/*
+!data/calls/.gitkeep
+council/sessions/*
+!council/sessions/.gitkeep
+*.wav
+*.webm
+*.ogg
+!services/api/tests/fixtures/*.wav
