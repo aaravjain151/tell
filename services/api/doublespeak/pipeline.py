@@ -4,14 +4,24 @@ from __future__ import annotations
 import os
 import time
 
-from . import audio as audio_mod
+from . import audio as audio_mod, net_monitor
 from . import llm, privacy, scorer
+from . import audio as audio_mod
+from . import llm, privacy, scorer, secure_store
 from . import stt
 from .signals import acoustic, intent, neural, script
 from .types import Tell, Verdict
 
 
 def analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
+    """Analyse, while asking the OS (not our own counters) whether this process opened any outside connection."""
+    with net_monitor.watch() as nm:
+        v = _analyze(audio_bytes, transcript)
+    v.egress = {**v.egress, **nm.report()}
+    return v
+
+
+def _analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
     t0 = time.perf_counter()
     ctx: dict = {}
     acoustic_tells: list[Tell] = []
@@ -48,4 +58,5 @@ def analyze(audio_bytes: bytes | None, transcript: str | None) -> Verdict:
     payload = {"tier": v.tier, "p_ai": round(v.p_ai, 3), "p_scam": round(v.p_scam, 3),
                "tells": [(t.name, round(t.score, 3)) for t in v.tells], "thresholds_version": v.thresholds_version}
     v.signature = privacy.sign(payload, privacy.audio_fingerprint(audio_bytes))
+    secure_store.record_verdict(v)   # opt-in (DOUBLESPEAK_HISTORY=1), allowlisted fields only, never raises
     return v
