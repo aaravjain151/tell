@@ -1,5 +1,8 @@
 .PHONY: setup lock test eval api web demo models redteam record wild audit
 PY=./.venv/bin/python
+VPY=$(CURDIR)/.venv/bin/python
+# uvicorn refuses a missing --env-file, so a fresh clone without .env must not pass one
+ENVFILE=$(if $(wildcard .env),--env-file $(CURDIR)/.env,)
 LOCK=services/api/requirements.lock
 MODELS_LOCK=services/api/requirements-models.lock
 # first interpreter >= 3.11 on PATH (macOS /usr/bin/python3 is 3.9 and cannot install the lock)
@@ -21,11 +24,11 @@ lock:
 	cd services/api && uv pip compile -q --universal --python-version 3.11 requirements-models.txt ../../tools/redteam/requirements.txt -o requirements-models.lock
 
 test:
-	cd services/api && ../../.venv/bin/python -m pytest -q
+	cd services/api && $(VPY) -m pytest -q
 eval:
-	cd services/api && ../../.venv/bin/python eval/run_eval.py $(ARGS)
+	cd services/api && $(VPY) eval/run_eval.py $(ARGS)
 api:
-	cd services/api && ../../.venv/bin/python -m uvicorn doublespeak.main:app --reload --port 8000 --env-file ../../.env
+	cd services/api && $(VPY) -m uvicorn doublespeak.main:app --reload --port 8000$(if $(ENVFILE), $(ENVFILE),)
 web:
 	cd apps/web && python3 -m http.server 5173 --bind 127.0.0.1
 
@@ -39,7 +42,7 @@ demo:
 	@test -x $(PY) || { echo "run 'make setup' first"; exit 2; }
 	@echo "Doublespeak demo · UI http://localhost:5173 · API http://localhost:8000/health · offline models · Ctrl-C to stop"
 	@trap 'kill 0' INT TERM EXIT; \
-	(cd services/api && DOUBLESPEAK_OFFLINE=1 ../../.venv/bin/python -m uvicorn doublespeak.main:app --host 127.0.0.1 --port 8000 --env-file ../../.env) & \
+	(cd services/api && DOUBLESPEAK_OFFLINE=1 $(VPY) -m uvicorn doublespeak.main:app --host 127.0.0.1 --port 8000$(if $(ENVFILE), $(ENVFILE),)) & \
 	(cd apps/web && python3 -m http.server 5173 --bind 127.0.0.1) & \
 	wait
 
@@ -48,6 +51,6 @@ redteam:
 record:
 	$(PY) tools/redteam/capture.py human --free $(ARGS)
 wild:
-	bash tools/redteam/degrade.sh data/calls && cd services/api && ../../.venv/bin/python eval/run_eval.py --wild ../../data/calls $(ARGS)
+	bash tools/redteam/degrade.sh data/calls && cd services/api && $(VPY) eval/run_eval.py --wild ../../data/calls $(ARGS)
 audit:
 	python3 scripts/pm.py audit
