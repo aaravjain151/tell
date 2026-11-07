@@ -2,8 +2,10 @@
 # Everything runs on-device. The only runtime network connection allowed is to
 # a local Ollama server on localhost:11434.
 
-# UI
-streamlit==1.39.0
+# UI  (1.40+ required for st.audio_input in-app recording)
+streamlit==1.40.2
+# Pin pyarrow to the last NumPy 1.x-compatible line; pyarrow>=18 needs NumPy 2.
+pyarrow==17.0.0
 
 # Speech-to-text (CPU, int8)
 faster-whisper==1.0.3
