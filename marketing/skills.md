@@ -1,7 +1,7 @@
 # marketing/ — skills.md
 
 ## Positioning
-**Tell: every voice has a tell.** The only AI-caller detector where the call never leaves your phone — and it shows you why.
+**Doublespeak: every voice has a tell.** The only AI-caller detector where the call never leaves your phone — and it shows you why.
 
 ## Pillars
 1. **Proof, not promises** — the bytes-out meter, the signed receipt, the open eval.

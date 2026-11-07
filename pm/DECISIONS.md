@@ -9,7 +9,7 @@
 **Why:** iOS exposes no third-party access to cellular call audio; Android default-dialer is too heavy for <24 h; the judging criteria are provable privacy and a convincing demo, both achievable on a laptop.
 
 ## D-003 · 2026-11-07 · Passive, local listen-and-judge. No talk-back.
-**Decision:** Tell listens and judges; it never answers or speaks to the caller. Liveness challenges are out of scope (team decision 14:12).
+**Decision:** Doublespeak listens and judges; it never answers or speaks to the caller. Liveness challenges are out of scope (team decision 14:12).
 **Why:** Team wants the product to be invisible to the caller. Differentiation is local + open + ensemble + provable, not an active protocol.
 
 ## D-004 · 2026-11-07 · Core architectural rule: models interpret, code decides; caller audio never leaves the device
@@ -31,3 +31,7 @@
 ## D-008 · 2026-11-07 · Neural ensemble on-device
 **Decision:** Add local neural voters beside the behavioral tells: an open anti-spoof checkpoint (HF or ONNX), local Whisper (faster-whisper) for the transcript, and a local 3B model via Ollama for scam-talk. All are voters; `scorer.py` still decides.
 **Why:** Hardcoded acoustic heuristics are a floor. Neural voters catch vocoder artifacts (incl. live voice conversion) that behavioral tells miss. Caller audio still never leaves the device: Whisper and the anti-spoof model run in-process, Ollama runs on localhost.
+
+## D-009 · 2026-11-07 · Renamed Tell → Doublespeak (brand only, for now)
+**Decision:** Product name in UI, API title, docs and marketing is "Doublespeak". The Python package `services/api/tell`, the `TELL_*` env vars and the `Tell` record type stay for now so open teammate branches merge without rename conflicts; package/env rename is one later PR once those land. Tagline "Every voice has a tell." kept: a tell is what Doublespeak finds. Supersedes D-001.
+**Why:** Team naming decision (T-001). Orwell's "doublespeak" = language that hides what it is, which is exactly an undisclosed AI caller.

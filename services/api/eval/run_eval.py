@@ -66,13 +66,29 @@ def run_audio(verbose: bool) -> float:
     return acc
 
 
+# Engines whose output the HF anti-spoof checkpoint was TRAINED on: scores there are in-domain, not a fair held-out test.
+IN_DOMAIN = {"elevenlabs": "garystafford/wav2vec2-deepfake-voice-detector was trained on ElevenLabs output"}
+
+
+def _engine(base: str) -> str:
+    """ai__<engine>__<script> -> engine; anything else -> 'other'."""
+    parts = base.split("__")
+    return parts[1] if parts[0] == "ai" and len(parts) >= 3 else "other"
+
+
 def _label(stem: str) -> str:
     return "human" if stem.startswith("human") else "ai"
 
 
+_CONDITIONS = {".opus8k": "opus-8k", ".replayed": "replayed"}  # suffix -> condition (degrade.sh, capture.py replay)
+
+
 def _condition(stem: str) -> tuple[str, str]:
-    """('clean'|'opus-8k', base stem)."""
-    return ("opus-8k", stem[: -len(".opus8k")]) if stem.endswith(".opus8k") else ("clean", stem)
+    """('clean'|'opus-8k'|'replayed', base stem)."""
+    for suffix, cond in _CONDITIONS.items():
+        if stem.endswith(suffix):
+            return cond, stem[: -len(suffix)]
+    return "clean", stem
 
 
 def _transcript(wav: Path, base: str) -> str | None:
@@ -87,7 +103,8 @@ def _transcript(wav: Path, base: str) -> str | None:
 def run_wild(folder: str, verbose: bool) -> None:
     """Per-condition FPR at 90% TPR for p_ai on real recordings. Human = filename starts with 'human'.
 
-    Naming: <script>.wav (AI) · human__<speaker>__<script>.wav (human) · <stem>.opus8k.wav (tools/redteam/degrade.sh).
+    Naming: <script>.wav (AI) · human__<speaker>__<script>.wav (human) · <stem>.opus8k.wav (tools/redteam/degrade.sh)
+    · <stem>.replayed.wav (tools/redteam/capture.py replay).
     """
     from eval.metrics import fpr_at_tpr
     rows: dict[str, list[dict]] = {}
@@ -95,7 +112,7 @@ def run_wild(folder: str, verbose: bool) -> None:
         cond, base = _condition(wav.stem)
         v = pipeline.analyze(wav.read_bytes(), _transcript(wav, base))
         fired = [f"{t.name}={t.score:.2f}" for t in v.tells if t.applicable and t.score >= 0.5]
-        rows.setdefault(cond, []).append({"name": wav.stem, "label": _label(base), "p_ai": v.p_ai, "tier": v.tier, "fired": fired})
+        rows.setdefault(cond, []).append({"name": wav.stem, "label": _label(base), "engine": _engine(base), "p_ai": v.p_ai, "tier": v.tier, "fired": fired})
     if not rows:
         print(f"no .wav clips in {folder} (run make redteam / record humans / tools/redteam/degrade.sh)")
         return
@@ -107,6 +124,11 @@ def run_wild(folder: str, verbose: bool) -> None:
         fpr, thr = fpr_at_tpr([r["p_ai"] for r in ai], [r["p_ai"] for r in hu])
         head = f"[{cond}] AI n={len(ai)}  human n={len(hu)}  "
         print(head + (f"FPR@90%TPR = {fpr:.2f} (threshold p_ai >= {thr:.2f})" if fpr is not None else "FPR undefined (need both classes)"))
+        for eng in sorted({r["engine"] for r in ai}):
+            sub = [r for r in ai if r["engine"] == eng]
+            caught = sum(r["p_ai"] >= P_AI_THRESHOLD for r in sub)
+            note = f"   [in-domain: {IN_DOMAIN[eng]}]" if eng in IN_DOMAIN else ""
+            print(f"   engine {eng:12} caught {caught}/{len(sub)} at p_ai >= {P_AI_THRESHOLD}{note}")
         for r in ai:
             if r["p_ai"] < P_AI_THRESHOLD:
                 print(f"   MISS  {r['name']}: p_ai {r['p_ai']:.2f}, tier {r['tier']}; fired: {r['fired'] or 'none'}")
