@@ -9,8 +9,8 @@
 <script>
 try{
   var qv = new URLSearchParams(location.search).get("view");
-  var vv = (qv === "simple" || qv === "detailed") ? qv : localStorage.getItem("ds-view");
-  if (vv === "simple" || vv === "detailed") document.documentElement.dataset.view = vv;
+  document.documentElement.dataset.view = qv === "detailed" ? "detailed" : "simple";
+  document.documentElement.dataset.live = "empty";
 }catch(e){}
 </script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E%3Crect width=%22512%22 height=%22512%22 rx=%22112%22 fill=%22%23FFFFFF%22/%3E%3Cg shape-rendering=%22crispEdges%22 transform=%22translate(91.3 103.9) scale(0.9) translate(-334 -126)%22%3E%3Cpath d=%22M338.0 277.0 L340.0 277.0 L342.0 277.0 L344.0 276.8 L346.0 276.4 L348.0 275.8 L350.0 275.4 L352.0 274.6 L354.0 273.8 L356.0 272.8 L358.0 271.8 L360.0 270.6 L362.0 269.0 L364.0 267.0 L366.0 264.6 L368.0 261.8 L370.0 258.6 L372.0 255.0 L374.0 250.6 L376.0 245.6 L378.0 240.0 L380.0 234.0 L382.0 228.4 L384.0 223.4 L386.0 218.8 L388.0 215.0 L390.0 212.0 L392.0 209.8 L394.0 208.0 L396.0 206.4 L398.0 205.2 L400.0 204.4 L402.0 204.0 L404.0 204.0 L406.0 204.0 L408.0 204.0 L410.0 204.4 L412.0 205.2 L414.0 206.4 L416.0 207.6 L418.0 209.2 L420.0 211.2 L422.0 213.8 L424.0 217.4 L426.0 222.2 L428.0 228.4 L430.0 235.6 L432.0 243.8 L434.0 252.0 L436.0 260.0 L438.0 266.6 L440.0 271.8 L442.0 275.8 L444.0 279.2 L446.0 281.6 L448.0 283.2 L450.0 284.0 L452.0 284.6 L454.0 284.8 L456.0 284.2 L458.0 283.2 L460.0 281.8 L462.0 279.8 L464.0 276.8 L466.0 272.8 L468.0 268.2 L470.0 262.0 L472.0 254.4 L474.0 245.6 L476.0 235.4 L478.0 225.0 L480.0 214.4 L482.0 203.8 L484.0 194.2 L486.0 186.0 L488.0 178.6 L490.0 172.4 L492.0 167.2 L494.0 163.0 L496.0 159.4 L498.0 156.4 L500.0 154.0 L502.0 152.2 L504.0 150.6 L506.0 149.6 L508.0 148.8 L510.0 148.5 L511.0 148.3 L511.0 423.7 L510.0 423.5 L508.0 423.2 L506.0 422.8 L504.0 422.2 L502.0 421.2 L500.0 419.8 L498.0 418.0 L496.0 415.8 L494.0 413.2 L492.0 409.8 L490.0 405.6 L488.0 400.6 L486.0 394.6 L484.0 388.4 L482.0 382.6 L480.0 377.4 L478.0 373.4 L476.0 370.4 L474.0 368.0 L472.0 366.4 L470.0 365.4 L468.0 364.8 L466.0 364.4 L464.0 364.0 L462.0 364.0 L460.0 364.0 L458.0 364.0 L456.0 364.0 L454.0 363.6 L452.0 362.8 L450.0 361.6 L448.0 359.8 L446.0 356.8 L444.0 352.8 L442.0 347.0 L440.0 339.2 L438.0 330.2 L436.0 321.2 L434.0 314.8 L432.0 310.2 L430.0 307.4 L428.0 305.8 L426.0 304.8 L424.0 304.2 L422.0 304.2 L420.0 304.8 L418.0 306.2 L416.0 308.0 L414.0 310.8 L412.0 315.2 L410.0 320.8 L408.0 325.8 L406.0 330.0 L404.0 333.4 L402.0 336.0 L400.0 337.6 L398.0 338.8 L396.0 339.6 L394.0 340.0 L392.0 340.0 L390.0 340.0 L388.0 339.8 L386.0 339.2 L384.0 337.6 L382.0 336.2 L380.0 334.4 L378.0 331.6 L376.0 328.2 L374.0 324.0 L372.0 319.4 L370.0 315.0 L368.0 311.4 L366.0 308.4 L364.0 305.6 L362.0 303.2 L360.0 301.4 L358.0 300.2 L356.0 299.0 L354.0 298.0 L352.0 297.4 L350.0 296.6 L348.0 296.0 L346.0 295.4 L344.0 295.0 L342.0 295.0 L340.0 295.0 L338.0 295.0Z%22 fill=%22%23141D44%22/%3E%3Crect x=%22556.5%22 y=%22164.5%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22181.9%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22573.8%22 y=%22181.9%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22181.9%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22199.2%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22608.6%22 y=%22199.2%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22216.6%22 width=%2252.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22591.2%22 y=%22216.6%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22216.6%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22233.9%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22591.2%22 y=%22233.9%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22233.9%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22251.3%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22573.8%22 y=%22251.3%22 width=%2252.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22251.3%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22643.3%22 y=%22251.3%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22268.6%22 width=%22104.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22268.6%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22643.3%22 y=%22268.6%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22285.9%22 width=%22104.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22285.9%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22643.3%22 y=%22285.9%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22303.3%22 width=%2287.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22303.3%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22320.7%22 width=%2287.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22608.6%22 y=%22320.7%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22338.0%22 width=%2252.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22591.2%22 y=%22338.0%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22608.6%22 y=%22338.0%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22355.4%22 width=%2252.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22591.2%22 y=%22355.4%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22608.6%22 y=%22355.4%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22372.7%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22390.0%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22573.8%22 y=%22390.0%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22424.8%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3C/g%3E%3C/svg%3E">
@@ -21,7 +21,7 @@ try{
 :root{
   --bg:#FFFFFF; --ink:#141D44; --muted:#5C6482; --line:#E3E6EF; --plane:#F3F5F9;
   --teal:#189192; --teal-t:#0E7374; --red:#F73C45; --red-t:#D4222C; --amber:#B7790B; --blue:#3A55C8; --unsure:#8A92AD;
-  --cell-off:#DDE1EC; --tier:var(--unsure);
+  --cell-off:#DDE1EC; --tier:var(--unsure); --alert-bg:#C81D28; --alert-fg:#FFFFFF;
   --f:Outfit,"SF Pro Display","Helvetica Neue","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
   --serif:Charter,"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif;
   --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
@@ -29,11 +29,11 @@ try{
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0B1020; --ink:#F1F3FA; --muted:#9AA3C0; --line:#1F2745; --plane:#111833;
-  --teal:#2BB5B6; --teal-t:#3CC7C8; --red:#FF5A63; --red-t:#FF7A82; --amber:#F2B632; --blue:#8C9BFF; --unsure:#6B7491; --cell-off:#1D2647;
+  --teal:#2BB5B6; --teal-t:#3CC7C8; --red:#FF5A63; --red-t:#FF7A82; --amber:#F2B632; --blue:#8C9BFF; --unsure:#6B7491; --cell-off:#1D2647; --alert-bg:#FF5A63; --alert-fg:#0B1020;
 }}
 :root[data-theme="dark"]{
   --bg:#0B1020; --ink:#F1F3FA; --muted:#9AA3C0; --line:#1F2745; --plane:#111833;
-  --teal:#2BB5B6; --teal-t:#3CC7C8; --red:#FF5A63; --red-t:#FF7A82; --amber:#F2B632; --blue:#8C9BFF; --unsure:#6B7491; --cell-off:#1D2647;
+  --teal:#2BB5B6; --teal-t:#3CC7C8; --red:#FF5A63; --red-t:#FF7A82; --amber:#F2B632; --blue:#8C9BFF; --unsure:#6B7491; --cell-off:#1D2647; --alert-bg:#FF5A63; --alert-fg:#0B1020;
 }
 :root[data-tier="human"]{--tier:var(--teal)}
 :root[data-tier="ai_disclosed"]{--tier:var(--blue)}
@@ -57,7 +57,7 @@ h1,h2,p{margin:0}
 .link:hover{color:var(--ink)}
 
 /* ---------- nav ---------- */
-.nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;min-height:72px;padding:0 var(--gut);font-size:15px}
+.nav{display:grid;grid-template-columns:1fr auto;align-items:center;gap:24px;min-height:72px;padding:0 var(--gut);font-size:15px}
 .nav-l{display:flex;align-items:center;gap:28px}
 .brand{display:flex;align-items:center;gap:12px;font-weight:500;text-decoration:none;letter-spacing:-.005em}
 .brand svg{width:36px;height:33px;color:var(--ink);flex:none}
@@ -79,10 +79,10 @@ h1,h2,p{margin:0}
 .viewsep{color:var(--muted);padding:0 2px}
 .nav-r{flex-wrap:wrap}
 @media (max-width:900px){
-  .nav{grid-template-columns:minmax(0,1fr);align-items:start;padding-top:14px;padding-bottom:8px;row-gap:0}
+  .nav{grid-template-columns:minmax(0,1fr) auto;align-items:center;padding-top:0;padding-bottom:0;row-gap:0}
   .nav-c,.clock{display:none}
   .nav-l,.nav-r{min-width:0}
-  .nav-r{justify-content:flex-start;gap:0 18px}
+  .nav-r{justify-content:flex-end;flex-wrap:nowrap;gap:0 16px}
   .net span{display:none}
   .net b{display:inline}
 }
@@ -103,7 +103,7 @@ h1,h2,p{margin:0}
 @keyframes draw{from{transform:scaleX(0)}to{transform:none}}
 
 /* ---------- controls ---------- */
-.controls{padding:32px var(--gut) 56px}
+.controls{padding:8px 0 0}
 .row{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 32px;margin:0 0 4px}
 .row>.k{flex:0 0 168px;font-size:14px;color:var(--muted);min-height:44px;display:flex;align-items:center}
 .links{display:flex;flex-wrap:wrap;gap:0 28px;flex:1 1 320px;min-width:0}
@@ -223,7 +223,6 @@ html:not([data-view="simple"]) #simple{display:none}
 html[data-view="simple"] .nav{font-size:20px}
 html[data-view="simple"] .viewswitch .paren{min-height:56px;font-size:20px}
 html[data-view="simple"] .nav-c,
-html[data-view="simple"] .controls,
 html[data-view="simple"] #paper,
 html[data-view="simple"] #evidence,
 html[data-view="simple"] #proof,
@@ -312,34 +311,141 @@ html[data-view="simple"][data-tier] .caveat{display:none} /* the score block car
 .heard summary::after{content:"+";margin-left:auto;font:200 32px/1 var(--f);color:var(--ink)}
 .heard[open] summary::after{content:"\2212"}
 .heard p{margin:4px 0 0;font:400 22px/1.55 var(--serif);white-space:pre-wrap;overflow-wrap:anywhere}
+/* ---------- live view: one calm screen that changes in place ---------- */
+.lbar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;min-height:52px;padding:6px var(--gut);background:var(--plane);border-bottom:2px solid var(--tier);font-size:15px;transition:border-color .6s}
+.lbar-dot{width:10px;height:10px;background:var(--teal);flex:none;animation:blink 1.4s steps(2) infinite}
+.lbar[data-s="ended"] .lbar-dot,.lbar[data-s="lost"] .lbar-dot{background:var(--unsure);animation:none}
+.lbar-state{font-weight:500}
+.lbar-src{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbar-time{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.lbar-note{color:var(--muted);font-size:14px}
+.lbar-note:empty{display:none}
+.lbar-stop{margin-left:auto;color:var(--ink)}
+.redbar{display:flex;align-items:center;justify-content:space-between;gap:16px 32px;flex-wrap:wrap;margin:16px var(--gut) 0;padding:18px 24px;background:var(--alert-bg);color:var(--alert-fg);border-radius:2px}
+.redbar b{font-size:20px;font-weight:600;letter-spacing:-.005em}
+.redbar p{margin-top:4px;font-size:18px;line-height:1.4;max-width:60ch}
+.redbar .btn{border-color:var(--alert-fg);color:var(--alert-fg);min-height:48px}
+.redbar .btn:hover{background:var(--alert-fg);color:var(--alert-bg)}
+.redbar .btn:focus-visible,.redbar:focus-visible{outline-color:var(--alert-fg)}
+.empty{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:calc(100svh - 190px);padding:48px var(--gut) 72px}
+html[data-live="empty"] .empty,html[data-live="offline"] .empty{display:flex}
+html[data-live="offline"] .empty-on,html:not([data-live="offline"]) .empty-off{display:none}
+.empty h1{font-weight:200;text-transform:uppercase;font-size:clamp(38px,6.4vw,92px);line-height:1;letter-spacing:-.025em;max-width:16ch;text-wrap:balance}
+.empty-p{margin:clamp(18px,3vh,28px) auto 0;max-width:36ch;font-size:clamp(18px,1.7vw,22px);font-weight:300;line-height:1.5;color:var(--muted)}
+.empty-act{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 28px;margin-top:clamp(28px,5vh,44px)}
+.empty .btn .sq{background:var(--bg)}
+.empty .btn.primary:hover .sq{background:var(--red)}
+.empty .btn[aria-pressed="true"]{background:transparent;color:var(--red-t);border-color:var(--red-t)}
+.empty .btn[aria-pressed="true"] .sq{background:var(--red);animation:blink 1s steps(2) infinite}
+.empty-msg{min-height:24px;margin-top:20px;font-size:15px;color:var(--muted);max-width:52ch}
+.cmd{display:inline-block;margin-top:24px;padding:14px 22px;border:1px solid var(--ink);border-radius:2px;font:500 18px var(--mono)}
+.changed{margin:16px auto 0;font-size:16px;color:var(--muted);font-variant-numeric:tabular-nums;transition:opacity .5s}
+.changed b{font-weight:500;color:var(--ink)}
+.caution{margin:12px auto 0;font-size:17px;font-weight:500;color:var(--amber)}
+.hero h1 .hl>span{transition:opacity .25s}
+.hero.fade h1 .hl>span,.hero.fade .advice{opacity:0}
+.advice{transition:opacity .25s}
+.rule{transition:background-color .6s}
+.quad-grid i{transition:background-color .6s,border-color .6s}
+.livepane{max-width:760px;margin:clamp(40px,7vh,72px) auto 0;padding:0 var(--gut)}
+.tl-h,.tx-h{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+.livepane h2{font-size:14px;font-weight:500;color:var(--muted)}
+.tl-note{font-size:14px;color:var(--muted)}
+.tl{display:flex;gap:2px;height:28px;margin-top:22px;align-items:stretch}
+.tc{position:relative;flex:0 1 16px;min-width:2px;background:var(--tc,var(--unsure))}
+.tc[data-t="human"]{--tc:var(--teal)}.tc[data-t="ai_disclosed"]{--tc:var(--blue)}.tc[data-t="ai_undisclosed"]{--tc:var(--amber)}.tc[data-t="scam"]{--tc:var(--red)}
+.tc[data-w="1"]{background:var(--cell-off)}
+.tc.chg::before{content:"";position:absolute;left:-2px;top:-10px;width:2px;height:8px;background:var(--ink)}
+.tl-axis{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tx-h{margin-top:clamp(36px,6vh,56px);padding-bottom:12px}
+.lgd{display:inline-flex;gap:6px 20px;font-size:14px;color:var(--muted)}
+.lgd span::before{content:"";display:inline-block;width:12px;height:2px;margin-right:8px;vertical-align:middle;background:var(--c)}
+.lg-i{--c:var(--red)}.lg-s{--c:var(--amber)}
+.lgd [hidden]{display:none}
+.livetx{max-height:min(46vh,360px);overflow:auto;padding:16px 8px 16px 0;border-top:1px solid var(--line);font-size:clamp(18px,1.6vw,21px);max-width:none;overscroll-behavior:contain}
+.livetx:empty::before{content:"No words yet.";color:var(--muted)}
+.moredemo{margin:clamp(56px,10vh,112px) var(--gut) 0}
+.moredemo[open]{padding-bottom:24px}
+.morebody{padding:4px 0 24px}
+.more-lede{margin:0 0 16px;max-width:62ch;font-size:15px;color:var(--muted)}
+.simple-actions,.sstatus,#salert{display:none}
+.addc{margin-top:16px}
+.addc summary{min-height:48px;display:flex;align-items:center;cursor:pointer;font-size:18px;font-weight:500;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:5px;list-style:none}
+.addc summary::-webkit-details-marker{display:none}
+html[data-live="on"] .act,html[data-live="on"][data-banner="1"] .advice{display:none}
+/* mode switches: empty and offline show only the empty screen; live and ended always use the Simple layout */
+html[data-live="empty"] .hero,html[data-live="empty"] .rule,html[data-live="empty"] #simple,html[data-live="empty"] #paper,html[data-live="empty"] #evidence,html[data-live="empty"] #proof,
+html[data-live="offline"] .hero,html[data-live="offline"] .rule,html[data-live="offline"] #simple,html[data-live="offline"] #paper,html[data-live="offline"] #evidence,html[data-live="offline"] #proof,
+html[data-live="on"] #paper,html[data-live="on"] #evidence,html[data-live="on"] #proof,
+html:not([data-live="on"]) #livepane{display:none}
+html[data-live="on"] #simple{display:block}
+html[data-live="on"] .quad-grid{display:grid}
+html[data-live="on"] .quad{margin-top:clamp(20px,3vh,32px);justify-content:center}
+html[data-live="on"] .quad-txt{font-size:22px;max-width:26ch}
+html[data-live="on"] .quad-txt small{display:block}
+html[data-live="on"] .hero{padding-top:clamp(28px,6vh,64px)}
+html[data-live="on"] .hero h1{font-size:clamp(40px,7.6vw,112px)}
+html[data-live="on"] .advice{font-size:clamp(20px,2vw,26px);font-weight:400;color:var(--ink);max-width:30ch}
+html[data-live="on"] .rule{margin-top:clamp(28px,4vh,44px)}
+html[data-live="on"] .heard{display:none}
+html[data-live="on"][data-alert="none"] .trustblock{display:none}
+html[data-live="on"][data-warm="1"] #serious,html[data-live="on"][data-warm="1"] #why-h,html[data-live="on"][data-warm="1"] #why,html[data-live="on"][data-warm="1"] .quad{display:none}
+html[data-live="on"] .simple{max-width:760px;padding-bottom:0}
+@media (max-width:640px){.lbar{padding-top:8px;padding-bottom:8px}.lbar-src{flex-basis:100%;order:5}.lbar-stop{min-height:44px}.redbar{padding:16px}.empty{min-height:calc(100svh - 150px)}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.hl>span{transform:none}}
 </style>
 </head>
 <body>
-<a class="skip" id="skip" href="#call">Skip to the call</a>
+<a class="skip" id="skip" href="#top">Skip to the verdict</a>
 
 <header class="nav">
   <div class="nav-l">
     <a class="brand" href="#top" aria-label="Doublespeak home"><svg viewBox="334 126 366 338" aria-hidden="true" shape-rendering="crispEdges"><g color="currentColor"><path d="M338.0 277.0 L340.0 277.0 L342.0 277.0 L344.0 276.8 L346.0 276.4 L348.0 275.8 L350.0 275.4 L352.0 274.6 L354.0 273.8 L356.0 272.8 L358.0 271.8 L360.0 270.6 L362.0 269.0 L364.0 267.0 L366.0 264.6 L368.0 261.8 L370.0 258.6 L372.0 255.0 L374.0 250.6 L376.0 245.6 L378.0 240.0 L380.0 234.0 L382.0 228.4 L384.0 223.4 L386.0 218.8 L388.0 215.0 L390.0 212.0 L392.0 209.8 L394.0 208.0 L396.0 206.4 L398.0 205.2 L400.0 204.4 L402.0 204.0 L404.0 204.0 L406.0 204.0 L408.0 204.0 L410.0 204.4 L412.0 205.2 L414.0 206.4 L416.0 207.6 L418.0 209.2 L420.0 211.2 L422.0 213.8 L424.0 217.4 L426.0 222.2 L428.0 228.4 L430.0 235.6 L432.0 243.8 L434.0 252.0 L436.0 260.0 L438.0 266.6 L440.0 271.8 L442.0 275.8 L444.0 279.2 L446.0 281.6 L448.0 283.2 L450.0 284.0 L452.0 284.6 L454.0 284.8 L456.0 284.2 L458.0 283.2 L460.0 281.8 L462.0 279.8 L464.0 276.8 L466.0 272.8 L468.0 268.2 L470.0 262.0 L472.0 254.4 L474.0 245.6 L476.0 235.4 L478.0 225.0 L480.0 214.4 L482.0 203.8 L484.0 194.2 L486.0 186.0 L488.0 178.6 L490.0 172.4 L492.0 167.2 L494.0 163.0 L496.0 159.4 L498.0 156.4 L500.0 154.0 L502.0 152.2 L504.0 150.6 L506.0 149.6 L508.0 148.8 L510.0 148.5 L511.0 148.3 L511.0 423.7 L510.0 423.5 L508.0 423.2 L506.0 422.8 L504.0 422.2 L502.0 421.2 L500.0 419.8 L498.0 418.0 L496.0 415.8 L494.0 413.2 L492.0 409.8 L490.0 405.6 L488.0 400.6 L486.0 394.6 L484.0 388.4 L482.0 382.6 L480.0 377.4 L478.0 373.4 L476.0 370.4 L474.0 368.0 L472.0 366.4 L470.0 365.4 L468.0 364.8 L466.0 364.4 L464.0 364.0 L462.0 364.0 L460.0 364.0 L458.0 364.0 L456.0 364.0 L454.0 363.6 L452.0 362.8 L450.0 361.6 L448.0 359.8 L446.0 356.8 L444.0 352.8 L442.0 347.0 L440.0 339.2 L438.0 330.2 L436.0 321.2 L434.0 314.8 L432.0 310.2 L430.0 307.4 L428.0 305.8 L426.0 304.8 L424.0 304.2 L422.0 304.2 L420.0 304.8 L418.0 306.2 L416.0 308.0 L414.0 310.8 L412.0 315.2 L410.0 320.8 L408.0 325.8 L406.0 330.0 L404.0 333.4 L402.0 336.0 L400.0 337.6 L398.0 338.8 L396.0 339.6 L394.0 340.0 L392.0 340.0 L390.0 340.0 L388.0 339.8 L386.0 339.2 L384.0 337.6 L382.0 336.2 L380.0 334.4 L378.0 331.6 L376.0 328.2 L374.0 324.0 L372.0 319.4 L370.0 315.0 L368.0 311.4 L366.0 308.4 L364.0 305.6 L362.0 303.2 L360.0 301.4 L358.0 300.2 L356.0 299.0 L354.0 298.0 L352.0 297.4 L350.0 296.6 L348.0 296.0 L346.0 295.4 L344.0 295.0 L342.0 295.0 L340.0 295.0 L338.0 295.0Z" fill="currentColor"/><rect x="556.5" y="164.5" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="181.9" width="18.1" height="18.2" fill="#189192"/><rect x="573.8" y="181.9" width="35.4" height="18.2" fill="#189192"/><rect x="625.9" y="181.9" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="199.2" width="18.1" height="18.2" fill="#189192"/><rect x="608.6" y="199.2" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="216.6" width="52.8" height="18.2" fill="#189192"/><rect x="591.2" y="216.6" width="35.4" height="18.2" fill="#189192"/><rect x="625.9" y="216.6" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="233.9" width="35.4" height="18.2" fill="#189192"/><rect x="591.2" y="233.9" width="35.4" height="18.2" fill="#189192"/><rect x="625.9" y="233.9" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="251.3" width="35.4" height="18.2" fill="#189192"/><rect x="573.8" y="251.3" width="52.8" height="18.2" fill="#189192"/><rect x="625.9" y="251.3" width="18.1" height="18.2" fill="#F73C45"/><rect x="643.3" y="251.3" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="268.6" width="104.8" height="18.2" fill="#189192"/><rect x="625.9" y="268.6" width="18.1" height="18.2" fill="#F73C45"/><rect x="643.3" y="268.6" width="35.4" height="18.2" fill="#189192"/><rect x="521.8" y="285.9" width="104.8" height="18.2" fill="#189192"/><rect x="625.9" y="285.9" width="18.1" height="18.2" fill="#F73C45"/><rect x="643.3" y="285.9" width="35.4" height="18.2" fill="#189192"/><rect x="521.8" y="303.3" width="87.4" height="18.2" fill="#189192"/><rect x="625.9" y="303.3" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="320.7" width="87.4" height="18.2" fill="#189192"/><rect x="608.6" y="320.7" width="35.4" height="18.2" fill="#F73C45"/><rect x="521.8" y="338.0" width="52.8" height="18.2" fill="#189192"/><rect x="591.2" y="338.0" width="18.1" height="18.2" fill="#189192"/><rect x="608.6" y="338.0" width="35.4" height="18.2" fill="#F73C45"/><rect x="521.8" y="355.4" width="52.8" height="18.2" fill="#189192"/><rect x="591.2" y="355.4" width="18.1" height="18.2" fill="#189192"/><rect x="608.6" y="355.4" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="372.7" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="390.0" width="18.1" height="18.2" fill="#189192"/><rect x="573.8" y="390.0" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="424.8" width="18.1" height="18.2" fill="#189192"/></g></svg>Doublespeak</a>
     <span class="clock" id="clock" aria-hidden="true"></span>
   </div>
-  <nav class="nav-c" aria-label="Sections"><a href="#call">The call</a><a href="#evidence">Evidence</a><a href="#proof">Proof</a></nav>
   <div class="nav-r">
-    <div class="viewswitch" role="group" aria-label="View">
-      <button class="paren" id="view-simple" type="button" aria-pressed="false">Simple</button>
-      <span class="viewsep" aria-hidden="true">|</span>
-      <button class="paren" id="view-detailed" type="button" aria-pressed="true">Detailed</button>
-    </div>
     <span class="net" id="chip" data-state="checking"><i></i><span id="chiptext">Checking for the local API</span></span>
     <button class="paren" id="theme" type="button" aria-label="Switch between light and dark">(Dark)</button>
   </div>
 </header>
 
 <main id="top">
+  <div class="lbar" id="lbar" hidden role="status" aria-label="Call listening status">
+    <span class="lbar-dot" aria-hidden="true"></span>
+    <b class="lbar-state" id="lbar-state">Listening</b>
+    <span class="lbar-src" id="lbar-src"></span>
+    <span class="lbar-time" id="lbar-time">0:00</span>
+    <span class="lbar-note" id="lbar-note"></span>
+    <button class="link lbar-stop" id="lbar-stop" type="button">Stop</button>
+  </div>
+  <div class="redbar" id="redbar" role="alert" hidden>
+    <div><b>Possible scam in progress</b><p id="red-advice">Hang up and call back on a number you already have. Do not send money or read out any codes.</p></div>
+    <button class="btn" id="red-dismiss" type="button">Dismiss</button>
+  </div>
+  <section class="empty" id="empty" aria-labelledby="empty-h">
+    <div class="empty-on">
+      <h1 id="empty-h">Waiting for a call</h1>
+      <p class="empty-p">Doublespeak starts listening when a call plays on this Mac.</p>
+      <div class="empty-act">
+        <button class="btn primary" id="empty-start" type="button" aria-pressed="false"><span class="sq" aria-hidden="true"></span><span id="empty-startlab">Start listening now</span></button>
+        <button class="link" id="empty-file" type="button">Analyse a recording</button>
+      </div>
+      <p class="empty-msg" id="emsg" aria-live="polite"></p>
+    </div>
+    <div class="empty-off">
+      <h1>Not connected to the Doublespeak engine</h1>
+      <p class="empty-p">Start it in a terminal, then this page connects by itself.</p>
+      <code class="cmd">make api</code>
+      <p class="empty-msg" id="retry-note"></p>
+    </div>
+  </section>
+
   <section class="hero" id="screen" data-tier="unsure" aria-live="polite" aria-label="Verdict">
     <span class="vh" id="tierlabel">Waiting for a call</span>
     <p class="prov" id="prov" hidden><span class="vh">Source. </span><span id="provtext"></span></p>
-    <h1 id="headline" data-long="0"><span class="hl"><span>Drop a call in</span></span></h1>
+    <h1 id="headline" data-long="0"><span class="hl"><span>Waiting for a call</span></span></h1>
+    <p class="changed" id="changed" hidden></p>
+    <p class="caution" id="caution" hidden>Be careful with this call. Something about it is off.</p>
     <div class="quad" id="quad" hidden>
       <div class="quad-grid" id="quad-grid" role="img" aria-label="">
         <span></span><span class="ax" aria-hidden="true">Not scam</span><span class="ax" aria-hidden="true">Scam</span>
@@ -348,7 +454,7 @@ html[data-view="simple"][data-tier] .caveat{display:none} /* the score block car
       </div>
       <p class="quad-txt" id="quad-txt"></p>
     </div>
-    <p class="advice" id="advice">Pick a sample, paste a transcript, or record a few seconds. You get a verdict, and every tell that gave it away.</p>
+    <p class="advice" id="advice">Doublespeak listens locally and judges the voice and the words together.</p>
     <p class="caveat">Doublespeak can be wrong.</p>
   </section>
   <div class="rule" id="rule" aria-hidden="true"></div>
@@ -367,15 +473,19 @@ html[data-view="simple"][data-tier] .caveat{display:none} /* the score block car
     </div>
     <h2 id="why-h">Why we think so</h2>
     <ul class="why" id="why"></ul>
+    <div class="trustblock">
     <p class="act">Hang up and call back on a number you trust</p>
     <h2 id="trust-h">Call someone you trust</h2>
     <p class="trust-empty" id="trust-empty">Add a person you would call if a call felt wrong. Their number stays on this device.</p>
     <ul class="trust-list" id="trust-list"></ul>
+    <details class="addc"><summary>Add a contact</summary>
     <form class="trust-form" id="trust-form">
       <label>Name <input id="trust-name" name="name" autocomplete="name" maxlength="40" required></label>
       <label>Phone <input id="trust-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="40" required></label>
-      <button type="submit">Add a contact</button>
+      <button type="submit">Save contact</button>
     </form>
+    </details>
+    </div>
     <div class="simple-actions">
       <button class="bigbtn" id="simple-rec" type="button" aria-pressed="false"><span class="sq" aria-hidden="true"></span><span id="simple-reclabel">Record</span></button>
       <button class="bigbtn primary" id="simple-check" type="button">Check this call</button>
@@ -388,41 +498,12 @@ html[data-view="simple"][data-tier] .caveat{display:none} /* the score block car
     </details>
   </section>
 
-  <section class="controls" aria-label="Start a call">
-    <div class="row">
-      <span class="k" id="samples-k">Try a sample</span>
-      <div class="links" id="samples" role="group" aria-labelledby="samples-k">
-        <button class="sample" type="button" data-sample="scam" aria-pressed="false">Grandparent scam</button>
-        <button class="sample" type="button" data-sample="ai_undisclosed" aria-pressed="false">Sales bot, no disclosure</button>
-        <button class="sample" type="button" data-sample="ai_disclosed" aria-pressed="false">Appointment bot</button>
-        <button class="sample" type="button" data-sample="human" aria-pressed="false">Friend calling</button>
-      </div>
-    </div>
-    <div class="row" id="rt" hidden>
-      <span class="k" id="rt-label">Generated attacker calls</span>
-      <div class="links rt-chips" id="rtchips" role="group" aria-labelledby="rt-label"></div>
-      <button class="link rt-more" id="rtmore" type="button" aria-expanded="false" hidden></button>
-      <label class="rt-q" id="rtqwrap" hidden><input type="checkbox" id="rtq">Phone quality (Opus 8 kHz)</label>
-    </div>
-    <div class="row" id="srcrow">
-      <label class="k" for="src" id="src-k">Audio source</label>
-      <div class="srcbox">
-        <select id="src" aria-describedby="srcnote"><option value="">Default microphone</option></select>
-        <button class="link" id="srccheck" type="button">Check level</button>
-        <div class="px sm srcmeter" id="srcmeter" aria-hidden="true"></div>
-      </div>
-      <p class="srcnote" id="srcnote" aria-live="polite"></p>
-    </div>
-    <div class="row actions">
-      <button class="btn primary" id="analyze" type="button">Analyze call</button>
-      <button class="btn rec" id="rec" type="button" aria-pressed="false"><span class="sq"></span><span id="reclabel">Record</span></button>
-      <label class="btn" for="audio" id="uploadlbl" tabindex="0" role="button">Upload audio</label>
-      <input class="vh" type="file" id="audio" accept="audio/*" tabindex="-1">
-      <button class="btn" id="speak" type="button">Speak verdict</button>
-      <div class="attach" id="attach"><b id="attachname"></b><span id="attachmeta"></span><button class="link" id="detach" type="button">Remove</button></div>
-    </div>
-    <p class="status" id="status" role="status" aria-live="polite"></p>
-    <p class="alert" id="alert" role="alert"></p>
+  <section class="livepane" id="livepane" aria-label="The call so far">
+    <div class="tl-h"><h2>The call so far</h2><span class="tl-note" id="tl-note"></span></div>
+    <div class="tl" id="tl" role="img" aria-label=""></div>
+    <div class="tl-axis" aria-hidden="true"><span>0:00</span><span id="tl-end"></span></div>
+    <div class="tx-h"><h2>What was said</h2><span class="lgd" id="lgd" hidden><span class="lg-i" id="lg-i">Scam wording</span><span class="lg-s" id="lg-s">Scripted phrasing</span></span></div>
+    <div class="reader livetx" id="livetx" tabindex="0" aria-label="Transcript so far, scam wording underlined"></div>
   </section>
 
   <section class="plane" id="paper" data-mode="edit" aria-labelledby="call-h">
@@ -468,6 +549,57 @@ html[data-view="simple"][data-tier] .caveat{display:none} /* the score block car
       <details class="log"><summary>Request log</summary><div id="log">No requests yet.</div></details>
     </div>
   </section>
+  <details class="moredemo" id="more">
+    <summary>More</summary>
+    <div class="morebody">
+      <p class="more-lede">Demo tools. Try a stored sample, a generated attacker call, or a recording of your own. A live call always takes over this page.</p>
+      <div class="row">
+        <span class="k">View</span>
+    <div class="viewswitch" role="group" aria-label="View">
+      <button class="paren" id="view-simple" type="button" aria-pressed="false">Simple</button>
+      <span class="viewsep" aria-hidden="true">|</span>
+      <button class="paren" id="view-detailed" type="button" aria-pressed="true">Detailed</button>
+    </div>
+      </div>
+  <section class="controls" aria-label="Demo tools">
+    <div class="row">
+      <span class="k" id="samples-k">Try a sample</span>
+      <div class="links" id="samples" role="group" aria-labelledby="samples-k">
+        <button class="sample" type="button" data-sample="scam" aria-pressed="false">Grandparent scam</button>
+        <button class="sample" type="button" data-sample="ai_undisclosed" aria-pressed="false">Sales bot, no disclosure</button>
+        <button class="sample" type="button" data-sample="ai_disclosed" aria-pressed="false">Appointment bot</button>
+        <button class="sample" type="button" data-sample="human" aria-pressed="false">Friend calling</button>
+      </div>
+    </div>
+    <div class="row" id="rt" hidden>
+      <span class="k" id="rt-label">Generated attacker calls</span>
+      <div class="links rt-chips" id="rtchips" role="group" aria-labelledby="rt-label"></div>
+      <button class="link rt-more" id="rtmore" type="button" aria-expanded="false" hidden></button>
+      <label class="rt-q" id="rtqwrap" hidden><input type="checkbox" id="rtq">Phone quality (Opus 8 kHz)</label>
+    </div>
+    <div class="row" id="srcrow">
+      <label class="k" for="src" id="src-k">Audio source</label>
+      <div class="srcbox">
+        <select id="src" aria-describedby="srcnote"><option value="">Default microphone</option></select>
+        <button class="link" id="srccheck" type="button">Check level</button>
+        <div class="px sm srcmeter" id="srcmeter" aria-hidden="true"></div>
+      </div>
+      <p class="srcnote" id="srcnote" aria-live="polite"></p>
+    </div>
+    <div class="row actions">
+      <button class="btn primary" id="analyze" type="button">Analyze call</button>
+      <button class="btn rec" id="rec" type="button" aria-pressed="false"><span class="sq"></span><span id="reclabel">Record</span></button>
+      <label class="btn" for="audio" id="uploadlbl" tabindex="0" role="button">Upload audio</label>
+      <input class="vh" type="file" id="audio" accept="audio/*" tabindex="-1">
+      <button class="btn" id="speak" type="button">Speak verdict</button>
+      <div class="attach" id="attach"><b id="attachname"></b><span id="attachmeta"></span><button class="link" id="detach" type="button">Remove</button></div>
+    </div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+    <p class="alert" id="alert" role="alert"></p>
+  </section>
+
+    </div>
+  </details>
 </main>
 
 <footer>
@@ -519,8 +651,8 @@ let apiUp = false, lastVerdict = null, recorder = null, recBlob = null, file = n
 
 /* ---------- helpers ---------- */
 function log(line){ logLines.unshift(line); logLines = logLines.slice(0, 8); $("log").innerHTML = logLines.map(l => `<div>${esc(l)}</div>`).join(""); }
-function setStatus(t){ $("status").textContent = t || ""; const s = $("sstatus"); if (s) s.textContent = t || ""; }
-function showError(t){ $("alert").textContent = t || ""; const a = $("salert"); if (a) a.textContent = t || ""; }
+function setStatus(t){ $("status").textContent = t || ""; const s = $("sstatus"); if (s) s.textContent = t || ""; const m = $("emsg"); if (m) m.textContent = t || ""; }
+function showError(t){ $("alert").textContent = t || ""; const a = $("salert"); if (a) a.textContent = t || ""; const m = $("emsg"); if (m && t) m.textContent = t; }
 function mmss(s){ return Math.floor(s/60) + ":" + String(Math.floor(s%60)).padStart(2, "0"); }
 function setChip(state, text){ const c = $("chip"); c.dataset.state = state; $("chiptext").innerHTML = text; }
 const tick = () => { $("clock").textContent = new Date().toLocaleTimeString([], {hour12:false}); };
@@ -714,6 +846,7 @@ function renderWhy(v){
   $("heard-text").textContent = heard || "No words captured yet.";
 }
 function render(v, {animate = true, live = false, textOnly = false} = {}){
+  setLive("demo");
   timers.forEach(clearTimeout); timers = [];
   lastVerdict = v;
   document.documentElement.dataset.tier = v.tier;
@@ -750,7 +883,7 @@ function render(v, {animate = true, live = false, textOnly = false} = {}){
   setChip(apiUp ? "up" : "demo", apiUp ? `<span>On this machine · </span><b>${Number(eg.caller_audio_bytes_sent) || 0} B out</b>` : "<span>Demo mode · run </span><b>make api</b>");
 }
 function setBusy(b){
-  busy = b; $("paper").classList.toggle("busy", b); $("analyze").disabled = b;
+  busy = b; if (b) setLive("demo"); $("paper").classList.toggle("busy", b); $("analyze").disabled = b;
   const sc = $("simple-check"); if (sc) sc.disabled = b;
   if (b){
     $("tierlabel").textContent = "Listening locally"; setHeadline("Listening");
@@ -971,7 +1104,7 @@ $("theme").addEventListener("click", () => {
   try{ localStorage.setItem("ds-theme", document.documentElement.dataset.theme); }catch(e){}
 });
 
-function setRecLabel(text){ $("reclabel").textContent = text; const s = $("simple-reclabel"); if (s) s.textContent = text; }
+function setRecLabel(text){ $("reclabel").textContent = text; const s = $("simple-reclabel"); if (s) s.textContent = text; const e = $("empty-startlab"); if (e) e.textContent = text === "Record" ? "Start listening now" : text; const b = $("empty-start"); if (b) b.setAttribute("aria-pressed", String(text !== "Record")); }
 
 /* ---------- simple | detailed ---------- */
 function applyView(v, persist){
@@ -983,14 +1116,10 @@ function applyView(v, persist){
   if (persist){ try{ localStorage.setItem("ds-view", simple ? "simple" : "detailed"); }catch(e){} }
 }
 function initView(){
-  let v = "detailed";
-  try{
-    const q = new URLSearchParams(location.search).get("view");
-    if (q === "simple" || q === "detailed") v = q;
-    else if (document.documentElement.dataset.view === "simple" || document.documentElement.dataset.view === "detailed") v = document.documentElement.dataset.view;
-    else { const s = localStorage.getItem("ds-view"); if (s === "simple" || s === "detailed") v = s; }
-  }catch(e){}
-  applyView(v, true);
+  // Simple is the default on every load; only ?view=detailed or the switch under More changes it.
+  let v = "simple";
+  try{ if (new URLSearchParams(location.search).get("view") === "detailed") v = "detailed"; }catch(e){}
+  applyView(v, false);
 }
 
 /* ---------- contacts: this device only, never a made-up number ---------- */
@@ -1046,7 +1175,174 @@ $("audio").addEventListener("change", e => { const f = e.target.files[0]; if (!f
 $("uploadlbl").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); $("audio").click(); } });
 $("copysig").addEventListener("click", async () => { try{ await navigator.clipboard.writeText($("sig").textContent); $("copysig").textContent = "Copied"; setTimeout(() => $("copysig").textContent = "Copy", 1400); }catch(e){} });
 
-probe().then(loadRedteam).catch(() => {}).then(() => { document.querySelector('[data-sample="scam"]').setAttribute("aria-pressed", "true"); $("transcript").value = SAMPLES.scam.transcript; render(SAMPLES.scam); });
+/* ---------- live view: Server-Sent Events from the engine (GET /live/events), one verdict card that changes in place ---------- */
+const HTML = document.documentElement;
+let mode = "empty";
+function setLive(m){ mode = m; HTML.dataset.live = m; }
+const L = {active:false, ended:false, endReason:"", source:"", elapsed:0, at:0, tick:-1, listening:true, ticks:[], tier:null, dismissed:false, sigs:{}, lost:false};
+const TL_MAX = 240;
+const STABLE_TXT = t => (SAMPLES[t] ? {h: SAMPLES[t].headline, a: SAMPLES[t].advice} : {h: "Not sure yet", a: "Not enough to judge yet. Doublespeak keeps listening."});
+function liveClock(){ return L.active && !L.ended ? Math.min(L.elapsed + (performance.now() - L.at) / 1000, L.elapsed + 12) : L.elapsed; }
+let barNote = "";
+function drawBar(){
+  const bar = $("lbar"), on = mode === "on";
+  bar.hidden = !on; if (!on) return;
+  bar.dataset.s = L.ended ? "ended" : L.lost ? "lost" : "live";
+  $("lbar-state").textContent = L.ended ? "Call ended" : "Listening";
+  $("lbar-src").textContent = L.source || "";
+  $("lbar-time").textContent = mmss(liveClock());
+  $("lbar-note").textContent = barNote || (L.ended ? (/^(call ended|stopped)\.?$/i.test(L.endReason || "") ? "" : (L.endReason || "")) : L.lost ? "Connection lost. Reconnecting" : !L.listening ? "Waiting for audio" : "");
+  $("lbar-stop").textContent = L.ended ? "Clear" : "Stop";
+}
+setInterval(drawBar, 1000);
+function resetSession(){
+  Object.assign(L, {active:true, ended:false, endReason:"", tick:-1, ticks:[], tier:null, dismissed:false, sigs:{}, lost:false});
+  barNote = "";
+  HTML.dataset.ended = "0"; HTML.dataset.alert = "none"; HTML.dataset.warm = "1"; HTML.dataset.tier = "unsure";
+  $("changed").hidden = true; $("caution").hidden = true; $("redbar").hidden = true; HTML.dataset.banner = "0"; $("livetx").innerHTML = ""; $("tl").innerHTML = "";
+  swapHeadline("Listening", "Gathering the first few seconds before judging.", true);
+  $("tierlabel").textContent = "Listening"; showProvenance("");
+  $("quad").hidden = true; $("serious").hidden = true; $("tl-note").textContent = ""; $("tl-end").textContent = "";
+  setLive("on"); drawBar();
+}
+let fadeTimer = 0;
+function swapHeadline(h, a, now){
+  const hd = $("headline");
+  if (hd.textContent === h && $("advice").textContent === a) return;
+  const put = () => { hd.dataset.long = h.length > 24 ? "1" : "0"; hd.innerHTML = `<span class="hl"><span style="animation:none">${esc(h)}</span></span>`; $("advice").textContent = a; $("screen").classList.remove("fade"); };
+  clearTimeout(fadeTimer);
+  if (REDUCED || now) put(); else { $("screen").classList.add("fade"); fadeTimer = setTimeout(put, 260); }
+}
+function endSession(reason){
+  if (!L.active) return;
+  L.elapsed = Math.max(L.elapsed, liveClock()); L.ended = true; L.endReason = reason || "";
+  HTML.dataset.ended = "1"; $("caution").hidden = true; $("redbar").hidden = true; HTML.dataset.banner = "0"; drawBar();
+}
+function clearSession(){ Object.assign(L, {active:false, ended:false, ticks:[], tier:null}); HTML.dataset.ended = "0"; setLive(conn.ok ? "empty" : "offline"); drawBar(); }
+function stableView(v, st){
+  // The card shows the STABLE tier. If this tick disagrees, recompute the 2x2 and scores from the stable tier so the card never contradicts itself.
+  const o = Object.assign({}, v);
+  if (st.tier && st.tier !== v.tier){ o.tier = st.tier; delete o.scores; delete o.quadrant; if (st.tier === "scam") o.p_scam = Math.max(o.p_scam || 0, 0.6); if (st.tier === "ai_disclosed") o.disclosed_ai = true; }
+  if (Array.isArray(st.reasons) && st.reasons.length) o.reasons = st.reasons; else delete o.reasons;
+  return o;
+}
+function drawTimeline(){
+  const t = L.ticks.slice(-TL_MAX); let prev = null, html = "";
+  t.forEach(x => { const chg = !x.w && prev !== null && x.tier !== prev; if (!x.w) prev = x.tier;
+    html += `<i class="tc${chg ? " chg" : ""}" data-t="${esc(x.tier)}" data-w="${x.w}" title="${esc(mmss(x.t) + ", " + (x.w ? "warming up" : (TIER[x.tier] || x.tier)))}"></i>`; });
+  $("tl").innerHTML = html;
+  const segs = []; t.forEach(x => { if (x.w) return; const l = segs[segs.length - 1]; if (!l || l.tier !== x.tier) segs.push({tier:x.tier, t:x.t}); });
+  const sum = segs.length ? segs.map((g, i) => `${i ? "then " : ""}${TIER[g.tier] || g.tier} from ${mmss(g.t)}`).join(", ") : "still warming up";
+  $("tl").setAttribute("aria-label", `The call so far, ${t.length} checks: ${sum}.`);
+  $("tl-end").textContent = mmss(t.length ? t[t.length - 1].t : 0);
+  $("tl-note").textContent = segs.length > 1 ? `${segs.length - 1} change${segs.length > 2 ? "s" : ""}` : "";
+}
+function drawLiveText(v){
+  const box = $("livetx"), text = v.transcript || "", key = text + "|" + (v.tells || []).length;
+  if (L.sigs.tx === key) return; L.sigs.tx = key;
+  const stick = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  const marks = buildMarks({transcript:text, tells:v.tells || []}); let html = "", at = 0;
+  for (const r of marks){
+    const why = `${NAMES[r.t.name] || r.t.name}|${r.t.evidence}`;
+    html += esc(text.slice(at, r.s)) + `<mark class="on ${r.t.family === "script" ? "script" : "intent"}" tabindex="0" data-why="${esc(why)}" aria-label="${esc(text.slice(r.s, r.e))}: ${esc(why.replace("|", ". "))}">${esc(text.slice(r.s, r.e))}</mark>`;
+    at = r.e;
+  }
+  box.innerHTML = html + esc(text.slice(at));
+  const k = new Set(marks.map(m => m.t.family));
+  $("lgd").hidden = !marks.length; $("lg-i").hidden = !k.has("intent"); $("lg-s").hidden = !k.has("script");
+  if (stick) box.scrollTop = box.scrollHeight;
+}
+function onVerdict(e){
+  if (!L.active || L.ended || (e.tick != null && e.tick < L.tick)) resetSession();
+  const st = e.stable || {}, v = e.verdict || {};
+  L.tick = e.tick; L.elapsed = e.elapsed_s; L.at = performance.now(); L.lost = false;
+  const warm = st.state === "warming", tier = st.tier || v.tier || "unsure";
+  L.ticks.push({tier, t:e.elapsed_s, w: warm ? 1 : 0});
+  setLive("on");
+  HTML.dataset.warm = warm ? "1" : "0"; HTML.dataset.alert = st.alert || "none";
+  // headline, advice and colour follow the stable tier
+  const txt = warm ? {h:"Listening", a:"Gathering the first few seconds before judging."} : (tier === v.tier && v.headline ? {h:v.headline, a:v.advice} : STABLE_TXT(tier));
+  const prev = L.tier;
+  HTML.dataset.tier = warm ? "unsure" : tier; $("tierlabel").textContent = warm ? "Listening" : (TIER[tier] || tier);
+  swapHeadline(txt.h, txt.a);
+  if (!warm){
+    if (prev && prev !== tier){
+      $("changed").hidden = false; $("changed").innerHTML = `Changed to <b>${esc(TIER[tier] || tier)}</b> at ${mmss(e.elapsed_s)}, was ${esc(TIER[prev] || prev)}.`;
+    }
+    L.tier = tier;
+  }
+  const sv = stableView(v, st), sig = JSON.stringify([sv.tier, sv.p_ai, sv.p_scam, sv.confidence, sv.scores, sv.quadrant, sv.reasons]);
+  if (L.sigs.v !== (warm ? "warm" : sig)){
+    L.sigs.v = warm ? "warm" : sig; renderQuad(sv);
+    if (!warm){ renderScores(sv); $("why").innerHTML = plainReasons(sv).map(x => `<li>${esc(x)}</li>`).join(""); }
+  }
+  if (st.alert !== "red") L.dismissed = false;
+  const showRed = st.alert === "red" && !L.dismissed;
+  if ($("redbar").hidden === showRed) $("redbar").hidden = !showRed;
+  HTML.dataset.banner = showRed ? "1" : "0"; $("caution").hidden = st.alert !== "amber";
+  drawTimeline(); drawLiveText(v); drawBar();
+}
+function onState(e){
+  L.source = e.source || L.source; L.listening = e.listening !== false;
+  if (e.active){
+    if (!L.active || L.ended || (e.elapsed_s || 0) + 1 < L.elapsed) resetSession();
+    L.elapsed = e.elapsed_s || 0; L.at = performance.now(); L.lost = false; drawBar();
+  }else if (L.active && !L.ended) endSession("The call stopped.");
+  else if (!L.active && mode !== "demo") setLive("empty");
+}
+function onFeed(raw){
+  let e; try{ e = JSON.parse(raw); }catch(x){ return; }
+  if (!e || typeof e !== "object") return;
+  if (e.type === "state") onState(e); else if (e.type === "verdict") onVerdict(e);
+  else if (e.type === "ended") endSession(e.reason ? String(e.reason).slice(0, 80) : "");
+}
+const conn = {ok:false, es:null, tries:0, timer:0};
+function connect(){
+  clearTimeout(conn.timer);
+  let es; try{ es = new EventSource(API + "/live/events"); }catch(x){ return feedDown(); }
+  conn.es = es;
+  es.onopen = () => { conn.ok = true; conn.tries = 0; L.lost = false; if (mode === "offline") setLive("empty"); $("retry-note").textContent = ""; drawBar(); };
+  es.onmessage = m => { conn.ok = true; onFeed(m.data); };
+  es.onerror = () => { es.close(); feedDown(); };
+}
+function feedDown(){
+  conn.ok = false; conn.tries++;
+  if (L.active && !L.ended){ L.lost = true; drawBar(); }
+  else if (mode !== "demo" && mode !== "on") setLive("offline");
+  const wait = Math.min(15000, 1000 * 2 ** Math.min(conn.tries - 1, 4));
+  $("retry-note").textContent = `Trying again in ${Math.round(wait / 1000)} s.`;
+  conn.timer = setTimeout(connect, wait);
+}
+async function stopLive(){
+  if (L.ended){ clearSession(); return; }
+  if (recorder && recorder.state === "recording"){ recorder.stop(); return; }
+  try{ const r = await fetch(API + "/live/stop", {method:"POST"}); if (!r.ok) throw new Error(String(r.status)); }
+  catch(x){ barNote = "Could not stop from here. End it where it was started."; drawBar(); setTimeout(() => { barNote = ""; drawBar(); }, 6000); }
+}
+async function dismissAlert(){
+  L.dismissed = true; $("redbar").hidden = true; HTML.dataset.banner = "0";
+  try{ await fetch(API + "/live/dismiss", {method:"POST"}); }catch(x){}
+}
+function openMore(){ $("more").open = true; }
+function liveInit(){
+  setLive("empty");
+  $("lbar-stop").addEventListener("click", stopLive);
+  $("red-dismiss").addEventListener("click", dismissAlert);
+  $("empty-start").addEventListener("click", () => { openMore(); toggleRecord(); });
+  $("empty-file").addEventListener("click", () => { openMore(); $("audio").click(); });
+  const lt = $("livetx");
+  lt.addEventListener("pointerover", e => { const m = e.pointerType === "mouse" && e.target.closest("mark"); if (m) showTip(m); });
+  lt.addEventListener("pointerout", e => { if (e.pointerType === "mouse") hideTip(); });
+  lt.addEventListener("click", e => { const m = e.target.closest("mark"); if (m) showTip(m); else hideTip(); });
+  lt.addEventListener("focusin", e => { const m = e.target.closest("mark"); if (m) showTip(m); });
+  lt.addEventListener("focusout", hideTip);
+  lt.addEventListener("scroll", hideTip, {passive:true});
+  try{ if (new URLSearchParams(location.search).get("demo") === "1") openMore(); }catch(e){}
+  if (typeof EventSource === "undefined") setLive("offline"); else connect();
+}
+
+probe().then(loadRedteam).catch(() => {});
+liveInit();
 </script>
 </body>
 </html>
