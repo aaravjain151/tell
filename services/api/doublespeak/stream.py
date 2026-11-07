@@ -7,7 +7,8 @@ Auth that works from a browser (a WebSocket cannot send custom headers, and the 
      within 5 s. The token is random 256-bit, single-use and expires in 60 s.
   3. server -> {"type":"ready"}; then binary PCM16 mono 16 kHz frames (<= 128 KiB each), plus text control messages
      {"type":"ping"} (heartbeat; any message counts), {"type":"stop"}, {"type":"kill"}.
-Server -> client: ready | verdict | warn(lagging|overloaded) | final{ticks,reason} | error{code} | pong.
+Optional hello field "source" (short label for the live feed). {"type":"dismiss"} acknowledges a red alert.
+Server -> client: ready | verdict (raw fields + "stable", see live.py) | warn(lagging|overloaded) | final{ticks,reason} | error{code} | pong.
 Every end (stop, kill, heartbeat timeout, disconnect, max length, DELETE /session/{id}, POST /panic) wipes the ring.
 """
 from __future__ import annotations
@@ -17,7 +18,7 @@ import json
 
 from fastapi import APIRouter, HTTPException, Request, WebSocket
 
-from . import limits, session as sess_mod
+from . import limits, live, session as sess_mod
 from .session import MAX_TEXT_BYTES, REGISTRY, SIDES, Session
 
 router = APIRouter()
@@ -111,7 +112,7 @@ async def _handshake(ws: WebSocket, out: _Out) -> Session | None:
         REGISTRY.close(s.id, "bad_hello")
         await _fail(out, ws, "unsupported_format")
         return None
-    s.activate(hello["side"])
+    s.activate(hello["side"], hello.get("source", "stream"))
     return s
 
 
@@ -128,10 +129,12 @@ async def ws_stream(ws: WebSocket) -> None:
         s = await _handshake(ws, out)
         if s is None:
             return
+        live.HUB.session_started(s)
         await _serve(ws, out, s)
     finally:
         if s is not None:
             s.close(s.close_reason or "ended")
+            live.HUB.session_ended(s, s.close_reason or "ended")
             s.cancel_job()
             REGISTRY.discard(s.id)
 
@@ -186,6 +189,8 @@ async def _serve(ws: WebSocket, out: _Out, s: Session) -> None:
             kind = m.get("type") if m else None
             if kind == "ping":
                 await out({"type": "pong"})
+            elif kind == "dismiss":                  # acknowledge a latched red alert (display only)
+                s.stab.dismiss()
             elif kind in ("stop", "kill"):
                 reason = kind
                 break

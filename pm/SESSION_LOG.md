@@ -43,3 +43,4 @@
 | 2026-11-07 18:00 | frontend | - | voice x content quadrant: quadrant.py (display-only, additive), 2x2 grid in Simple, one line in Detailed, samples regenerated; PR stacked on #62; next: review wording with owner |
 | 2026-11-07 18:18 | frontend | claude | session start |
 | 2026-11-07 18:32 | frontend | - | Live view: calm empty state, listening bar, in-place verdict card, timeline, live transcript, red banner; demo tools behind More; SSE client + mock_live.py. Next: wire to backend /live/events after backend PR merges; confirm /live/stop and ws browser listener. |
+| 2026-11-07 18:31 | backend | - | Live listener: Stabiliser wired (display only), GET /live/events SSE + POST /live/dismiss, tools/macos/listen.py (--now/--watch/--file), docs/call-connection/LIVE.md. Next: real Continuity call test with tap on callservicesd/avconferenced; web page consumes /live/events. |

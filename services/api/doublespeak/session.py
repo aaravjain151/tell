@@ -28,7 +28,7 @@ from typing import Any, Awaitable, Callable
 
 import numpy as np
 
-from . import limits, pipeline
+from . import limits, live, pipeline
 from .ring import SR, Ring
 
 MAX_SESSIONS = 2
@@ -101,6 +101,8 @@ class Session:
         self.p = p
         self.state = "pending"            # pending -> live -> closed
         self.side = "far"
+        self.source = "stream"            # short label for the live feed (listener-supplied, sanitised)
+        self.stab = live.StableTracker()  # display-only smoothing; never touches a stored tier
         self.ring: Ring | None = None
         self.created = _now()
         self.ticks = 0                    # verdicts sent
@@ -128,8 +130,9 @@ class Session:
     def inflight(self) -> bool:
         return self._inflight
 
-    def activate(self, side: str) -> None:
+    def activate(self, side: str, source: str = "stream") -> None:
         self.side = side
+        self.source = live.clean_source(source)
         self.ring = Ring(self.p["ring_s"])
         self.state = "live"
 
@@ -144,6 +147,7 @@ class Session:
             return False
         self.state = "closed"
         self.close_reason = reason
+        self.stab.wipe()
         if self.ring is not None:
             self.ring.wipe()
         if self._loop is not None and self._wake is not None:
@@ -228,7 +232,10 @@ class Session:
         self.last_job_s = _now() - started
         self.last_lag_s = max(0.0, (self._received - end_samples) / SR)
         self.ticks += 1
-        await emit(self.verdict_message(d, seq, t0, t1))
+        msg = self.verdict_message(d, seq, t0, t1)
+        msg["stable"] = self.stab.observe(d, t0, t1)
+        live.HUB.on_tick(self, d, msg["stable"], self.ticks)
+        await emit(msg)
         if self.last_lag_s > LAG_WARN_FACTOR * self.p["hop_s"]:
             await self._warn("lagging", emit)
         if self._overload:
