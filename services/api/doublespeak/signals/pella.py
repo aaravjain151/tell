@@ -267,4 +267,5 @@ def pella_vote(x16k: np.ndarray) -> Tell:
         return _na(f"Pellav2 inference failed ({type(e).__name__})")
     mean, mx = float(np.mean(probs)), float(np.max(probs))
     return Tell("neural_pella", "acoustic", mean, W_PELLA,
-                f"Pellav2: P(synthetic) = {mean:.2f} over {len(probs)} window{'s' if len(probs) != 1 else ''} (highest {mx:.2f})")
+                f"Pellav2: P(synthetic) = {mean:.2f} over {len(probs)} window{'s' if len(probs) != 1 else ''} (highest {mx:.2f})",
+                detail={"windows": [{"t": round(float(t), 2), "p": round(p, 4)} for (t, _), p in zip(ws, probs)]})
