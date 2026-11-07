@@ -8,6 +8,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
+from . import pipeline, privacy, speak, thresholds, net_monitor, offline_guard
 from . import pipeline, privacy, secure_store, speak, thresholds
 from .audio import AudioDecodeError
 from .redteam import router as redteam_router
@@ -44,6 +45,7 @@ def warm_up() -> None:
 @app.get("/health")
 def health() -> dict:
     return {"ok": True, "thresholds_version": thresholds.THRESHOLDS_VERSION, "egress": privacy.report(),
+            "os_network": net_monitor.snapshot_report(), "offline_models": offline_guard.is_enforced(),
             "llm_provider": os.environ.get("LLM_PROVIDER", "stub")}
 
 
