@@ -22,7 +22,7 @@ tests/synth.py          synthetic human/TTS fixtures (mechanics only — not a s
 tests/test_privacy.py   the privacy guarantee as a test
 eval/golden.jsonl       32 transcript cases · eval/run_eval.py (targets 0.85 / 0.90)
 apps/web/build_samples.py  regenerates the 4 inline demo verdicts (deterministic: stub LLM, no heavy models) — run after any thresholds change; tests/test_web_samples.py guards it
-../../tools/redteam/    degrade.sh (opus-8k) · make_calls.py — Gradium attacker clips from scripts/*.txt
+../../tools/redteam/    degrade.sh (opus-8k) · make_calls.py — Gradium attacker clips from scripts/*.txt · capture.py — human takes + speaker→mic replay (runbook: RECORDING.md)
 ```
 
 ## Data model

@@ -80,9 +80,15 @@ def _label(stem: str) -> str:
     return "human" if stem.startswith("human") else "ai"
 
 
+_CONDITIONS = {".opus8k": "opus-8k", ".replayed": "replayed"}  # suffix -> condition (degrade.sh, capture.py replay)
+
+
 def _condition(stem: str) -> tuple[str, str]:
-    """('clean'|'opus-8k', base stem)."""
-    return ("opus-8k", stem[: -len(".opus8k")]) if stem.endswith(".opus8k") else ("clean", stem)
+    """('clean'|'opus-8k'|'replayed', base stem)."""
+    for suffix, cond in _CONDITIONS.items():
+        if stem.endswith(suffix):
+            return cond, stem[: -len(suffix)]
+    return "clean", stem
 
 
 def _transcript(wav: Path, base: str) -> str | None:
@@ -97,7 +103,8 @@ def _transcript(wav: Path, base: str) -> str | None:
 def run_wild(folder: str, verbose: bool) -> None:
     """Per-condition FPR at 90% TPR for p_ai on real recordings. Human = filename starts with 'human'.
 
-    Naming: <script>.wav (AI) · human__<speaker>__<script>.wav (human) · <stem>.opus8k.wav (tools/redteam/degrade.sh).
+    Naming: <script>.wav (AI) · human__<speaker>__<script>.wav (human) · <stem>.opus8k.wav (tools/redteam/degrade.sh)
+    · <stem>.replayed.wav (tools/redteam/capture.py replay).
     """
     from eval.metrics import fpr_at_tpr
     rows: dict[str, list[dict]] = {}
