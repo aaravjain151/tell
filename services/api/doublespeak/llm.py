@@ -13,7 +13,7 @@ import os
 from . import localhost, privacy
 from .types import Tell
 
-log = logging.getLogger("tell.llm")
+log = logging.getLogger("doublespeak.llm")
 
 PROMPT = """You read a phone-call transcript and extract structured signals. Output ONLY JSON:
 {"assistant_style": 0-1, "assistant_style_reason": "...",
@@ -48,8 +48,8 @@ def _to_tells(data: dict, src: str) -> list[Tell]:
 
 
 def cap_words(transcript: str, limit: int | None = None) -> str:
-    """Keep only the last `limit` words (default TELL_LLM_MAX_WORDS=120): the latest turns carry the ask, and it bounds local latency."""
-    limit = limit or int(os.environ.get("TELL_LLM_MAX_WORDS", "120"))
+    """Keep only the last `limit` words (default DOUBLESPEAK_LLM_MAX_WORDS=120): the latest turns carry the ask, and it bounds local latency."""
+    limit = limit or int(os.environ.get("DOUBLESPEAK_LLM_MAX_WORDS", "120"))
     words = transcript.split()
     return transcript if len(words) <= limit else " ".join(words[-limit:])
 
@@ -93,7 +93,7 @@ def interpret(transcript: str) -> tuple[list[Tell], dict]:
         log.warning("LLM_PROVIDER=anthropic but `anthropic` not installed; skipping")
         return [], {"provider": "stub", "input_tokens": 0, "output_tokens": 0, "usd": 0.0}
     client = anthropic.Anthropic()
-    model = os.environ.get("TELL_LLM_MODEL", "claude-sonnet-5-5")
+    model = os.environ.get("DOUBLESPEAK_LLM_MODEL", "claude-sonnet-5-5")
     privacy.record_egress("text", len(transcript.encode()))
     msg = client.messages.create(model=model, max_tokens=300, messages=[{"role": "user", "content": PROMPT + transcript}])
     text = "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")

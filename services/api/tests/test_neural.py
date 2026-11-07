@@ -1,4 +1,4 @@
-from tell.signals import neural
+from doublespeak.signals import neural
 import numpy as np
 
 

@@ -18,8 +18,8 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 @app.on_event("startup")
 def warm_up() -> None:
-    """Load whisper, the anti-spoof model and the Ollama model once, so the first real call isn't 8 s. TELL_WARMUP=0 disables."""
-    if os.environ.get("TELL_WARMUP", "1") == "0":
+    """Load whisper, the anti-spoof model and the Ollama model once, so the first real call isn't 8 s. DOUBLESPEAK_WARMUP=0 disables."""
+    if os.environ.get("DOUBLESPEAK_WARMUP", "1") == "0":
         return
     import time
 
@@ -34,9 +34,9 @@ def warm_up() -> None:
         stt.transcribe(x)
         neural.analyze(x, 4.0)
         llm.interpret("hello, this is a warm up")
-        logging.getLogger("tell.main").info("warm-up done in %.1fs", time.time() - t0)
+        logging.getLogger("doublespeak.main").info("warm-up done in %.1fs", time.time() - t0)
     except Exception as e:  # noqa: BLE001 — never block startup
-        logging.getLogger("tell.main").warning("warm-up skipped: %s", e)
+        logging.getLogger("doublespeak.main").warning("warm-up skipped: %s", e)
 
 
 @app.get("/health")

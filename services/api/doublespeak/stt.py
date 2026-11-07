@@ -1,7 +1,7 @@
 """Local speech-to-text for the caller's audio. Never a cloud API — caller audio stays on the device.
 
 Provider order (DOUBLESPEAK_STT=auto, default): VoiceStudio on loopback (OpenAI-style
-POST {VOICESTUDIO_URL|http://127.0.0.1:3900}/v1/audio/transcriptions, via tell/localhost.py only, D-009)
+POST {VOICESTUDIO_URL|http://127.0.0.1:3900}/v1/audio/transcriptions, via doublespeak/localhost.py only, D-009)
 → in-process faster-whisper → none. DOUBLESPEAK_STT=voicestudio|whisper forces one. Any failure falls back silently.
 VoiceStudio is AGPL-3.0: used over HTTP only. Install whisper:  pip install faster-whisper
 """
@@ -16,7 +16,7 @@ import numpy as np
 
 from . import localhost
 
-log = logging.getLogger("tell.stt")
+log = logging.getLogger("doublespeak.stt")
 _model = None
 
 
@@ -73,7 +73,7 @@ def transcribe(x16k: np.ndarray) -> str | None:
         return None
     from faster_whisper import WhisperModel
     if _model is None:
-        size = os.environ.get("TELL_WHISPER_MODEL", "base.en")
+        size = os.environ.get("DOUBLESPEAK_WHISPER_MODEL", "base.en")
         _model = WhisperModel(size, device="cpu", compute_type="int8")
         log.info("loaded faster-whisper %s", size)
     segments, _ = _model.transcribe(x16k, beam_size=1, vad_filter=True)

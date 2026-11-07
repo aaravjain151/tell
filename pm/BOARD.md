@@ -15,8 +15,8 @@ One person, one branch, PR into `main` when `make test` is green. Merge order av
 
 | Branch | Owner | Owns | Done when |
 |---|---|---|---|
-| `feat/antispoof` | @sanathNU | `tell/signals/neural.py`, neural tests, T-010, T-013 | HF voter picked + logged id2label, < 5 s / 10 s clip on CPU, AudioSeal "cooperative AI" voter, one skills.md line per voter |
-| `feat/local-plumbing` | @samarthsrinivas | `tell/stt.py`, `tell/localhost.py`, `tell/llm.py`, `apps/web/`, T-011, T-018, T-020..T-022 | audio-only `/analyze` → `transcript_source == "local_voicestudio"` (or `local_whisper`), `cost.provider == "ollama"` + both llm_* tells, < 6 s CPU, counter reads 0 with Wi-Fi off |
+| `feat/antispoof` | @sanathNU | `doublespeak/signals/neural.py`, neural tests, T-010, T-013 | HF voter picked + logged id2label, < 5 s / 10 s clip on CPU, AudioSeal "cooperative AI" voter, one skills.md line per voter |
+| `feat/local-plumbing` | @samarthsrinivas | `doublespeak/stt.py`, `doublespeak/localhost.py`, `doublespeak/llm.py`, `apps/web/`, T-011, T-018, T-020..T-022 | audio-only `/analyze` → `transcript_source == "local_voicestudio"` (or `local_whisper`), `cost.provider == "ollama"` + both llm_* tells, < 6 s CPU, counter reads 0 with Wi-Fi off |
 | `feat/redteam-eval` | @aaravjain151 | `tools/redteam/`, `eval/`, `thresholds.py`, T-012, T-017, pitch | four generator families held out, `pm/AUDITS.md` table, FPR@90%TPR <= 0.15 on opus8k, demo script + Devpost |
 
 Cross-branch asks: `python3 scripts/pm.py msg <from> <to> "..."`. Log: `python3 scripts/pm.py log backend "..."`.
