@@ -12,9 +12,5 @@ web:
 	cd apps/web && python3 -m http.server 5173
 redteam:
 	$(PY) tools/redteam/make_calls.py --out data/calls $(ARGS)
-record:
-	$(PY) tools/redteam/capture.py human --free $(ARGS)
-wild:
-	bash tools/redteam/degrade.sh data/calls && cd services/api && ../../.venv/bin/python eval/run_eval.py --wild ../../data/calls $(ARGS)
 audit:
 	python3 scripts/pm.py audit

@@ -5,6 +5,7 @@ Each engine turns *our script text* into a WAV file. Caller audio is never sent 
   gradium     `uvx gradium tts` CLI            needs GRADIUM_API_KEY (+ uv)            cloud, credits
   elevenlabs  POST api.elevenlabs.io           needs ELEVENLABS_API_KEY                cloud, credits
   voicestudio POST localhost:3900/v1/audio/speech   VoiceStudio app running locally   local, free, AGPL-3.0 (used over HTTP only; no code vendored)
+  qwen3tts    `qwen-tts` package, Qwen3-TTS Base  pip install -U qwen-tts; clones from a ref wav + its exact words   local, free, Apache-2.0; slow on Mac (mps), minutes per clip
 
 Clone only voices of people who consented (teammates). Never clone a real person's voice without their say-so.
 """
@@ -63,8 +64,35 @@ def voicestudio(text: str, out: Path, voice_id: str = "", opener=None, **_) -> N
     out.write_bytes(_post(base + "/v1/audio/speech", body, {}, opener, timeout=600))   # first call may download the model
 
 
-ENGINES = {"gradium": gradium, "elevenlabs": elevenlabs, "voicestudio": voicestudio}
-VOICE_ENV = {"gradium": "GRADIUM_VOICE_ID", "elevenlabs": "ELEVENLABS_VOICE_ID", "voicestudio": "VOICESTUDIO_VOICE"}
+_qwen = None   # loaded once: the model is ~2-4 GB
+
+
+def _load_qwen():
+    import torch
+    from qwen_tts import Qwen3TTSModel
+    name = os.environ.get("QWEN3TTS_MODEL", "Qwen/Qwen3-TTS-12Hz-0.6B-Base")   # 1.7B-Base is better but ~3x slower
+    mps = torch.backends.mps.is_available()
+    return Qwen3TTSModel.from_pretrained(name, device_map="mps" if mps else "cpu", dtype=torch.bfloat16 if mps else torch.float32)
+
+
+def qwen3tts(text: str, out: Path, voice_id: str = "", voice_text: str = "", loader=None, **_) -> None:
+    """Clone the voice in `voice_id` (a ref .wav of a consenting teammate) saying `voice_text` (its exact words)."""
+    global _qwen
+    import numpy as np
+    if not voice_id or not Path(voice_id).is_file():
+        raise RuntimeError("qwen3tts needs --voice <ref.wav> (a consenting teammate, 3-15 s) and --voice-text '<exact words in it>'")
+    if not voice_text.strip():
+        raise RuntimeError("qwen3tts needs --voice-text: the exact words spoken in the reference clip")
+    if _qwen is None:
+        _qwen = (loader or _load_qwen)()
+    wavs, sr = _qwen.generate_voice_clone(text=text, language=os.environ.get("QWEN3TTS_LANG", "English"), ref_audio=voice_id, ref_text=voice_text)
+    x = np.clip(np.asarray(wavs[0], dtype=np.float32), -1.0, 1.0)
+    out.write_bytes(wrap_pcm16((x * 32767).astype("<i2").tobytes(), int(sr)))
+
+
+# order matters for `--engine all` under --max: the slow local one first, so it is never starved
+ENGINES = {"qwen3tts": qwen3tts, "voicestudio": voicestudio, "gradium": gradium, "elevenlabs": elevenlabs}
+VOICE_ENV = {"gradium": "GRADIUM_VOICE_ID", "elevenlabs": "ELEVENLABS_VOICE_ID", "voicestudio": "VOICESTUDIO_VOICE", "qwen3tts": "QWEN3TTS_REF"}
 PAID = {"gradium", "elevenlabs"}
 
 
@@ -78,6 +106,10 @@ def unavailable_reason(engine: str, opener=None) -> str | None:
     elif engine == "elevenlabs":
         if not os.environ.get("ELEVENLABS_API_KEY"):
             return "ELEVENLABS_API_KEY not set"
+    elif engine == "qwen3tts":
+        import importlib.util
+        if importlib.util.find_spec("qwen_tts") is None:
+            return "qwen-tts not installed (pip install -U qwen-tts)"
     elif engine == "voicestudio":
         base = os.environ.get("VOICESTUDIO_URL", "http://127.0.0.1:3900")
         try:

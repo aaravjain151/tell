@@ -78,3 +78,45 @@ def test_analysis_package_never_mentions_tts_services():
     for p in (ROOT / "services" / "api" / "tell").rglob("*.py"):
         src = p.read_text().lower()
         assert not any(b in src for b in banned), p
+
+
+def test_qwen3tts_clones_from_ref_with_fake_model(tmp_path):
+    import numpy as np
+    engines._qwen = None
+    ref = tmp_path / "ref.wav"
+    ref.write_bytes(engines.wrap_pcm16(b"\x00\x00" * 160))
+    calls = {}
+
+    class FakeModel:
+        def generate_voice_clone(self, text, language, ref_audio, ref_text):
+            calls.update(text=text, language=language, ref_audio=ref_audio, ref_text=ref_text)
+            return [np.full(2400, 0.5, dtype=np.float32)], 24000
+
+    out = tmp_path / "q.wav"
+    engines.qwen3tts("say this", out, voice_id=str(ref), voice_text="exact words", loader=lambda: FakeModel())
+    assert calls == {"text": "say this", "language": "English", "ref_audio": str(ref), "ref_text": "exact words"}
+    assert _wav_info(out) == (24000, 1, 2400)
+    engines._qwen = None
+
+
+def test_qwen3tts_refuses_without_ref_or_text(tmp_path):
+    import pytest
+    with pytest.raises(RuntimeError, match="--voice"):
+        engines.qwen3tts("x", tmp_path / "o.wav", voice_id="", voice_text="words")
+    ref = tmp_path / "r.wav"
+    ref.write_bytes(b"x")
+    with pytest.raises(RuntimeError, match="voice-text"):
+        engines.qwen3tts("x", tmp_path / "o.wav", voice_id=str(ref), voice_text=" ")
+
+
+def test_wild_eval_reads_engine_folders_and_human_dir(tmp_path):
+    """A subfolder per engine plus human/ must all be found (the old flat glob skipped them)."""
+    import sys as _s
+    _s.path.insert(0, str(ROOT / "services" / "api"))
+    from eval import run_eval
+    from pathlib import Path as P
+    assert run_eval._engine(P("voicestudio/scam_irs.wav"), "scam_irs") == "voicestudio"
+    assert run_eval._engine(P("ai__gradium__scam_irs.wav"), "ai__gradium__scam_irs") == "gradium"
+    assert run_eval._label(P("human/ana/scam_irs.wav"), "scam_irs") == "human"
+    assert run_eval._label(P("elevenlabs/scam_irs.wav"), "scam_irs") == "ai"
+    assert run_eval._condition("scam_irs.opus8k") == ("opus-8k", "scam_irs")
