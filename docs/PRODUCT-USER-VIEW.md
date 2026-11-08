@@ -1,4 +1,4 @@
-# Doublespeak from the user's chair
+# Tell from the user's chair
 
 Written from the user's side, not the engineer's. Status 2026-11-07. Claims here follow `pm/FINDINGS-call-connection.md` and `docs/DETECTION-LAYERS.md`; nothing below is a measured accuracy.
 
@@ -14,7 +14,7 @@ Truecaller's site could not be fetched from the build environment (the fetch too
 
 ## The moments
 
-1. Before the call. Doublespeak is armed and says so on Home. They should never think about it. They check once: what stays on the device?
+1. Before the call. Tell is armed and says so on Home. They should never think about it. They check once: what stays on the device?
 2. The call rings. Nothing happens. No popup, no sound. Unknown numbers are the only thing a block list can act on (the Mac route does not see the number today).
 3. I pick up. Listening starts by itself, caller side only. A thin bar says Listening. This is the best feature and the one thing we protect.
 4. During. One verdict card that changes in place and can change its mind. Two separate answers: human or AI, scam or not, each with the evidence. A red banner only for a corroborated scam pattern, with a Dismiss.

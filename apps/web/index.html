@@ -639,7 +639,7 @@ html[data-sens="quiet"] #caution{display:none}
     </div>
     <div class="postcall" id="postcall">
       <h2>After the call</h2>
-      <p class="note">On a Mac, Doublespeak does not see the caller’s number. If you want to block them, type it from your call log.</p>
+      <p class="note">On a Mac, Tell does not see the caller’s number. If you want to block them, type it from your call log.</p>
       <div class="formrow">
         <label class="field">Their number<input id="pc-number" type="tel" inputmode="tel" autocomplete="off" maxlength="40" placeholder="+1 555 0100"></label>
         <div class="postact">
@@ -771,8 +771,8 @@ html[data-sens="quiet"] #caution{display:none}
       <div class="home-hero" id="home-hero" data-s="checking">
         <h1 id="home-h" class="home-state">Checking</h1>
         <div class="px home-px" id="home-px" aria-hidden="true"></div>
-        <p class="pg-lede" id="home-lede">Doublespeak starts listening when you pick up.</p>
-        <p class="home-sub" id="home-sub">Looking for the Doublespeak engine on this machine.</p>
+        <p class="pg-lede" id="home-lede">Tell starts listening when you pick up.</p>
+        <p class="home-sub" id="home-sub">Looking for the Tell engine on this machine.</p>
         <div class="home-act">
           <button class="btn primary" type="button" data-go="live" id="home-open">Open live view</button>
           <button class="link" type="button" data-go="settings">How listening works</button>
@@ -800,7 +800,7 @@ html[data-sens="quiet"] #caution{display:none}
   <section class="page" id="pg-history" aria-labelledby="hist-h">
     <div class="pg">
       <h1 id="hist-h">History</h1>
-      <p class="pg-lede">Calls Doublespeak flagged, kept only on this device, encrypted, and only if you turn it on. No audio, no words, no phone numbers.</p>
+      <p class="pg-lede">Calls Tell flagged, kept only on this device, encrypted, and only if you turn it on. No audio, no words, no phone numbers.</p>
       <div id="hist-body" aria-live="polite"></div>
       <div class="home-act" id="hist-act" hidden>
         <button class="btn" type="button" id="hist-refresh">Refresh</button>
@@ -821,7 +821,7 @@ html[data-sens="quiet"] #caution{display:none}
   <section class="page" id="pg-block" aria-labelledby="block-h">
     <div class="pg">
       <h1 id="block-h">Block and spam</h1>
-      <p class="pg-lede">Numbers you never want to hear from again. Doublespeak on a Mac does not see the caller’s number, so you add it yourself after the call.</p>
+      <p class="pg-lede">Numbers you never want to hear from again. Tell on a Mac does not see the caller’s number, so you add it yourself after the call.</p>
       <p class="msg" id="block-mode" role="status"></p>
 
       <section class="pg-sec" aria-labelledby="block-add-h">
@@ -858,7 +858,7 @@ html[data-sens="quiet"] #caution{display:none}
 
       <section class="pg-sec" aria-labelledby="set-auto-h">
         <h2 id="set-auto-h">Listening starts when you pick up</h2>
-        <p class="pg-lede" style="margin-top:8px">There is no button to press. When a call is answered and plays through this Mac, Doublespeak starts listening to the caller’s side only. It never speaks to the caller. Stop it any time with Stop on the listening bar, or quit the engine.</p>
+        <p class="pg-lede" style="margin-top:8px">There is no button to press. When a call is answered and plays through this Mac, Tell starts listening to the caller’s side only. It never speaks to the caller. Stop it any time with Stop on the listening bar, or quit the engine.</p>
         <p class="msg" id="set-auto-state" role="status"></p>
         <label class="opt" style="margin-top:12px;max-width:640px">
           <input type="checkbox" id="pref-follow" checked>
@@ -1697,7 +1697,7 @@ function go(p, push){
   if (p === "people") $("people-slot").appendChild(tb);
   else if (tb.parentElement.id === "people-slot") $("simple").insertBefore(tb, document.querySelector(".simple-actions"));
   if (push !== false && was !== p) { try{ history.replaceState(null, "", location.pathname + location.search + "#/" + p); }catch(e){} }
-  document.title = (p === "home" ? "" : ({live:"Live call", history:"History", people:"Trusted people", block:"Block and spam", settings:"Settings"}[p] + " | ")) + "Doublespeak";
+  document.title = (p === "home" ? "" : ({live:"Live call", history:"History", people:"Trusted people", block:"Block and spam", settings:"Settings"}[p] + " | ")) + "Tell";
   if (p === "history") loadHistory();
   if (p === "block") loadBlock();
   if (p === "settings") renderSettings();
@@ -1718,7 +1718,7 @@ function renderHome(){
   if (mode === "on"){ s = "live"; h = "Listening now"; sub = "A call is in progress. Open the live view to see the verdict as it changes."; }
   else if (conn.ok || apiUp){ s = "armed"; h = "Armed"; sub = "Waiting for a call to play on this Mac. Answer a call on your iPhone through Calls on Other Devices, or on this Mac, and it starts by itself."; }
   else if (conn.tries > 0 || probed){ s = "off"; h = "Not connected"; sub = "The engine is not running. Start it in a terminal and this page connects by itself."; }
-  else { s = "checking"; h = "Checking"; sub = "Looking for the Doublespeak engine on this machine."; }
+  else { s = "checking"; h = "Checking"; sub = "Looking for the Tell engine on this machine."; }
   hero.dataset.s = s; $("home-h").textContent = h; $("home-sub").textContent = sub;
   $("home-open").textContent = mode === "on" ? "Open the live call" : "Open live view";
   const px = $("home-px"); if (!px.children.length) makePx(px, 20);
@@ -1775,7 +1775,7 @@ async function loadHistory(){
   if (String(r.j.status).startsWith("unavailable")){ panel(body, "error", "History is locked", String(r.j.status), ""); return; }
   HIST = r.j.records || []; renderHome();
   $("hist-act").hidden = false;
-  if (!HIST.length){ panel(body, "empty", "No flagged calls yet", "When Doublespeak flags a call it is added here, on this device only."); return; }
+  if (!HIST.length){ panel(body, "empty", "No flagged calls yet", "When Tell flags a call it is added here, on this device only."); return; }
   body.innerHTML = `<ul class="rows">${HIST.map(x => {
     const tells = (x.tells || []).map(n => NAMES[n] || n).join(", ");
     return `<li data-tier="${esc(x.tier)}"><div class="main"><b class="tag">${esc(tierWord(x.tier))}</b><span>${esc(new Date(x.ts).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}))}${tells ? ". Top reasons: " + esc(tells) : ""}</span></div><span class="muted-n">Voice ${esc(x.p_ai)}, wording ${esc(x.p_scam)}</span></li>`;
