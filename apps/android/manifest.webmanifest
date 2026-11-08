@@ -1,6 +1,6 @@
 {
-  "name": "Doublespeak for Android",
-  "short_name": "Doublespeak",
+  "name": "Tell for Android",
+  "short_name": "Tell",
   "description": "Listens to a call on speakerphone and checks it on your own computer over USB. Nothing is recorded or stored.",
   "id": "./",
   "start_url": "./?source=pwa",

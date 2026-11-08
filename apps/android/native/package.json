@@ -1,8 +1,8 @@
 {
-  "name": "doublespeak-android",
+  "name": "tell-android",
   "private": true,
   "version": "0.1.0",
-  "description": "Capacitor wrapper for apps/android (Doublespeak for Android). Thin client: audio goes to the engine on the owner's computer over adb reverse only.",
+  "description": "Capacitor wrapper for apps/android (Tell for Android). Thin client: audio goes to the engine on the owner's computer over adb reverse only.",
   "scripts": {
     "build:www": "node build-www.mjs",
     "sync": "npm run build:www && cap sync android",

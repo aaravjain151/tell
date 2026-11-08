@@ -1,4 +1,4 @@
-/* Messages for WS /ws/stream (see services/api/doublespeak/stream.py). Pure; used by the page and the tests. */
+/* Messages for WS /ws/stream (see services/api/tell/stream.py). Pure; used by the page and the tests. */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();
   else root.DSProtocol = factory();

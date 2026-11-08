@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Doublespeak</string>
-    <string name="title_activity_main">Doublespeak</string>
+    <string name="app_name">Tell</string>
+    <string name="title_activity_main">Tell</string>
     <string name="package_name">dev.doublespeak.app</string>
     <string name="custom_url_scheme">dev.doublespeak.app</string>
 </resources>

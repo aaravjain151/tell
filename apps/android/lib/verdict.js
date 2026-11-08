@@ -12,7 +12,7 @@
     ai_undisclosed: { h: "Likely synthetic, didn't say so", a: "Legitimate AI callers are required to identify themselves. Treat this as untrusted: hang up and call back on a number you already have." },
     ai_disclosed: { h: "AI, identified itself", a: "The caller said it's automated. Fine for appointment reminders; never share codes or payment with an automated caller." },
     scam: { h: "Scam pattern", a: "Hang up. Do not send money, cards, or codes. Call the person or organisation back on a number you already have." },
-    unsure: { h: "Not sure yet", a: "Not enough to judge yet. Doublespeak keeps listening." },
+    unsure: { h: "Not sure yet", a: "Not enough to judge yet. Tell keeps listening." },
   };
   var NAMES = { urgency: "Urgency", payment_rails: "Payment asks", impersonation: "Impersonation", credential_ask: "Credential asks",
     secrecy: "Secrecy", ai_disclosure: "AI disclosure", llm_isms: "Assistant phrasing", disfluency: "Hesitations",

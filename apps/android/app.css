@@ -1,4 +1,4 @@
-/* Doublespeak for Android. Tokens match apps/web/index.html and design/tokens.json (navy ink, teal = machine half, red = flag).
+/* Tell for Android. Tokens match apps/web/index.html and design/tokens.json (navy ink, teal = machine half, red = flag).
    Phone first: one hero (the orb), the primary action in the thumb zone, status never colour-only (word + ring + headline). */
 @font-face{font-family:"Outfit";src:url(outfit.woff2) format("woff2");font-weight:200 600;font-style:normal;font-display:swap}
 :root{

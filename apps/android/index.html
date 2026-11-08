@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Doublespeak for Android</title>
+<title>Tell for Android</title>
 <meta name="description" content="Listens to a call on speakerphone and checks it on your own computer over USB. Nothing is recorded or stored.">
 <meta name="theme-color" content="#0B1020" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
@@ -23,10 +23,10 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
 <div class="app" id="app">
 
   <header class="top">
-    <div class="brand" aria-label="Doublespeak">
+    <div class="brand" aria-label="Tell">
       <img class="mk mk-l" src="icons/mark-light.svg" alt="" width="30" height="28">
       <img class="mk mk-d" src="icons/mark-dark.svg" alt="" width="30" height="28">
-      <span>Doublespeak</span>
+      <span>Tell</span>
     </div>
     <button class="conn" id="conn" type="button" aria-haspopup="dialog">
       <i class="dot" aria-hidden="true"></i><span id="conn-t">Checking</span>
@@ -66,7 +66,7 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
     <section class="card pair" id="pair" aria-labelledby="pair-h" hidden></section>
 
     <!-- idle: how it works -->
-    <section class="card steps" id="steps" aria-label="How to use Doublespeak">
+    <section class="card steps" id="steps" aria-label="How to use Tell">
       <ol>
         <li><b>Put the call on speakerphone.</b><span>Android gives apps no call audio. The microphone hears the speaker.</span></li>
         <li><b>Tap Start listening.</b><span>Audio goes only to your computer, over USB.</span></li>
@@ -104,7 +104,7 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
       </div>
     </section>
 
-    <p class="foot">Doublespeak can be wrong. It never speaks to the caller and never records.</p>
+    <p class="foot">Tell can be wrong. It never speaks to the caller and never records.</p>
   </main>
 
   <!-- the dock: the primary action lives in the thumb zone -->
@@ -137,7 +137,7 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
       <p class="al-a" id="al-a">Hang up. Do not send money, cards, or codes.</p>
       <ul class="al-why" id="al-why"></ul>
       <button class="btn al-btn" id="al-dismiss" type="button">Dismiss</button>
-      <p class="al-note">Dismiss clears this alert. Doublespeak keeps listening and will warn again if there is new evidence.</p>
+      <p class="al-note">Dismiss clears this alert. Tell keeps listening and will warn again if there is new evidence.</p>
     </div>
   </div>
 
@@ -147,7 +147,7 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
   <section class="sheet" id="sheet-consent" role="dialog" aria-modal="true" aria-labelledby="sc-h" hidden>
     <div class="grab" aria-hidden="true"></div>
     <h2 id="sc-h">Before you listen</h2>
-    <p class="lead" id="consent-text">Doublespeak listens to this call through your microphone on your phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it.</p>
+    <p class="lead" id="consent-text">Tell listens to this call through your microphone on your phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it.</p>
     <p class="small">This works in speaker mode only: the call has to be on speakerphone.</p>
     <div class="sheet-actions">
       <button class="btn primary big" id="consent-yes" type="button">I understand, continue</button>
@@ -158,11 +158,11 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
   <section class="sheet" id="sheet-speaker" role="dialog" aria-modal="true" aria-labelledby="ss-h" hidden>
     <div class="grab" aria-hidden="true"></div>
     <h2 id="ss-h">How speaker mode works</h2>
-    <p class="lead">Android does not give apps the audio of a phone call. So Doublespeak listens the way you do: through the microphone, while the call plays out loud on speakerphone.</p>
+    <p class="lead">Android does not give apps the audio of a phone call. So Tell listens the way you do: through the microphone, while the call plays out loud on speakerphone.</p>
     <ul class="facts">
       <li><b>It hears</b> the caller from the speaker, your own voice, and the room.</li>
       <li><b>It does not hear</b> a call held to your ear, on Bluetooth, or on headphones.</li>
-      <li><b>Some phones silence the microphone</b> for other apps during a call. If the level bars stay flat, this phone is doing that and Doublespeak cannot help on this call.</li>
+      <li><b>Some phones silence the microphone</b> for other apps during a call. If the level bars stay flat, this phone is doing that and Tell cannot help on this call.</li>
       <li><b>Accuracy is lower</b> than with clean audio, so the engine caps how sure it says it is.</li>
       <li><b>Keep this screen on.</b> If you switch apps, Android may stop the microphone.</li>
     </ul>
