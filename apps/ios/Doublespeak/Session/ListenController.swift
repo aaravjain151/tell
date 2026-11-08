@@ -120,7 +120,13 @@ final class ListenController: ObservableObject {
             }
         case .tick(let t): apply(t)
         case .ended(let reason):
-            if mode == .listening && reason != "ended" { /* a stop we asked for is handled locally */ }
+            // The computer ended the session (panic, closed, longest time reached, engine gone, bridge stopped):
+            // stop the microphone, leave the listening state and say why. The last verdict stays until Clear screen.
+            guard mode == .listening else { break }
+            stopCapture()
+            mode = .ended
+            showAlert = false
+            notice = Notice(title: "Listening stopped on your computer", body: Self.endedText(reason))
         default: break
         }
     }
@@ -258,6 +264,17 @@ final class ListenController: ObservableObject {
     private func resetSession() {
         verdict = nil; notice = nil; showAlert = false; elapsed = 0; silentFrames = 0
         micFlat = false; redDismissed = false; lastAlert = "none"; engine = nil
+    }
+
+    static func endedText(_ reason: String) -> String {
+        switch reason {
+        case "panic": return "Everything was wiped on your computer. Start again when you are ready."
+        case "deleted", "kill": return "The session was closed on your computer."
+        case "max_length": return "The longest allowed listening time was reached. Start again to keep listening."
+        case "heartbeat_timeout": return "Your computer stopped hearing from the phone. Check the USB cable."
+        case "bridge stopped": return "The bridge on your computer was stopped."
+        default: return "The engine on your computer ended the session. Check that it is still running."
+        }
     }
 
     // test/demo seam
