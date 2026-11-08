@@ -90,3 +90,34 @@ Findings that survive phone-band (paired, n=8 scripts): voice too clean (CPPS +2
 Shadow layers added (never scored): qwen_cpp_db, qwen_f0_rate_st_s, qwen_long_pause_per_min, qwen_onset_sharpness_db, qwen_lowmid_balance_db. Leave-one-script-out clip AUC (clean/opus8k/g711/replay): cpp 1.00/1.00/1.00/0.92, long-pause 0.97/0.98/0.98/0.96, f0-rate 0.81/0.69/0.81/0.89, onset 0.92/0.88/0.90/0.80 (0.67 noise-matched), lowmid 0.88 throughout (likely mic). Scorer, thresholds untouched; golden eval identical (transcript 0.98 / synthetic 1.00 before and after); tests 549 passed.
 
 Caveat that governs all of it: ONE speaker, ONE engine, 8 scripts; real and Qwen differ in recording chain as well as synthesis. Not promotable. Next step: more speakers/mics, a second TTS engine, Qwen in real phone captures, and a short listening test to confirm which cues people actually use; then decide whether a "too clean voice" tell belongs in `acoustic.py`.
+
+## Phone-memo humans: false-alarm test and neural-head retrain (2026-11-07) - head still NOT wired
+Full write-up: docs/HEAD-FINETUNE.md "Real phone-recorded humans"; tables `docs/head-finetune/tables_humans.md`. Scorer, thresholds, `W_*` untouched.
+Data: 12 iPhone Voice Memos (171 s) of the owner's friends, quiet rooms, **voice memos, not calls**; consent relayed by the owner (`consent.txt`, not signed per speaker); audio stays in gitignored `data/finetune/humans_new/`. All 12 are speech (local whisper): 4 "train cancelled" reads, 4 free "my morning", 4 human reads of the scam script.
+**Speaker count is ESTIMATED: 4** (wav2vec2 L5 / w2v-BERT L4 mean-pooled embeddings, cosine + agglomerative, silhouette k = 4 / 5; each guessed speaker has one clip of each script). By that guess two speakers recorded at both locations, so the location grouping can leak; a single-group split (all 12 held out together) is reported as the conservative case.
+
+Current shipping pipeline on the 12 clips (`run_eval.py --wild`, Pellav2 + HF, thresholds 2026-11-07.3), n = 12 per row:
+
+| condition | fused p_ai >= 0.60 | max p_ai | Pellav2 >= 0.5 | HF >= 0.5 |
+|---|---|---|---|---|
+| clean / opus8k / g711_mulaw8k / chain_replay_call | 0/12 each | 0.29 / 0.23 / 0.20 / 0.20 | 0/12 each (max 0.00) | 0/12 each |
+| g711_alaw8k / speaker_rerecord_sim | 0/12 each | 0.21 / 0.23 | 0/12 each | 0/12 each |
+| opus_lowbitrate_with_loss | 0/12 | **0.54** | **7/12** | 0/12 |
+| chain_pstn_voip | 0/12 | **0.56** (1 unsure) | **7/12** | 0/12 |
+
+No human crossed 0.60 (95% upper bound 26% on 12). But Pellav2 calls 7/12 real humans synthetic after 6 kbps Opus with burst loss (our own concealment) and fused p_ai gets within 0.04 of the threshold; Pellav2's FPR@0.5 there is 0.55 on the 485 old+new real windows too. That is the nearest human false alarm in the shipped detector. Scam-script reads correctly land in tier "scam" (2-4 per condition).
+Existing head (`head_pella_mlp.pt`, never saw these speakers), 45 windows: share >= 0.5 = 0.02 clean, 0.18 opus8k, 0.13 g711, 0.02 replay, 0.16 alaw, 0.07 pstn (Pellav2: 0.00 except pstn 0.51); every clip mean stays < 0.5.
+
+Retrain with the new humans as reals (same leave-one-generator-out x leave-speaker-group-out protocol, each new group its own fold), held-out generator, chain_replay_call, AUC / TPR@0.5 / FPR@0.5 (485 reals):
+
+| held out | Pellav2 now | head before | head after (cluster grouping) |
+|---|---|---|---|
+| Qwen (442 fake) | 0.58 / 0.01 / 0.01 | 0.65 / 0.06 / 0.01 | 0.63 / 0.05 / 0.00 |
+| Gradium (72) | 0.41 / 0.00 / 0.01 | 0.82 / 0.25 / 0.03 | 0.77 / 0.08 / 0.02 |
+| `say` (94) | 0.73 / 0.03 / 0.01 | 0.92 / 0.54 / 0.02 | 0.89 / 0.46 / 0.01 |
+
+New-human windows >= 0.5 for the retrained head: 0.00-0.02 with location or cluster groups; **up to 0.09 (g711, alaw) in the single-group split**, where no phone-memo speaker was in training. Owner Qwen files (Sanath-held-out fold, never trained on): Qwen-seen head clean 0.81 / 0.73, opus8k 0.98 / 0.97, replay 0.08 / 0.21 (before 0.78 / 0.69, 0.97 / 0.96, 0.17 / 0.31); Pellav2 now 0.67 / 0.02, 0.67 / 0.00, 0.00 / 0.00.
+Learned fusion (PR #82): not on main, not refitted.
+Bar (replay catch better AND held-out false alarms no higher than the fusion): catch met; false alarms not shown (single-group 2-9% of codec windows, held-out LibriSpeech FPR@0.5 0.01-0.03 vs Pellav2 0.00; 12 clips cannot bound it). **Not wired.**
+Caveats: speaker count is estimated; voice memos in quiet rooms, not phone calls; channels simulated; 45 windows from 12 clips are not independent; the loss concealment is ours, not libopus PLC.
+Next: more speakers on more devices and real calls; investigate the Pellav2 low-bitrate-loss false alarms before any threshold work.

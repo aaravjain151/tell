@@ -32,20 +32,52 @@ EVAL_CONDS = ["clean", "opus8k", "g711_mulaw8k", "chain_replay_call", "g711_alaw
 GENS = ["qwen", "gradium", "say"]
 import os
 K_FOLDS, SEED = 5, int(os.environ.get("HEAD_FOLD_SEED", "7"))
+HN = FT / "humans_new"          # new real humans (finetune/head_humans.py); appended only with --extra-humans
+EXTRA = {"on": False, "groups": "location"}
 
 
 # --------------------------------------------------------------------------------------------- data
-def load(backbone: str):
+def _new_speaker(m: dict) -> str:
+    """Speaker-group label of a new human window: location (conservative: one group per recording place) or the
+    estimated speaker cluster from head_humans.py speakers, or one group for all."""
+    if EXTRA["groups"] == "location":
+        return f"new_{m['group']}"
+    if EXTRA["groups"] == "single":            # most conservative: all new clips are one group, scored only by models that saw none of them
+        return "new_all"
+    # estimated speakers: the wav2vec2 layer-5 best-silhouette cut (k=4; it groups one clip of each script per cluster,
+    # so it is not a same-text artefact; the w2v-BERT cut agrees except that it splits one clip off). A GUESS.
+    sp = json.loads((HN / "speakers.json").read_text())["hf"]
+    return f"new_c{dict(zip(sp['clips'], sp['clusters_k_best']))[m['clip']]}"
+
+
+def load_meta() -> list[dict]:
     meta = list(csv.DictReader(open(FT / "windows.csv")))
-    F = {c: np.load(FT / f"feat_{backbone}_{c}.npz") for c in CONDS}
+    if EXTRA["on"]:
+        new = list(csv.DictReader(open(HN / "windows.csv")))
+        for m in new:
+            m["speaker"] = _new_speaker(m)
+            m["wid"] = str(len(meta) + int(m["wid"]))
+        meta = meta + new
+    return meta
+
+
+def load(backbone: str):
+    meta = load_meta()
+    F = {c: dict(np.load(FT / f"feat_{backbone}_{c}.npz")) for c in CONDS}
+    if EXTRA["on"]:
+        Fn = {c: np.load(HN / f"feat_{backbone}_{c}.npz") for c in CONDS}
+        for c in CONDS:
+            F[c] = {k: np.concatenate([F[c][k], Fn[c][k]]) for k in ("mean", "std", "p_current")}
     return meta, F
 
 
 def folds_for(meta) -> dict[str, int]:
     rng = np.random.default_rng(SEED)
-    spk = sorted({m["speaker"] for m in meta if m["owner"] == "0"})
+    spk = sorted({m["speaker"] for m in meta if m["owner"] == "0" and m.get("split") != "humans_new"})
     rng.shuffle(spk)
-    f = {s: i % K_FOLDS for i, s in enumerate(spk)}
+    f = {s: i % K_FOLDS for i, s in enumerate(spk)}          # identical to the 2026-11-07 run for the old speakers
+    for j, s in enumerate(sorted({m["speaker"] for m in meta if m.get("split") == "humans_new"})):
+        f[s] = K_FOLDS + j                                     # every new speaker group is its OWN held-out fold
     f["owner"] = -1
     return f
 
@@ -190,7 +222,7 @@ def run_eval(backbone, kind, use_std, aug, epochs, train_conds_arg=None):
     n_params = None
     for scn in scenarios:
         g_out = scn[4:] if scn.startswith("loo_") else None
-        for k in range(K_FOLDS):
+        for k in range(max(fold.values()) + 1):
             tr = (fold_of != k) & ((lab == 0) | (gen != g_out) if g_out else True)
             h = fit(Xm[tr], Xs[tr], lab[tr], weights_for(lab[tr], gen[tr], spk[tr]), kind, use_std, epochs=epochs, seed=k)
             n_params = sum(p.numel() for p in h.parameters())
@@ -231,6 +263,24 @@ def report(meta, idx, sources, scores, owner_idx, owner_scores, n_params, secs, 
     mk = np.ones(len(meta), bool)
     block("seen_gen/head", scores["seen_gen"], mk)
     block("seen_gen/current", sources["current"], mk)
+    new_h = np.array([m.get("split") == "humans_new" for m in meta])
+    if new_h.any():
+        # reals = ONLY the new phone-memo humans (each scored by a model that never saw its group); fakes = held-out generator
+        for g in GENS:
+            mk = new_h | ((y_all == 1) & (gen_all == g))
+            block(f"newhum_loo_{g}/head", scores[f"loo_{g}"], mk)
+            block(f"newhum_loo_{g}/current", sources["current"], mk)
+        old_real = (y_all == 0) & ~new_h
+        fa = {}
+        for name, src in [("head_loo_qwen", scores["loo_qwen"]), ("head_seen_gen", scores["seen_gen"]), ("current", sources["current"])]:
+            fa[name] = {}
+            for c in EVAL_CONDS:
+                s = src[c]
+                op = float(np.nanquantile(s[old_real], 0.95))          # 5% FPR on the OLD reals (out-of-fold for the head)
+                fa[name][c] = {"n_new_windows": int(new_h.sum()), "fa_0.5": float((s[new_h] >= 0.5).mean()), "op_fpr5_old": op,
+                               "fa_op": float((s[new_h] >= op).mean()),
+                               "by_group": {sp: float((s[new_h & (spk_all == sp)] >= 0.5).mean()) for sp in sorted(set(spk_all[new_h]))}}
+        res["new_humans_false_alarms"] = fa
     # owner files: mean over the production windows of each file, per scenario (mean over the 5 fold-models)
     own = {}
     for name in ("owner_rough_morning", "owner_long_tech_scam"):
@@ -256,11 +306,15 @@ def main():
     ap.add_argument("--train-all-conds", action="store_true", help="also train on the eval conditions (all 8 chains)")
     ap.add_argument("--epochs", type=int, default=25)
     ap.add_argument("--out", default="")
+    ap.add_argument("--extra-humans", choices=["", "location", "cluster", "single"], default="",
+                    help="append the new phone-memo humans (data/finetune/humans_new) to the real class, grouped by location, estimated speaker cluster, or as one group")
     a = ap.parse_args()
+    if a.extra_humans:
+        EXTRA.update(on=True, groups=a.extra_humans)
     use_std = not a.no_std
-    tag = f"{'s' + str(SEED) + '_' if SEED != 7 else ''}{'all_' if a.train_all_conds else ''}{a.backbone}_{a.kind}{'' if use_std else '_meanonly'}{'_cleanonly' if a.clean_only else ''}"
+    tag = f"{'hum_' + a.extra_humans + '_' if a.extra_humans else ''}{'s' + str(SEED) + '_' if SEED != 7 else ''}{'all_' if a.train_all_conds else ''}{a.backbone}_{a.kind}{'' if use_std else '_meanonly'}{'_cleanonly' if a.clean_only else ''}"
     if a.mode == "evaluate":
-        meta0 = list(csv.DictReader(open(FT / "windows.csv")))
+        meta0 = load_meta()
         r = report(*run_eval(a.backbone, a.kind, use_std, not a.clean_only, a.epochs, CONDS if a.train_all_conds else None), tag,
                    sanath_fold=folds_for(meta0)["sanath"])
         (FT / f"results_{tag}.json").write_text(json.dumps(r, indent=1))
