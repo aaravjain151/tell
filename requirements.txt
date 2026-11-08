@@ -1,0 +1,38 @@
+# DoubleSpeak - pinned dependencies (Python 3.11)
+# Everything runs on-device. The only runtime network connection allowed is to
+# a local Ollama server on localhost:11434.
+
+# UI  (1.40+ required for st.audio_input in-app recording)
+streamlit==1.40.2
+# Pin pyarrow to the last NumPy 1.x-compatible line; pyarrow>=18 needs NumPy 2.
+pyarrow==17.0.0
+
+# Speech-to-text (CPU, int8)
+faster-whisper==1.0.3
+
+# Deepfake detector backbone + preprocessing (pellav2)
+torch==2.4.1
+torchaudio==2.4.1
+transformers==4.44.2
+soundfile==0.12.1
+scipy==1.14.1
+pyloudnorm==0.1.1
+
+# Audio handling
+librosa==0.10.2.post1
+sounddevice==0.5.1
+numpy==1.26.4
+
+# Encrypted local history + OS keychain
+cryptography==43.0.1
+keyring==25.4.1
+
+# Network monitor
+psutil==6.0.0
+
+# Tests
+pytest==8.3.3
+
+# Only used once, during offline setup, to fetch model weights ahead of time.
+# Not imported at runtime (HF_HUB_OFFLINE=1 is enforced in the app).
+huggingface-hub==0.24.7

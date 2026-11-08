@@ -12,19 +12,28 @@ caller. Notifications use fixed wording and never contain what was said. It stop
 
 --watch only arms for call apps (default: FaceTime, Phone, callservicesd, avconferenced, zoom.us, WhatsApp,
 Microsoft Teams), matched by exact process name or bundle id. It never arms on music or browsers unless you list them
-with --call-process. Needs the `websockets` package (installed with services/api/requirements.txt).
+with --call-process. OPT-IN labelled capture (OFF by default, for building real evaluation data): with
+    --save-labeled DIR --label {human,ai,scam_human,scam_ai} --speaker NAME --consent-note TEXT
+the 16 kHz PCM it analysed is written to DIR/<label>/<timestamp>.wav (0600) with a JSON sidecar (label, speaker, consent
+note, date, source, raw scores per tick). All four flags are required, typed on the command line, never defaulted.
+A loud SAVING AUDIO TO DISK banner shows and stays in the LISTENING line. Only record people who agreed.
+
+Needs the `websockets` package (installed with services/api/requirements.txt).
 """
 from __future__ import annotations
 
 import argparse
 import array
 import asyncio
+import datetime
 import json
+import os
 import signal
 import subprocess
 import sys
 import time
 import urllib.request
+import wave
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -40,6 +49,10 @@ FRAME_BYTES = 16000 * FRAME_MS // 1000 * 2
 SILENCE_PEAK = 40                      # int16 peak below this counts as silence
 NOTIFY_TEXT = {"amber": "Possible scam call. Be careful with money and codes.",
                "red": "Likely scam call. Do not share money, codes or passwords."}
+LABELS = ("human", "ai", "scam_human", "scam_ai")
+SAVE_BANNER = "!!! SAVING AUDIO TO DISK (labelled capture) !!!"
+SAVE_TAG = " | SAVING AUDIO TO DISK"
+NETWORK_FS = ("smbfs", "nfs", "afpfs", "webdav", "cifs", "ftp", "fuse", "osxfuse", "macfuse", "sshfs", "9p", "ncpfs", "davfs")
 END_POLLS = 3                          # consecutive polls without the call app before we call the call over
 
 
@@ -63,6 +76,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--call-process", action="append", metavar="NAME", help="call app process name (repeatable); "
                     "replaces the default list")
     ap.add_argument("--process", metavar="NAME", help="with --now: tap only this app (default: system audio)")
+    ap.add_argument("--tap-call-app-only", action="store_true",
+                    help="--watch: tap only the detected call app instead of all system audio (can hear silence if the "
+                         "call is rendered by another process)")
     ap.add_argument("--tap", default=str(DEFAULT_TAP), help="path to the tap_audio binary")
     ap.add_argument("--side", choices=("far", "near", "mix"), default="far")
     ap.add_argument("--silence-s", type=float, default=90.0, help="stop after this many seconds of silence")
@@ -70,6 +86,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--speed", type=float, default=1.0, help="--file: 1 = real time")
     ap.add_argument("--sound", action="store_true", help="play a sound with notifications (off by default)")
     ap.add_argument("--no-notify", action="store_true", help="never show a macOS notification")
+    ap.add_argument("--save-labeled", metavar="DIR", help="OPT-IN: write the analysed audio + sidecar under DIR/<label>/ "
+                    "(needs --label, --speaker, --consent-note)")
+    ap.add_argument("--label", choices=LABELS, help="with --save-labeled: what the voice on this call really is")
+    ap.add_argument("--speaker", metavar="NAME", help="with --save-labeled: who is speaking")
+    ap.add_argument("--consent-note", metavar="TEXT", help="with --save-labeled: how/that the speaker consented")
     ap.add_argument("--i-understand", action="store_true", help="accept the consent line non-interactively")
     a = ap.parse_args(argv)
     if a.speed <= 0 or a.silence_s <= 0 or a.poll_s <= 0:
@@ -139,10 +160,10 @@ def peak(frame: bytes) -> int:
     return max((abs(x) for x in a), default=0)
 
 
-def status_line(m: dict, latency: float | None) -> str:
+def status_line(m: dict, latency: float | None, saving: bool = False) -> str:
     st = m.get("stable") or {}
     lat = f" lat={latency:.1f}s" if latency is not None else ""
-    return (f"LISTENING | {m.get('t', 0):6.1f}s  shown={st.get('tier', '?'):<14} {st.get('state', '?'):<9} "
+    return (f"LISTENING{SAVE_TAG if saving else ''} | {m.get('t', 0):6.1f}s  shown={st.get('tier', '?'):<14} {st.get('state', '?'):<9} "
             f"alert={st.get('alert', '?'):<5}| raw={m.get('tier')} p_scam={m.get('p_scam')} p_ai={m.get('p_ai')}{lat}")
 
 
@@ -160,8 +181,11 @@ def say(msg: str) -> None:
     print(msg, flush=True)
 
 
-def banner(on: bool, label: str = "") -> None:
-    if on:
+def banner(on: bool, label: str = "", saving: bool = False) -> None:
+    if on and saving:
+        say(f"\n{SAVE_BANNER}")
+        say(f"=== LISTENING ({label}){SAVE_TAG} | nothing is sent anywhere | Ctrl-C stops ===")
+    elif on:
         say(f"\n=== LISTENING ({label}) | analysed in memory on this machine, nothing recorded or sent | Ctrl-C stops ===")
     else:
         say("=== NOT LISTENING ===")
@@ -172,6 +196,9 @@ def banner(on: bool, label: str = "") -> None:
 
 def consent(args: argparse.Namespace) -> bool:
     say(CONSENT)
+    if args.save_labeled:
+        say(f"{SAVE_BANNER}\nThis run WRITES the call audio to {args.save_labeled}/{args.label}/ for speaker "
+            f"{args.speaker!r}. Consent noted: {args.consent_note!r}. Only record people who agreed.")
     if args.i_understand:
         return True
     if not sys.stdin.isatty():
@@ -194,6 +221,89 @@ def create_session(base: str, origin: str) -> dict:
                                  headers={"Origin": origin, "Content-Type": "application/json"})
     with opener.open(req, timeout=10) as r:
         return json.loads(r.read())
+
+
+# ---------------------------------------------------------------------------------------------- labelled capture
+def network_mounts(mount_text: str) -> list[str]:
+    """Mount points of network file systems from `mount` output ('src on /path (smbfs, ...)')."""
+    out = []
+    for line in mount_text.splitlines():
+        if " on " not in line or "(" not in line:
+            continue
+        mp, _, rest = line.partition(" on ")[2].partition(" (")
+        kinds = {k.strip().lower() for k in rest.rstrip(")").split(",")}
+        if kinds & set(NETWORK_FS) or line.startswith("//"):
+            out.append(mp)
+    return out
+
+
+def is_network_path(path: Path, mount_text: str | None = None) -> bool:
+    if mount_text is None:
+        try:
+            mount_text = subprocess.run(["mount"], capture_output=True, text=True, timeout=5).stdout
+        except (OSError, subprocess.SubprocessError):
+            return True                                   # cannot tell: refuse rather than guess
+    p = str(path.resolve())
+    return any(p == m or p.startswith(m.rstrip("/") + "/") for m in network_mounts(mount_text))
+
+
+def save_error(a: argparse.Namespace, mount_text: str | None = None) -> str | None:
+    """None when capture is off or fully and validly requested; otherwise why we refuse. Never defaults anything."""
+    given = [a.save_labeled, a.label, a.speaker, a.consent_note]
+    if not any(x is not None for x in given):
+        return None
+    missing = [n for n, x in zip(("--save-labeled", "--label", "--speaker", "--consent-note"), given)
+               if x is None or not str(x).strip()]
+    if missing:
+        return "labelled capture needs all of --save-labeled, --label, --speaker and --consent-note (missing: " + ", ".join(missing) + ")"
+    if is_network_path(Path(a.save_labeled).expanduser(), mount_text):
+        return "refusing: the save directory is on a network mount (or could not be checked). Use a local disk."
+    return None
+
+
+class LabeledSaver:
+    """Writes the PCM that was analysed to DIR/<label>/<timestamp>.wav (0600) and a JSON sidecar. Nothing else."""
+
+    def __init__(self, a: argparse.Namespace, source: str, now: datetime.datetime | None = None) -> None:
+        self.a, self.source = a, source
+        self.t0 = now or datetime.datetime.now().astimezone()
+        d = Path(a.save_labeled).expanduser().resolve() / a.label
+        d.mkdir(parents=True, exist_ok=True, mode=0o700)
+        stem = self.t0.strftime("%Y%m%dT%H%M%S")
+        self.wav_path = d / f"{stem}.wav"
+        self.json_path = d / f"{stem}.json"
+        fd = os.open(self.wav_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        self._fh = os.fdopen(fd, "wb")
+        self._w = wave.open(self._fh, "wb")
+        self._w.setnchannels(1)
+        self._w.setsampwidth(2)
+        self._w.setframerate(16000)
+        self.ticks: list[dict] = []
+        self.bytes = 0
+
+    def write(self, frame: bytes) -> None:
+        self._w.writeframes(frame)
+        self.bytes += len(frame)
+
+    def tick(self, m: dict) -> None:
+        row = {k: m.get(k) for k in ("t", "window", "tier", "p_ai", "p_scam") if k in m}
+        if m.get("voice_windows") is not None:
+            row["voice_windows"] = m["voice_windows"]
+        self.ticks.append(row)
+
+    def close(self) -> None:
+        try:
+            self._w.close()
+        finally:
+            self._fh.close()
+        side = {"label": self.a.label, "speaker": self.a.speaker, "consent_note": self.a.consent_note,
+                "date": self.t0.isoformat(timespec="seconds"), "source": self.source, "sample_rate": 16000,
+                "seconds": round(self.bytes / 32000, 1), "wav": self.wav_path.name, "ticks": self.ticks}
+        fd = os.open(self.json_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as f:
+            json.dump(side, f, indent=1)
+        os.chmod(self.wav_path, 0o600)
+        os.chmod(self.json_path, 0o600)
 
 
 # ---------------------------------------------------------------------------------------------- audio sources
@@ -248,7 +358,9 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
         first = json.loads(await ws.recv())
         if first.get("type") != "ready":
             return f"server refused: {first.get('code', first)}"
-        banner(True, label)
+        saver = LabeledSaver(args, label) if args.save_labeled else None
+        saving = saver is not None
+        banner(True, label, saving)
         loop = asyncio.get_running_loop()
         t_start = loop.time()
         sent_at: list[float] = []                       # wall time at which each whole second of audio was sent
@@ -261,7 +373,9 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
                     end = m.get("window", [0, 0])[1]
                     idx = int(end) - 1
                     lat = loop.time() - sent_at[idx] if 0 <= idx < len(sent_at) else None
-                    say(status_line(m, lat))
+                    say(status_line(m, lat, saving))
+                    if saver:
+                        saver.tick(m)
                     new = (m.get("stable") or {}).get("alert", "none")
                     text = notification_for(state["alert"], new)
                     state["alert"] = new
@@ -277,6 +391,7 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
         rd = asyncio.ensure_future(reader())
         quiet_s = 0.0
         last_ping = loop.time()
+        diag = {"t": loop.time(), "peak": 0.0, "warned": False}
         try:
             async for frame in frames:
                 if stop.is_set():
@@ -286,10 +401,23 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
                     reason = "server closed"
                     break
                 await ws.send(frame)
+                if saver:
+                    saver.write(frame)
                 state["sent"] += len(frame)
                 while len(sent_at) < state["sent"] // 32000:
                     sent_at.append(loop.time())
-                quiet_s = quiet_s + FRAME_MS / 1000 if peak(frame) < SILENCE_PEAK else 0.0
+                pk = peak(frame)
+                diag["peak"] = max(diag["peak"], pk)
+                if loop.time() - diag["t"] >= 6:
+                    if diag["peak"] < SILENCE_PEAK:
+                        say("LISTENING | hearing SILENCE: the call audio is not reaching the tap "
+                            "(is the call answered on this Mac and playing through its speakers?)")
+                        diag["warned"] = True
+                    elif diag["warned"]:
+                        say("LISTENING | audio is arriving again")
+                        diag["warned"] = False
+                    diag["t"], diag["peak"] = loop.time(), 0.0
+                quiet_s = quiet_s + FRAME_MS / 1000 if pk < SILENCE_PEAK else 0.0
                 if quiet_s >= args.silence_s:
                     reason = "silence"
                     break
@@ -308,6 +436,9 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
                 except Exception:  # noqa: BLE001 — closing anyway; the server wipes on disconnect
                     rd.cancel()
             banner(False)
+            if saver:
+                saver.close()
+                say(f"saved {saver.wav_path} (+ .json sidecar, 0600)")
     return reason
 
 
@@ -355,7 +486,7 @@ async def watch(args: argparse.Namespace, stop: asyncio.Event) -> int:
         if ev == "arm" and task is None:
             say(f"call detected ({ws_state.armed}): arming")
             sess_stop = asyncio.Event()
-            task = asyncio.ensure_future(run_session(args, tap_frames(args.tap, ws_state.armed), "tap", sess_stop))
+            task = asyncio.ensure_future(run_session(args, tap_frames(args.tap, ws_state.armed if args.tap_call_app_only else None), "tap", sess_stop))
             idle_said = False
         elif ev == "stop" and task is not None:
             say("call ended: stopping")
@@ -388,6 +519,10 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     if args.file and not Path(args.file).exists():
         print(f"no such file: {args.file}", file=sys.stderr)
+        return 2
+    err = save_error(args)
+    if err:
+        print(err, file=sys.stderr)
         return 2
     if not consent(args):
         return 1

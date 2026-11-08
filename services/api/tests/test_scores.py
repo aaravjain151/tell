@@ -6,8 +6,17 @@ from doublespeak.scores import confidence_label, scores_for
 from doublespeak.types import Tell, Verdict
 
 
-def V(tier, p_ai=0.5, p_scam=0.0, conf=0.9):
-    return Verdict(tier=tier, p_ai=p_ai, p_scam=p_scam, confidence=conf, disclosed_ai=tier == "ai_disclosed", headline="h", advice="a")
+def V(tier, p_ai=0.5, p_scam=0.0, conf=0.9, tells=None):
+    return Verdict(tier=tier, p_ai=p_ai, p_scam=p_scam, confidence=conf, disclosed_ai=tier == "ai_disclosed", headline="h", advice="a",
+                   tells=tells or [])
+
+
+def VOTERS(*neural):
+    """Two acoustic behavioural voters plus the given neural scores (onnx, hf, pella order)."""
+    out = [Tell("pause_regularity", "acoustic", 0.5, 1.0, "e"), Tell("pitch_stability", "acoustic", 0.5, 1.0, "e")]
+    for n, sc in zip(("neural_onnx", "neural_hf", "neural_pella"), neural):
+        out.append(Tell(n, "acoustic", sc, 1.0, "e"))
+    return out
 
 
 @pytest.mark.parametrize("tier,p_ai,p_scam,level", [
@@ -28,13 +37,14 @@ def test_level_table(tier, p_ai, p_scam, level):
 @pytest.mark.parametrize("conf,label", [(0.49, "low"), (0.50, "medium"), (0.79, "medium"), (0.80, "high"), (1.0, "high"), (0.0, "low")])
 def test_confidence_bands(conf, label):
     assert confidence_label(conf) == label
-    assert scores_for(V("human", conf=conf))["confidence_label"] == label
+    assert scores_for(V("human", p_ai=0.1, conf=conf, tells=VOTERS()))["confidence_label"] == label
 
 
 def test_scores_shape_and_rounding():
     s = scores_for(V("scam", p_ai=0.756, p_scam=0.98, conf=0.99))
     assert s["scam"] == 98 and s["ai_voice"] == 76 and s["confidence"] == 99
-    assert set(s) == {"scam", "ai_voice", "confidence", "confidence_label", "level", "level_reason"}
+    assert set(s) == {"scam", "ai_voice", "confidence", "confidence_label", "level", "level_reason",
+                      "voice_sure", "voice_unresolved", "confidence_note"}
     assert all(isinstance(s[k], int) for k in ("scam", "ai_voice", "confidence"))
 
 
@@ -93,3 +103,51 @@ def test_voice_windows_ignores_inapplicable_and_other_tells():
     na = W("neural_pella", [(0.0, 0.9)])
     na.applicable = False
     assert pipeline.voice_windows([na, W("pause_regularity", [(0.0, 0.9)]), Tell("neural_hf", "acoustic", 0.5, 1.0, "e")]) == []
+
+
+# ---- honest "How sure" -------------------------------------------------------------------------------------------
+@pytest.mark.parametrize("p_ai,unresolved", [(0.29, False), (0.30, True), (0.59, True), (0.60, False)])
+def test_band_boundaries(p_ai, unresolved):
+    s = scores_for(V("human", p_ai=p_ai, conf=1.0, tells=VOTERS()))
+    assert s["voice_unresolved"] is unresolved
+    assert s["confidence_label"] == ("medium" if unresolved else "high")
+    assert s["confidence_note"] == ("The voice check is not sure." if unresolved else "")
+
+
+@pytest.mark.parametrize("a,b,disagree", [(0.50, 0.84, False), (0.50, 0.85, False), (0.50, 0.86, True)])
+def test_disagreement_boundary(a, b, disagree):
+    s = scores_for(V("human", p_ai=0.1, conf=1.0, tells=VOTERS(a, b)))
+    assert s["voice_unresolved"] is disagree
+    assert s["confidence_label"] == ("medium" if disagree else "high")
+    assert s["confidence_note"] == ("The voice checks disagree." if disagree else "")
+
+
+def test_disagree_in_band_is_low():
+    s = scores_for(V("human", p_ai=0.45, conf=1.0, tells=VOTERS(0.1, 0.9)))
+    assert s["confidence_label"] == "low" and s["confidence_note"] == "The voice checks disagree."
+
+
+def test_too_few_voters_caps_medium():
+    one = [Tell("pause_regularity", "acoustic", 0.9, 1.0, "e")]
+    s = scores_for(V("ai_undisclosed", p_ai=0.9, conf=1.0, tells=one))
+    assert s["confidence_label"] == "medium" and s["voice_unresolved"]
+    off = one + [Tell("neural_onnx", "acoustic", 0.9, 1.0, "e", applicable=False)]
+    assert scores_for(V("ai_undisclosed", p_ai=0.9, conf=1.0, tells=off))["confidence_label"] == "medium"
+    assert scores_for(V("ai_undisclosed", p_ai=0.9, conf=1.0, tells=VOTERS()))["confidence_label"] == "high"
+
+
+def test_disclosed_voice_is_resolved_by_words():
+    assert scores_for(V("ai_disclosed", p_ai=0.45, conf=1.0))["confidence_label"] == "high"
+
+
+def test_confidence_and_voice_sure_range_and_unchanged():
+    s = scores_for(V("human", p_ai=0.45, conf=1.0, tells=VOTERS()))
+    assert s["confidence"] == 100 and 0 <= s["voice_sure"] <= 40
+    assert scores_for(V("ai_undisclosed", p_ai=0.95, conf=1.0, tells=VOTERS(0.9, 0.9, 0.9)))["voice_sure"] == 100
+
+
+def test_new_wording_banned_words():
+    for p in (0.1, 0.45, 0.9):
+        for n in ((), (0.1, 0.9)):
+            s = scores_for(V("human", p_ai=p, tells=VOTERS(*n)))
+            assert not any(w in s["confidence_note"].lower() for w in ("safe", "legal", "illegal", "fraud", "confirmed"))

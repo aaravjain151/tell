@@ -1,0 +1,34 @@
+{
+  "before": {
+    "accuracy": 0.9,
+    "fakes_caught": 0.8,
+    "real_flagged": 0.0,
+    "balanced_acc": 0.9
+  },
+  "after": {
+    "accuracy": 0.9,
+    "fakes_caught": 0.8,
+    "real_flagged": 0.0,
+    "balanced_acc": 0.9
+  },
+  "per_condition": {
+    "clean": {
+      "accuracy": 0.9,
+      "fakes_caught": 0.8,
+      "real_flagged": 0.0,
+      "balanced_acc": 0.9
+    }
+  },
+  "val_speakers": [
+    "fake_qwen_address_send",
+    "fake_qwen_casual_clone",
+    "fake_qwen_dinner_plans",
+    "fake_qwen_new_internship",
+    "fake_qwen_room_booking",
+    "real_sanath_casual_clone",
+    "real_sanath_new_internship",
+    "real_sanath_rough_morning",
+    "real_sanath_scam_grandparent",
+    "real_sanath_scam_irs"
+  ]
+}
