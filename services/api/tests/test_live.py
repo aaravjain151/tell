@@ -83,7 +83,7 @@ def test_since_s_counts_from_last_change():
 # ----------------------------------------------------------------------- hub bounds
 def test_subscriber_cap_and_drop_oldest():
     hub = live.Hub()
-    qs = [hub.subscribe() for _ in range(4)]
+    qs = [hub.subscribe() for _ in range(live.MAX_SUBSCRIBERS)]
     assert all(q is not None for q in qs) and hub.subscribe() is None
     for i in range(live.QUEUE_MAX + 40):
         hub.publish({"type": "ended", "reason": str(i)})
