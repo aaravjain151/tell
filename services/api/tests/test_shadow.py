@@ -148,3 +148,71 @@ def test_live_tick_gets_call_persistence_and_stable_is_unchanged(monkeypatch):
     outs_off, ds_off = run()
     assert outs_on == outs_off                                  # the displayed stable answer cannot depend on shadow
     assert "shadow" not in ds_off[-1]["egress"]["context"] or not ds_off[-1]["egress"]["context"]["shadow"]
+
+
+# --- Qwen3-TTS cue layers (docs/QWEN-CUES.md): mechanics on synthetic signals only -------------------------------------
+def _voiced(sec=6.0, f0=120.0, vib_hz=0.0, vib_st=0.0, noise=0.0, seed=0, nh=25):
+    """Harmonic 'voice' at f0 with optional vibrato (semitones) and additive noise relative to the voice RMS."""
+    t = np.arange(int(sec * SR)) / SR
+    f = f0 * 2 ** (vib_st * np.sin(2 * np.pi * vib_hz * t) / 12)
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    x = sum(np.sin(k * ph) / k for k in range(1, nh + 1))
+    x = 0.2 * x / np.sqrt(np.mean(x ** 2)) * (1 + 0.3 * np.sin(2 * np.pi * 4 * t))
+    return (x + noise * 0.2 * np.random.default_rng(seed).normal(0, 1, t.size)).astype(np.float32)
+
+
+def test_qwen_cpp_clean_harmonics_beat_noisy_ones():
+    clean, noisy = _voiced(noise=0.0), _voiced(noise=1.5)
+    c, n = shadow.cepstral_peak_prominence_db(clean)[0], shadow.cepstral_peak_prominence_db(noisy)[0]
+    assert c > n + 3.0
+    assert math.isnan(shadow.cepstral_peak_prominence_db(_voiced(sec=1.0))[0])
+
+
+def test_qwen_onset_sharpness_abrupt_vs_ramped():
+    sec, per, on = 12.0, 1.5, 0.9
+    t = np.arange(int(sec * SR)) / SR
+    ph = t % per
+    carrier = np.sin(2 * np.pi * 220 * t) + 0.4 * np.sin(2 * np.pi * 440 * t)
+    abrupt = (ph < on).astype(float)
+    ramp_db = np.clip(-50 + 50 * ph / 0.6, -50, 0)                     # 50 dB over 600 ms, about 8 dB per 10 ms
+    ramped = np.where(ph < on, 10 ** (ramp_db / 20), 0.0)
+    rng = np.random.default_rng(0)
+    mk = lambda env: (0.2 * env * carrier + rng.normal(0, 0.0005, t.size)).astype(np.float32)
+    a, r = shadow.onset_sharpness_db(mk(abrupt))[0], shadow.onset_sharpness_db(mk(ramped))[0]
+    assert a > r + 8.0
+    assert math.isnan(shadow.onset_sharpness_db(mk(abrupt)[: SR])[0])
+
+
+def test_qwen_f0_rate_fast_vs_slow_pitch_movement():
+    fast = shadow.f0_rate_st_per_s(_voiced(vib_hz=4.0, vib_st=2.0))[0]
+    slow = shadow.f0_rate_st_per_s(_voiced(vib_hz=0.4, vib_st=2.0))[0]
+    flat = shadow.f0_rate_st_per_s(_voiced())[0]
+    assert fast > 3 * slow > 0 and flat < slow
+    assert math.isnan(shadow.f0_rate_st_per_s(_noise(3, 0.1))[0])
+
+
+def test_qwen_long_pause_rate():
+    def talk(gap):
+        t = np.arange(int(0.9 * SR)) / SR
+        seg = (0.2 * np.sin(2 * np.pi * 200 * t)).astype(np.float32)
+        z = np.random.default_rng(1).normal(0, 1e-4, int(gap * SR)).astype(np.float32)
+        return np.concatenate([seg, z] * 8)
+    assert shadow.long_pause_per_min(talk(0.6))[0] > 20
+    assert shadow.long_pause_per_min(talk(0.2))[0] == 0
+    assert math.isnan(shadow.long_pause_per_min(_noise(2, 0.01))[0])
+
+
+def test_qwen_lowmid_balance_tracks_spectral_tilt():
+    t = np.arange(4 * SR) / SR
+    low = (0.2 * np.sin(2 * np.pi * 300 * t)).astype(np.float32)
+    mid = (0.2 * np.sin(2 * np.pi * 700 * t)).astype(np.float32)
+    assert shadow.lowmid_balance_db(mid)[0] > shadow.lowmid_balance_db(low)[0] + 15
+    assert math.isnan(shadow.lowmid_balance_db(low[:2000])[0])
+
+
+def test_qwen_cues_are_logged_and_json_safe():
+    out = shadow.compute_all(_voiced(sec=8.0), None)
+    json.dumps(out)
+    for k in ("qwen_cpp_db", "qwen_onset_sharpness_db", "qwen_f0_rate_st_s", "qwen_long_pause_per_min", "qwen_lowmid_balance_db"):
+        assert k in out and "evidence" in out[k]
+    assert out["qwen_cpp_db"]["value"] is not None
