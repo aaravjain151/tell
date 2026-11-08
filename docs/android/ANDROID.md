@@ -10,6 +10,24 @@ A thin client. The phone listens through its microphone and sends the audio to t
 * Speakerphone audio is a blend of both voices, so the app sends it as `side=mix` and the engine caps how sure it says it is (0.6).
 * Phone-band audio is the weakest case for the voice checks; the wording (scam pattern) side still works.
 
+## Demo mode (stage)
+
+**What it is.** A recorded clip played into the **real** engine, honestly labelled. A real cellular call cannot be captured on the owner's S20 FE — Android silences the microphone to other apps while a call is active (confirmed) — so a live on-stage call is not reliable. Demo mode instead streams a **bundled, consented, recorded** PCM16 16 kHz mono clip to the engine over the USB tunnel on the **same** `POST /session` + WS `/ws/stream` path the microphone uses, at real-time pace (100 ms frames on a timer). The orb, verdict, 2×2 and scores are the engine's **genuine output for a known input**, rendered exactly as a real call. Nothing is faked: there are no hardcoded tiers or scores in the UI, and a persistent **"RECORDED DEMO — not a live call"** banner is shown the whole time. It is never presented as a live call.
+
+**Why we use it.** On stage it must not break: demo mode needs only the USB tunnel + engine — no microphone permission, no live call, no Wi-Fi. If the engine is unreachable it shows the normal "not connected to your computer" state.
+
+**The clips.** `apps/android/demo/scam.pcm` (an escalating tech-support scam) and `apps/android/demo/human.pcm` (a human check-in), converted from the repo's consented data (`data/calls/qwen3tts/long_tech_scam.wav`, `data/calls/human/sanath/long_checkin.wav`; consent `data/consents/`) with `ffmpeg -ar 16000 -ac 1 -f s16le -acodec pcm_s16le`. Each is under 2 MB and is bundled into the APK by `native/build-www.mjs` (the `demo` folder). The streamer is `lib/demo.js` (`frameClip`, `createStreamer`, `levelOf`); the page wiring is the demo block in `app.js`.
+
+**How to start it (hidden, OFF by default).** Demo mode never appears in the normal flow. Enter it either by **long-pressing the Tell logo** (top left, ~1.2 s) or by opening the app with **`?demo=1`**. You then get **Scam call** / **Human call** buttons and a big **Stop**; **Exit demo** leaves it.
+
+**Exact stage steps.**
+1. On the Mac: engine up at `http://127.0.0.1:8000` (`make api-android`), phone plugged in, `adb reverse tcp:8000 tcp:8000`. The pill top-right must say "Your computer".
+2. Long-press the logo (or launch `?demo=1`). The amber **RECORDED DEMO — not a live call** banner appears.
+3. Tap **Scam call**. It warms up for a few seconds, then the orb and verdict escalate from the engine's own events (warming → human → scam, amber). Tap **Human call** to show a clean human verdict.
+4. Tap **Stop** to end early, pick the other clip, or **Exit demo** to return to the normal app.
+
+**Validating the clips without a phone.** Stream a clip straight into the running engine and watch the real verdicts (the repo venv has `websockets`): `POST /session` with an allowed `Origin`, open the WS, send the `hello`, then 3200-byte frames every 100 ms. The scam clip escalates warming→human→scam/amber; the human clip stays human. That is genuine engine output on a known input.
+
 ## Two ways to run it
 
 | | PWA in Chrome | Installed app (APK) |
