@@ -7,6 +7,8 @@
   "use strict";
   var CONSENT = "When you answer a call, Tell listens through your microphone in speaker mode and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it.";
   var ON = "Auto-listen is on: Tell starts when you answer";
+  /* Verified on the Galaxy S20 FE / Android 13: the OS gives apps no mic data during a call. This is NOT a cable or engine fault. */
+  var MIC_BLOCKED = { line: "Your phone is blocking the microphone during the call. On this phone, apps can't hear a call even on speaker.", sub: "Use Tell on your Mac for live calls (answer the call on your Mac)." };
 
   var MISSING = {
     phone: "Tell lost the Phone permission it uses to see that a call was answered.",
@@ -37,9 +39,14 @@
       refused: "Your computer refused Tell. Start the engine with make api-android.",
       busy: "Another listening session is open on your computer.",
       lost: "Lost contact with your computer. Check the USB cable.",
+      dropped: "",
+      mic_silenced: MIC_BLOCKED.line,
       mic_failed: "Tell could not open the microphone.",
     }[o] || "";
   }
 
-  return { CONSENT: CONSENT, ON: ON, status: status, endedText: endedText };
+  /* The outcome in a native "ended:<outcome>" state. */
+  function outcome(state) { return String(state || "").split(":")[1] || "stopped"; }
+
+  return { CONSENT: CONSENT, ON: ON, MIC_BLOCKED: MIC_BLOCKED, status: status, endedText: endedText, outcome: outcome };
 });
