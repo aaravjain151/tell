@@ -30,6 +30,19 @@ def test_native_manifest_permissions_and_loopback_only_cleartext():
     assert sorted(domains) == ["127.0.0.1", "localhost"]
 
 
+def test_native_auto_listen_permissions_and_components():
+    """Auto-listen (docs/android/ANDROID.md): READ_PHONE_STATE for the call state only, a microphone-type service,
+    a PHONE_STATE receiver that is disabled until the user opts in, and none of the permissions Play forbids for this."""
+    m = (NATIVE / "AndroidManifest.xml").read_text()
+    assert "android.permission.READ_PHONE_STATE" in m
+    assert re.search(r'android:name="\.CallListenService"\s+android:exported="false"\s+android:foregroundServiceType="microphone"', m)
+    assert re.search(r'android:name="\.CallStateReceiver"\s+android:enabled="false"', m)
+    assert 'android:name=".TellApp"' in m
+    for banned in ("SYSTEM_ALERT_WINDOW", "MODIFY_PHONE_STATE", "READ_CALL_LOG", "CAPTURE_AUDIO_OUTPUT", "PROCESS_OUTGOING_CALLS",
+                   "BIND_ACCESSIBILITY_SERVICE", "USE_FULL_SCREEN_INTENT", "ANSWER_PHONE_CALLS"):
+        assert banned not in m, banned
+
+
 def test_native_config_is_bundled_shell_not_remote():
     cfg = (APP / "native" / "capacitor.config.json").read_text()
     assert '"appId": "dev.doublespeak.app"' in cfg

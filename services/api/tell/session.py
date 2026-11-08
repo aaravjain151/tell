@@ -9,6 +9,12 @@ newest audio (the oldest unanalysed audio is dropped and counted in `dropped_ms`
 The tick clock is the AUDIO clock (samples received), not wall time, so replay at --speed 4 behaves like a real call
 and tests need no sleeps. Heartbeat/hello timeouts are wall-clock and live in stream.py.
 
+Final flush (`finish`, graceful ends only: stop, normal close, max length): no new ticks start; a job already in
+flight is allowed to finish and emit; then, if at least FINAL_MIN_NEW_S of audio arrived after the end of the last
+SCORED window and it is not silence, ONE more analysis runs over the last `window_s` up to the end of received audio
+and goes through the same stabiliser. All of it is bounded by `final_flush_s` (<= TELL_ANALYZE_TIMEOUT_S); past that
+the session ends without it (logged). Kill, panic, DELETE, heartbeat timeout and errors never flush: immediate wipe.
+
 Privacy: audio exists only in `Ring` (zeroed on close) and in the one window copy handed to the worker, which lives
 until that analysis returns (bounded by TELL_ANALYZE_TIMEOUT_S plus thread end). Pipeline runs with
 ephemeral=True so TELL_DEBUG_SAVE and the opt-in history file are bypassed for streams.
@@ -18,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import io
+import logging
 import secrets
 import threading
 import time
@@ -44,8 +51,13 @@ SIDES = ("far", "near", "mix")
 MIX_CONF_CAP = 0.6
 LAG_WARN_FACTOR = 2.0               # warn "lagging" when a verdict is more than 2 hops behind live audio
 WARN_MIN_GAP_S = 5.0
+# Final flush on a graceful end: the unscored tail must hold this much new audio, with at least FINAL_MIN_VOICED_S of
+# 30 ms frames above VOICED_RMS (about -50 dBFS), or it is skipped. FINAL_FLUSH_S bounds the whole flush.
+FINAL_MIN_NEW_S, FINAL_MIN_VOICED_S, VOICED_RMS = 2.0, 0.5, 0.003
+FINAL_FLUSH_S = 6.0
 
-_now = time.monotonic               # patched in tests
+log = logging.getLogger("tell.stream")
+_now = time.monotonic              # patched in tests
 _EXEC = ThreadPoolExecutor(max_workers=1, thread_name_prefix="stream")   # one analysis at a time, all sessions
 
 Emit = Callable[[dict], Awaitable[None]]
@@ -69,6 +81,7 @@ def params() -> dict:
             "hello_timeout_s": _env_f("TELL_STREAM_HELLO_TIMEOUT_S", HELLO_TIMEOUT_S, 0.05, 30),
             "token_ttl_s": _env_f("TELL_STREAM_TOKEN_TTL_S", TOKEN_TTL_S, 0.05, 600),
             "max_session_s": _env_f("TELL_STREAM_MAX_SESSION_S", MAX_SESSION_S, 0.05, MAX_SESSION_S),
+            "final_flush_s": _env_f("TELL_STREAM_FINAL_S", FINAL_FLUSH_S, 0.05, 60),
             "max_frame_bytes": MAX_FRAME_BYTES, "max_sessions": MAX_SESSIONS, "sides": list(SIDES)}
 
 
@@ -114,6 +127,8 @@ class Session:
         self._received = 0                # samples received (survives wipe)
         self._last_tick = 0               # sample count at the last dispatch
         self._analysed_end = 0
+        self._scored_end = 0              # sample count at the end of the last window whose verdict was emitted
+        self._finishing = False           # graceful end in progress: no new ticks
         self._inflight = False
         self._overload = False
         self._last_warn: dict[str, float] = {}
@@ -180,7 +195,7 @@ class Session:
 
     def maybe_tick(self, emit: Emit) -> bool:
         """Start an analysis if a hop of new audio is waiting and none is in flight. Must run on the event loop."""
-        if not self.due() or self._inflight or self.ring is None:
+        if not self.due() or self._inflight or self.ring is None or self._finishing:
             return False
         hop = int(self.p["hop_s"] * SR)
         missed = (self._received - self._last_tick) // hop - 1
@@ -229,22 +244,98 @@ class Session:
             return
         if self.closed:                                    # wiped while analysing: drop the result
             return
-        self.last_job_s = _now() - started
-        self.last_lag_s = max(0.0, (self._received - end_samples) / SR)
-        self.ticks += 1
-        msg = self.verdict_message(d, seq, t0, t1)
-        msg["stable"] = self.stab.observe(d, t0, t1)
-        pa = self.stab.personal_alert
-        if pa is not None:                       # opt-in only; absent otherwise so the message is bit-identical
-            msg["personal_alert"] = pa
-        live.HUB.on_tick(self, d, msg["stable"], self.ticks, pa)
-        await emit(msg)
+        await self._publish(d, seq, t0, t1, end_samples, started, emit)
+        if self._finishing:                                # graceful end: finish() decides about the tail
+            return
         if self.last_lag_s > LAG_WARN_FACTOR * self.p["hop_s"]:
             await self._warn("lagging", emit)
         if self._overload:
             self._overload = False
             await self._warn("overloaded", emit)
         self.maybe_tick(emit)                              # catch up if a hop is already waiting
+
+    async def _publish(self, d: dict, seq: int, t0: float, t1: float, end_samples: int, started: float, emit: Emit,
+                       tail: bool = False) -> None:
+        """One verdict through the stabiliser to this client and the live feed (same path for ticks and the tail)."""
+        self.last_job_s = _now() - started
+        self.last_lag_s = max(0.0, (self._received - end_samples) / SR)
+        self.ticks += 1
+        self._scored_end = max(self._scored_end, end_samples)
+        msg = self.verdict_message(d, seq, t0, t1)
+        if tail:                                 # the final flush verdict; absent on ordinary ticks (bit-identical)
+            msg["tail"] = True
+        msg["stable"] = self.stab.observe(d, t0, t1)
+        pa = self.stab.personal_alert
+        if pa is not None:                       # opt-in only; absent otherwise so the message is bit-identical
+            msg["personal_alert"] = pa
+        live.HUB.on_tick(self, d, msg["stable"], self.ticks, pa, tail=tail)
+        await emit(msg)
+
+    # --- graceful end ---------------------------------------------------------------------------------------------
+    def flush_budget_s(self) -> float:
+        return min(float(self.p.get("final_flush_s", FINAL_FLUSH_S)), limits.analyze_timeout_s())
+
+    def _tail_window(self) -> "tuple[np.ndarray | None, str]":
+        """The last window up to the end of received audio, or why there is nothing worth scoring."""
+        new = self._received - self._scored_end
+        if self.ring is None or self.closed:
+            return None, "closed"
+        if new <= 0:
+            return None, "no_new_audio"
+        if new < int(FINAL_MIN_NEW_S * SR):
+            return None, "covered"
+        x = self.ring.last(self.p["window_s"])
+        tail = x[-min(new, len(x)):]
+        f = int(0.03 * SR)
+        n = len(tail) // f
+        if n == 0:
+            return None, "covered"
+        rms = np.sqrt(np.mean(np.square(tail[:n * f].reshape(n, f), dtype=np.float64), axis=1))
+        if int(np.count_nonzero(rms >= VOICED_RMS)) * f < int(FINAL_MIN_VOICED_S * SR):
+            return None, "silence"
+        return x, ""
+
+    async def finish(self, emit: Emit) -> str:
+        """Graceful end: score the unscored tail once, BEFORE the caller wipes. Returns the outcome:
+        scored | covered | no_new_audio | silence | timeout | failed | closed. Never raises (except cancellation)."""
+        self._finishing = True
+        loop = asyncio.get_running_loop()
+        budget = self.flush_budget_s()
+        deadline = loop.time() + budget
+        task = self._task
+        if task is not None and not task.done():           # let the in-flight tick land (it is a real verdict)
+            await asyncio.wait({task}, timeout=max(0.0, deadline - loop.time()))
+            if not task.done():
+                log.warning("final tail skipped: in-flight analysis exceeded the %.1f s flush budget", budget)
+                return "timeout"
+        x, why = self._tail_window()
+        if x is None:
+            return why
+        end = self._received
+        start = end - len(x)
+        self.seq += 1
+        seq = self.seq
+        started = _now()
+        fut = loop.run_in_executor(_EXEC, _analyze_window, x)
+        fut.add_done_callback(lambda f: f.cancelled() or f.exception())
+        del x
+        left = deadline - loop.time()
+        try:
+            if left <= 0:
+                raise asyncio.TimeoutError
+            d = await asyncio.wait_for(asyncio.shield(fut), left)
+        except asyncio.TimeoutError:
+            log.warning("final tail skipped: analysis exceeded the %.1f s flush budget", budget)
+            return "timeout"
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:  # noqa: BLE001
+            limits._log_failure("final tail analysis", e)
+            return "failed"
+        if self.closed:                                    # panic / DELETE while flushing: drop it
+            return "closed"
+        await self._publish(d, seq, start / SR, end / SR, end, started, emit, tail=True)
+        return "scored"
 
     async def _warn(self, code: str, emit: Emit) -> None:
         t = _now()

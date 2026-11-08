@@ -3,7 +3,7 @@
    No LAN, no cloud, no analytics; nothing is stored. Passive only: it never speaks to the caller. */
 (function () {
   "use strict";
-  var P = window.DSPcm, X = window.DSProtocol, V = window.DSVerdict;
+  var P = window.DSPcm, X = window.DSProtocol, V = window.DSVerdict, A = window.DSAuto;
   var HTML = document.documentElement, $ = function (id) { return document.getElementById(id); };
   var API = X.loopbackApi(location.search, "http://localhost:8000");
   var QS = new URLSearchParams(location.search);
@@ -23,6 +23,7 @@
     ws: null, stream: null, ctx: null, node: null, wake: null, ready: false,
     tier: null, tick: -1, elapsed: 0, startedAt: 0, ticks: [], alert: "none", dismissed: false, lastSig: "",
     level: 0, maxLevel: 0, sentBytes: 0, foreign: false, err: null, installEvt: null, ping: 0,
+    auto: null, nativeAuto: false,   // auto-listen status from the native app; true while the native service streams the call
   };
 
   /* ---------- small helpers ---------- */
@@ -254,6 +255,7 @@
   }
   function start() {
     if (S.mode === "listening" || S.mode === "starting") return;
+    if (S.auto && /^(starting|listening|silent)$/.test(S.auto.state)) return enterAutoListening();
     $("err").hidden = true;
     consent().then(function (ok) { if (ok) begin(); });
   }
@@ -328,10 +330,12 @@
     var ws = S.ws; S.ws = null; S.node = null; S.stream = null; S.ctx = null; S.ready = false;
     try { if (ws) { ws.onclose = null; ws.close(); } } catch (e) {}
     try { if (S.wake) S.wake.release(); } catch (e) {} S.wake = null;
-    var svc = native(); if (svc && svc.stop) svc.stop().catch(function () {});
+    var svc = native(); if (svc && svc.stop && !S.nativeAuto) svc.stop().catch(function () {});
+    S.nativeAuto = false;
     S.level = 0; drawMeter();
   }
   function stop() {
+    if (S.nativeAuto) { var svc = native(); if (svc && svc.stopAutoListen) svc.stopAutoListen().catch(function () {}); return finish(); }
     if (S.ws && S.ws.readyState === 1) try { S.ws.send('{"type":"stop"}'); } catch (e) {}
     finish();
   }
@@ -352,6 +356,62 @@
   }
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible" && S.mode === "listening" && (!S.wake || S.wake.released)) wakeLock(); });
 
+  /* ---------- auto-listen (native app only; behaviour in CallMonitor / CallListenService) ---------- */
+  function applyAuto(st, msg) {
+    S.auto = st && st.available ? st : null;
+    var view = A.status(S.auto), on = !!(S.auto && S.auto.enabled && !(S.auto.missing || []).length);
+    document.querySelectorAll("[data-auto]").forEach(function (b) { b.setAttribute("aria-checked", on ? "true" : "false"); b.disabled = !S.auto; });
+    $("auto").dataset.tone = view.tone; $("auto-line").textContent = view.line; $("auto-sub").textContent = view.sub;
+    var row = document.querySelector(".set-row"); row.dataset.tone = view.tone; $("set-auto-line").textContent = view.line; $("set-auto-sub").textContent = view.sub;
+    var denied = !!(S.auto && (S.auto.missing || []).length && (msg || S.auto.enabled));
+    document.querySelectorAll("[data-appsettings]").forEach(function (b) { b.hidden = !denied; });
+    ["auto-msg", "set-auto-msg"].forEach(function (id) { $(id).hidden = !msg; $(id).textContent = msg || ""; });
+  }
+  function refreshAuto() {
+    var svc = native();
+    if (!svc || !svc.getAutoListen) return applyAuto(null);
+    svc.getAutoListen().then(function (st) {
+      applyAuto(st);
+      if (/^(starting|listening|silent)$/.test(st.state)) enterAutoListening();
+    }).catch(function () { applyAuto(null); });
+  }
+  function setAuto(want) {
+    var svc = native(); if (!svc || !svc.setAutoListen) return;
+    svc.setAutoListen({ enabled: want }).then(function (st) { applyAuto(st, st.message || ""); if (st.enabled && !st.message) toast(A.ON); })
+      .catch(function () { applyAuto(S.auto, "Could not change the setting. Try again."); });
+  }
+  function toggleAuto() {
+    if (!S.auto) return;
+    var on = S.auto.enabled && !(S.auto.missing || []).length;
+    if (on) return setAuto(false);
+    if (S.auto.consented) return setAuto(true);           // the consent sheet is shown once
+    var back = !$("sheet-settings").hidden;
+    openSheet("sheet-auto");
+    $("auto-yes").onclick = function () { closeSheets(); setAuto(true); if (back) openSheet("sheet-settings"); };
+    $("auto-no").onclick = function () { closeSheets(); if (back) openSheet("sheet-settings"); };
+  }
+  /* The native service is streaming the call: show the live view (the page captures nothing itself). */
+  function enterAutoListening() {
+    if (S.nativeAuto) return;
+    if (S.mode === "listening" || S.mode === "starting") return;   // the page is listening by hand already
+    closeSheets(true); $("err").hidden = true; resetSession();
+    S.nativeAuto = true; S.startedAt = performance.now(); setMode("listening"); HTML.dataset.tier = "";
+    drawIdleHero("Listening", "Gathering speech", "Listening", "Tell started when you answered. Gathering the first few seconds before judging.");
+    $("live-note").textContent = "Auto-listen. Audio goes only to your computer over USB. Nothing is saved."; $("live-note").classList.remove("warn");
+    $("steps").hidden = true;
+    if (!conn.es) feed();
+  }
+  function onAuto(e) {
+    if (!e) return;
+    if (e.kind === "level" && S.nativeAuto) { S.level = e.level || 0; if (S.level > S.maxLevel) S.maxLevel = S.level; if (!meterRaf) meterRaf = requestAnimationFrame(drawMeter); return; }
+    if (e.kind !== "state") return;
+    if (S.auto) S.auto.state = e.state;
+    if (e.state === "starting" || e.state === "listening") enterAutoListening();
+    else if (e.state === "silent" && S.nativeAuto) { var n = $("live-note"); n.classList.add("warn"); n.textContent = "No sound is reaching the microphone. Is the call on speaker? Android may be silencing the microphone during calls."; }
+    else if (e.state.indexOf("ended") === 0) { var why = A.endedText(e.state); if (S.nativeAuto) finish(why || undefined); else if (why) toast(why); }
+    applyAuto(S.auto);
+  }
+
   /* ---------- sheets ---------- */
   var lastFocus = null;
   function openSheet(id) {
@@ -359,26 +419,31 @@
     var f = s.querySelector("button.primary, button"); if (f) f.focus();
   }
   function closeSheets(keep) {
-    ["sheet-consent", "sheet-speaker", "sheet-connect"].forEach(function (i) { $(i).hidden = true; }); $("scrim").hidden = true;
+    ["sheet-consent", "sheet-speaker", "sheet-connect", "sheet-auto", "sheet-settings"].forEach(function (i) { $(i).hidden = true; }); $("scrim").hidden = true;
     if (!keep && lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch (e) {}
   }
   document.querySelectorAll("[data-close]").forEach(function (b) { b.onclick = function () { closeSheets(); }; });
-  $("scrim").onclick = function () { if (!$("sheet-consent").hidden) $("consent-no").click(); else closeSheets(); };
+  $("scrim").onclick = function () { if (!$("sheet-consent").hidden) $("consent-no").click(); else if (!$("sheet-auto").hidden) $("auto-no").click(); else closeSheets(); };
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("scrim").hidden) $("scrim").click(); });
 
   $("start").onclick = start; $("stop").onclick = stop; $("again").onclick = function () { clearScreen(); start(); };
   $("clear").onclick = clearScreen; $("al-dismiss").onclick = dismissAlert;
   $("open-speaker").onclick = function () { openSheet("sheet-speaker"); };
   $("conn").onclick = function () { renderConnect(); openSheet("sheet-connect"); };
+  $("open-settings").onclick = function () { refreshAuto(); openSheet("sheet-settings"); };
+  document.querySelectorAll("[data-auto]").forEach(function (b) { b.onclick = toggleAuto; });
+  document.querySelectorAll("[data-appsettings]").forEach(function (b) { b.onclick = function () { var svc = native(); if (svc && svc.openAppSettings) svc.openAppSettings(); }; });
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") refreshAuto(); });   // permissions may have changed in Android settings
+  (function () { var svc = native(); if (svc && svc.addListener) try { svc.addListener("autoListen", onAuto); } catch (e) {} })();
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); S.installEvt = e; renderConnect(); });
 
   /* ---------- boot ---------- */
   if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0 && !native()) navigator.serviceWorker.register("sw.js").catch(function () {});
   if (QS.get("test") === "1") {            // test harness only (screenshots without a mic); never linked from the UI
     window.__ds = { S: S, onEvent: onEvent, setMode: function (m) { setMode(m); }, listening: function () { S.startedAt = performance.now(); resetSession(); setMode("listening"); drawIdleHero("Listening", "Gathering speech", "Listening", "Gathering the first few seconds before judging."); },
-      level: function (l) { S.level = l; S.maxLevel = Math.max(S.maxLevel, l); drawMeter(); }, finish: finish, sheet: openSheet };
+      level: function (l) { S.level = l; S.maxLevel = Math.max(S.maxLevel, l); drawMeter(); }, finish: finish, sheet: openSheet, auto: applyAuto, autoEvent: onAuto };
   }
   setMode("boot"); chip("", "Checking"); drawIdleHero("...", "", "Looking for your computer", "One moment.");
-  renderConnect();
+  renderConnect(); refreshAuto();
   probe().then(feed);
 })();
