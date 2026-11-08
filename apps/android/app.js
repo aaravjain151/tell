@@ -239,7 +239,8 @@
   function clock() {
     if (S.mode !== "listening") return;
     var s = (performance.now() - S.startedAt) / 1000;
-    $("live-sub").textContent = V.mmss(s) + " · speaker mode";
+    $("live-sub").textContent = V.mmss(s) + (S.demoPlaying ? " · recorded demo" : " · speaker mode");
+    if (S.demoPlaying) return;   // recorded clip, not the mic: never run the mic-blocked check
     if (s > 4 && S.maxLevel < 0.003 && !S.silenceChecked && !S.blocked) {
       S.silenceChecked = true;
       // No mic data. Only blame the cable if the engine is genuinely unreachable; otherwise it is the microphone.
