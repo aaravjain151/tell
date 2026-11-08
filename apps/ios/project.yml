@@ -1,0 +1,60 @@
+name: Doublespeak
+options:
+  bundleIdPrefix: dev.doublespeak
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Set your own team to install on a phone (see docs/ios/IOS.md). Empty here on purpose.
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+targets:
+  Doublespeak:
+    type: application
+    platform: iOS
+    sources:
+      - path: Doublespeak
+        excludes: ["Info.plist"]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.doublespeak.app.ios
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Doublespeak/Info.plist
+    info:
+      path: Doublespeak/Info.plist
+      properties:
+        CFBundleDisplayName: Doublespeak
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchMark
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIBackgroundModes: [audio]
+        UIAppFonts: [Outfit-ExtraLight.ttf, Outfit-Light.ttf, Outfit-Regular.ttf, Outfit-Medium.ttf]
+        NSMicrophoneUsageDescription: "Doublespeak listens to a call you put on speakerphone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored."
+        ITSAppUsesNonExemptEncryption: false
+  DoublespeakTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: DoublespeakTests
+    dependencies:
+      - target: Doublespeak
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: dev.doublespeak.app.ios.tests
+schemes:
+  Doublespeak:
+    build:
+      targets:
+        Doublespeak: all
+    test:
+      targets: [DoublespeakTests]
