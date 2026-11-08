@@ -158,13 +158,26 @@ def check_page(web: str) -> None:
             "Something else owns :5173 (old build or another server). Stop it; `make web` from this repo")
 
 
+def api_token() -> str:
+    """The per-install engine token (same lookup as tell.api_token): env, env file path, then the default file."""
+    if os.environ.get("TELL_API_TOKEN"):
+        return os.environ["TELL_API_TOKEN"].strip()
+    f = Path(os.environ.get("TELL_API_TOKEN_FILE") or Path.home() / "Library/Application Support/Tell/api_token")
+    try:
+        return f.read_text().strip()
+    except OSError:
+        return ""
+
+
 def check_session(api: str, origin: str) -> None:
+    tok = {"X-Tell-Token": api_token()} if api_token() else {}
     try:
         _, body = http("POST", api + "/session", data=b"{}",
-                       headers={"Origin": origin, "Content-Type": "application/json"})
+                       headers={"Origin": origin, "Content-Type": "application/json", **tok})
         sid = json.loads(body)["session_id"]
     except urllib.error.HTTPError as e:
-        hint = {403: "the engine refused the Origin: start it with make demo (default origins include :5173)",
+        hint = {401: "no engine token sent: the token file is missing or from another install (make pair-url makes one)",
+                403: "the engine refused the Origin: start it with make demo (default origins include :5173)",
                 429: "two live sessions are already open: a listener is running (menu bar app or listen.py). "
                      "Stop the extra one, wait about a minute, rerun"}.get(e.code, "read the engine log")
         add(FAIL, "Listener dry run", f"POST /session -> HTTP {e.code}", hint)
@@ -173,7 +186,7 @@ def check_session(api: str, origin: str) -> None:
         add(FAIL, "Listener dry run", f"POST /session failed ({type(e).__name__})", "Start the engine (make demo)")
         return
     try:
-        http("DELETE", api + f"/session/{sid}")
+        http("DELETE", api + f"/session/{sid}", headers=tok)
         add(PASS, "Listener dry run", "POST /session ok, session deleted again (no audio sent)")
     except Exception as e:  # noqa: BLE001
         add(WARN, "Listener dry run", f"session created but DELETE failed ({type(e).__name__}); it times out in ~60 s",
