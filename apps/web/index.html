@@ -439,9 +439,9 @@ html[data-live="on"] .simple{max-width:760px;padding-bottom:0}
   <section class="empty" id="empty" aria-labelledby="empty-h">
     <div class="empty-on">
       <h1 id="empty-h">Waiting for a call</h1>
-      <p class="empty-p">Doublespeak starts listening when a call plays on this Mac.</p>
+      <p class="empty-p">Doublespeak starts listening when a call plays on this Mac. Or start from the mic or BlackHole below.</p>
       <div class="empty-act">
-        <button class="btn primary" id="empty-start" type="button" aria-pressed="false"><span class="sq" aria-hidden="true"></span><span id="empty-startlab">Start listening now</span></button>
+        <button class="btn primary rec" id="empty-start" type="button" aria-pressed="false"><span class="sq" aria-hidden="true"></span><span id="empty-startlab">Start listening now</span></button>
         <button class="link" id="empty-file" type="button">Analyse a recording</button>
       </div>
       <p class="empty-msg" id="emsg" aria-live="polite"></p>
@@ -1006,14 +1006,16 @@ let srcId = ""; try{ srcId = localStorage.getItem("ds-src") || ""; }catch(e){}
 function srcLabel(){ const o = $("src").selectedOptions[0]; return o ? o.textContent.replace(/ \(call audio\)$/, "") : "the default microphone"; }
 function noteFor(){
   const o = $("src").selectedOptions[0];
+  if (srcId === "__tab__") return "Share a Chrome tab and tick Share audio. System audio is fragile; BlackHole is more reliable for a Mac call.";
   return o && VIRTUAL.test(o.textContent) ? "Call audio only: no room noise and not your own voice. Best for a relayed iPhone call."
     : "Microphone: it also hears the room and your own voice. Use headphones for the call, or expect lower accuracy.";
 }
+const RAW_AUDIO = {echoCancellation:false, noiseSuppression:false, autoGainControl:false, channelCount:1};
 function audioConstraints(){
   // Browser echo cancellation, noise suppression and auto-gain rewrite the very cues we measure (pauses, room noise, loudness),
   // and noise suppression makes a human's background look like digital silence. Capture raw.
-  const a = {echoCancellation:false, noiseSuppression:false, autoGainControl:false, channelCount:1};
-  if (srcId) a.deviceId = {exact: srcId};
+  const a = Object.assign({}, RAW_AUDIO);
+  if (srcId && srcId !== "__tab__") a.deviceId = {exact: srcId};
   return {audio: a};
 }
 async function loadDevices(){
@@ -1024,11 +1026,14 @@ async function loadDevices(){
   sel.add(new Option(ins.length ? "Default microphone" : "Default microphone (allow access to list devices)", ""));
   ins.filter(d => d.deviceId && d.deviceId !== "default" && d.deviceId !== "communications").forEach((d, i) =>
     sel.add(new Option((d.label || `Input ${i + 1}`) + (VIRTUAL.test(d.label || "") ? " (call audio)" : ""), d.deviceId)));
+  if (![...sel.options].some(o => o.value === "__tab__")) sel.add(new Option("Browser tab audio", "__tab__"));
   sel.value = [...sel.options].some(o => o.value === srcId) ? srcId : ""; srcId = sel.value;
-  $("srcnote").textContent = ins.some(d => d.label) ? noteFor() : "Press Check level once to allow microphone access and list your devices.";
+  $("srcnote").textContent = srcId === "__tab__" ? "Share a Chrome tab and tick Share audio. System audio is fragile; BlackHole is more reliable for a Mac call."
+    : ins.some(d => d.label) ? noteFor() : "Press Check level once to allow microphone access and list your devices.";
 }
 async function checkLevel(){
-  const btn = $("srccheck"); if (btn.disabled || recStarting || (recorder && recorder.state === "recording")) return;
+  const btn = $("srccheck"); if (btn.disabled || recStarting || (recorder && recorder.state === "recording") || browserListen) return;
+  if (srcId === "__tab__"){ showError("Check level works on a microphone or BlackHole. For tab audio, Start listening and share the tab."); return; }
   btn.disabled = true; showError(""); let stream;
   try{ stream = await navigator.mediaDevices.getUserMedia(audioConstraints()); }
   catch(e){ btn.disabled = false; showError(e.name === "OverconstrainedError" ? "That input is no longer available. Pick another audio source." : "Microphone blocked: " + e.message + ". Allow it in the browser's site settings and try again."); return; }
@@ -1055,10 +1060,98 @@ function dropSampleTranscript(){
   if (t && Object.values(SAMPLES).some(x => x.transcript === t)){ $("transcript").value = ""; setMode("edit"); }
 }
 let recStarting = false;
+let browserListen = null; // {stream, recorder, ac, an, raf, t0, n, stop, timer, modeLabel} — rolling 10 s /analyze into the live UI
+const BROWSER_LISTEN_MS = 10000, BROWSER_LISTEN_MAX_MS = 5 * 60 * 1000;
+async function openCaptureStream(){
+  if (srcId === "__tab__"){
+    if (!navigator.mediaDevices.getDisplayMedia) throw Object.assign(new Error("This browser can't share tab audio. Pick a microphone or BlackHole."), {name:"NotSupportedError"});
+    const stream = await navigator.mediaDevices.getDisplayMedia({video:true, audio:Object.assign({}, RAW_AUDIO)});
+    stream.getVideoTracks().forEach(t => { t.stop(); stream.removeTrack(t); });
+    if (!stream.getAudioTracks().length){ stream.getTracks().forEach(t => t.stop()); throw Object.assign(new Error("No tab audio in that share. Share a Chrome tab and tick Share audio."), {name:"NotFoundError"}); }
+    return {stream, modeLabel:"tab audio"};
+  }
+  return {stream: await navigator.mediaDevices.getUserMedia(audioConstraints()), modeLabel: srcLabel()};
+}
+function stopBrowserListen(){
+  if (!browserListen) return;
+  const B = browserListen; browserListen = null;
+  clearTimeout(B.timer); cancelAnimationFrame(B.raf);
+  try{ if (B.recorder && B.recorder.state !== "inactive") B.recorder.stop(); }catch(e){}
+  B.stream.getTracks().forEach(t => t.stop());
+  try{ B.ac.close(); }catch(e){}
+  $("src").disabled = false; $("srccheck").disabled = false;
+  $("empty-start").style.setProperty("--lvl", 0); setRecLabel("Record");
+  if (L.active && !L.ended) endSession("Stopped.");
+}
+function armBrowserWindow(){
+  if (!browserListen || browserListen.stop){ stopBrowserListen(); return; }
+  if (Date.now() - browserListen.t0 > BROWSER_LISTEN_MAX_MS){ barNote = "Browser listen capped at 5 minutes."; drawBar(); stopBrowserListen(); return; }
+  const chunks = [], n = browserListen.n, mime = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find(m => MediaRecorder.isTypeSupported(m)) || "";
+  const rec = new MediaRecorder(browserListen.stream, mime ? {mimeType: mime} : undefined);
+  browserListen.recorder = rec;
+  rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  rec.onstop = () => {
+    if (!browserListen) return;
+    const blob = new Blob(chunks, {type: rec.mimeType || mime || "audio/webm"});
+    blob.name = /mp4/.test(blob.type) ? `listen-${n}.m4a` : `listen-${n}.webm`;
+    browserListen.n += 1;
+    if (blob.size > 800) scoreBrowserWindow(blob, n);
+    if (browserListen.stop){ stopBrowserListen(); return; }
+    armBrowserWindow();
+  };
+  rec.start();
+  browserListen.timer = setTimeout(() => { try{ if (rec.state === "recording") rec.stop(); }catch(e){} }, BROWSER_LISTEN_MS);
+}
+async function scoreBrowserWindow(blob, n){
+  if (!browserListen) return;
+  const fd = new FormData(); fd.append("audio", blob, blob.name);
+  try{
+    const r = await fetch(API + "/analyze", {method:"POST", body:fd}), j = await r.json();
+    if (!r.ok) throw new Error(typeof j.detail === "string" ? j.detail : r.statusText);
+    if (!browserListen) return;
+    log(`browser listen window ${n}: ${Math.round(blob.size / 1024)} KB, loopback only`);
+    const elapsed = (Date.now() - browserListen.t0) / 1000;
+    const alert = j.tier === "scam" ? "red" : (j.tier === "ai_undisclosed" ? "amber" : "none");
+    onVerdict({tick:n, elapsed_s:elapsed, verdict:j, stable:{tier:j.tier, state: n < 2 ? "warming" : "steady", alert, reasons:j.reasons || []}});
+    L.source = browserListen.modeLabel; L.listening = true; drawBar();
+  }catch(e){
+    if (browserListen){ barNote = `Window ${n} failed (${e.message}). Still listening…`; drawBar(); }
+    log(`browser listen window ${n} failed: ${e.message}`);
+  }
+}
+async function startBrowserListen(){
+  if (browserListen){ browserListen.stop = true; try{ if (browserListen.recorder && browserListen.recorder.state === "recording") browserListen.recorder.stop(); else stopBrowserListen(); }catch(e){ stopBrowserListen(); } return; }
+  if (recorder && recorder.state === "recording"){ showError("Stop the short recording first."); return; }
+  if (!apiUp){ showError("Live listen needs the local API (`make api`)."); return; }
+  if (!navigator.mediaDevices || typeof MediaRecorder === "undefined"){ showError("This browser can't listen here. Open from http://localhost:5173 (make web)."); return; }
+  dropSampleTranscript(); showError("");
+  try{
+    const {stream, modeLabel} = await openCaptureStream();
+    await loadDevices();
+    const ac = new AudioContext(), an = ac.createAnalyser(); an.fftSize = 512; ac.createMediaStreamSource(stream).connect(an);
+    browserListen = {stream, recorder:null, ac, an, raf:0, t0:Date.now(), n:1, stop:false, timer:0, modeLabel};
+    $("src").disabled = true; $("srccheck").disabled = true;
+    resetSession(); L.source = modeLabel; L.listening = true; drawBar();
+    const meter = () => {
+      if (!browserListen) return;
+      const buf = new Uint8Array(browserListen.an.fftSize); browserListen.an.getByteTimeDomainData(buf);
+      let s = 0; for (const b of buf){ const x = (b - 128) / 128; s += x * x; }
+      $("empty-start").style.setProperty("--lvl", Math.min(1, Math.sqrt(s / buf.length) * 4));
+      setRecLabel("Stop " + mmss((Date.now() - browserListen.t0) / 1000));
+      browserListen.raf = requestAnimationFrame(meter);
+    };
+    meter(); armBrowserWindow();
+  }catch(e){
+    if (e.name === "OverconstrainedError"){ srcId = ""; loadDevices(); showError("That input is no longer available. Pick another audio source and try again."); }
+    else showError("Couldn't start listening: " + e.message);
+  }
+}
 async function toggleRecord(){
   const btn = $("rec");
+  if (browserListen){ showError("Stop live listen before recording a short clip."); return; }
   if (recorder && recorder.state === "recording"){ recorder.stop(); return; }
   if (recStarting) return;
+  if (srcId === "__tab__"){ showError("Tab audio is for Start listening. Pick a microphone or BlackHole to record a short clip."); return; }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined"){ showError("This browser can't record here. Open the page from http://localhost:5173 (make web) in a current Chrome, Edge, Firefox or Safari."); return; }
   dropSampleTranscript();
   recStarting = true; let stream = null;
@@ -1347,6 +1440,7 @@ function feedDown(){
 }
 async function stopLive(){
   if (L.ended){ clearSession(); return; }
+  if (browserListen){ browserListen.stop = true; try{ if (browserListen.recorder && browserListen.recorder.state === "recording") browserListen.recorder.stop(); else stopBrowserListen(); }catch(e){ stopBrowserListen(); } return; }
   if (recorder && recorder.state === "recording"){ recorder.stop(); return; }
   try{ const r = await fetch(API + "/live/stop", {method:"POST"}); if (!r.ok) throw new Error(String(r.status)); }
   catch(x){ barNote = "Could not stop from here. End it where it was started."; drawBar(); setTimeout(() => { barNote = ""; drawBar(); }, 6000); }
@@ -1360,7 +1454,7 @@ function liveInit(){
   setLive("empty");
   $("lbar-stop").addEventListener("click", stopLive);
   $("red-dismiss").addEventListener("click", dismissAlert);
-  $("empty-start").addEventListener("click", () => { openMore(); toggleRecord(); });
+  $("empty-start").addEventListener("click", () => { if (browserListen) startBrowserListen(); else { openMore(); startBrowserListen(); } });
   $("empty-file").addEventListener("click", () => { openMore(); $("audio").click(); });
   const lt = $("livetx");
   lt.addEventListener("pointerover", e => { const m = e.pointerType === "mouse" && e.target.closest("mark"); if (m) showTip(m); });
