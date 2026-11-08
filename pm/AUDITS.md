@@ -201,3 +201,6 @@ band_limited = 5-7.5 kHz vs 1-4 kHz < -37 dB (old rule flagged 71% of clean clip
 The fixes alone raise lossy false alarms (156 -> 221); they only ship with the voter. Golden eval identical (PASS).
 Not improved: replay chain (catch 0 everywhere at 0.60). Caveats: read speech + one conversational speaker + 12 memos; simulated
 channels; weight 8 and the Pellav2 clip were chosen on the same folds; tiny ElevenLabs/owner test sets.
+
+## 2026-11-08 morning: learned_tells reverted from the engine
+Owner call after live testing: the learned_tells voter and its companion fixes (breath_proxy 0, Pellav2 every window) were reverted together, as docs/LEARNED-TELLS.md requires (the fixes alone raise lossy-path human false alarms 156 -> 221). Engine thresholds back to 2026-11-07.3. The learned-tells numbers above are measurements, not the shipped engine.

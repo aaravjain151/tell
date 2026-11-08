@@ -31,8 +31,8 @@ VOICE_WINDOW_CAP = 60
 
 def voice_windows(tells: list[Tell]) -> list[dict]:
     """DISPLAY ONLY: merge per-window voice scores from the neural voters by window start time (seconds).
-    Returns [{"t":.., "pella":.., "hf":.., "learned":..}] ordered by t (a key is absent when that voter did not score that start), at most 60 points."""
-    keys = {"neural_pella": "pella", "neural_hf": "hf", "learned_tells": "learned"}
+    Returns [{"t":.., "pella":.., "hf":..}] ordered by t (a key is absent when that voter did not score that start), at most 60 points."""
+    keys = {"neural_pella": "pella", "neural_hf": "hf"}
     merged: dict[float, dict] = {}
     for t in tells:
         k = keys.get(t.name)

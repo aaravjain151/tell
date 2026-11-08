@@ -49,25 +49,14 @@ def spectral_flatness(fr: np.ndarray) -> np.ndarray:
     return np.exp(np.mean(np.log(spec), axis=1)) / np.mean(spec, axis=1)
 
 
-def high_band_ratio(x: np.ndarray) -> float:
-    """Legacy display value: share of total power above 4 kHz (kept in context for old tools; NOT the band-limit test)."""
+def band_limited(x: np.ndarray) -> tuple[bool, float]:
+    """True when almost no energy sits above 4 kHz (phone-band audio or a <=8 kHz source)."""
     spec = np.abs(np.fft.rfft(x * np.hanning(len(x))))
     freqs = np.fft.rfftfreq(len(x), 1 / SR)
-    return float(np.sum(spec[freqs > 4000] ** 2) / (np.sum(spec ** 2) + 1e-9))
-
-
-def band_limited(x: np.ndarray) -> tuple[bool, float]:
-    """(is phone-band, 5-7.5 kHz level relative to 1-4 kHz in dB).
-
-    The old test (power above 4 kHz < 2% of TOTAL power) fired on 71% of clean wideband clips: 4-8 kHz speech energy is
-    normally well under 2% of the total. Relative to 1-4 kHz and skipping the 4-5 kHz codec transition band, clean speech
-    reads -31 to +7 dB (949 clips) and opus8k / G.711 / replay-then-opus read -40 to -80 dB on the SAME clips, so the
-    threshold BAND_LIMIT_DB = -37 dB separates every pair (training/learned_tells/band.py, docs/LEARNED-TELLS.md)."""
-    from .tell_features import band_ratio_db
-    r = band_ratio_db(np.asarray(x, dtype=np.float64), lo=(1000.0, 4000.0), hi=(5000.0, 7500.0))
-    if not np.isfinite(r):
-        return False, float("nan")
-    return bool(r < T.BAND_LIMIT_DB), float(r)
+    total = np.sum(spec ** 2) + 1e-9
+    hi = np.sum(spec[freqs > 4000] ** 2)
+    ratio = float(hi / total)
+    return ratio < T.BAND_LIMIT_RATIO, ratio
 
 
 def segment(db: np.ndarray) -> tuple[np.ndarray, float, float]:
@@ -195,10 +184,9 @@ def analyze(x: np.ndarray, dur_ms: int) -> tuple[list[Tell], dict]:
     if dur_s < T.MIN_AUDIO_SECONDS:
         ctx["too_short"] = True
         return [Tell("acoustic", "acoustic", 0.5, 1.0, f"clip too short ({dur_s:.1f}s < {T.MIN_AUDIO_SECONDS:.0f}s) — acoustic tells skipped", applicable=False)], ctx
-    bl, rel_db = band_limited(x)
+    bl, ratio = band_limited(x)
     ctx["band_limited"] = bl
-    ctx["high_band_rel_db"] = round(rel_db, 1) if np.isfinite(rel_db) else None
-    ctx["high_band_ratio"] = round(high_band_ratio(x), 4)
+    ctx["high_band_ratio"] = round(ratio, 4)
     fr = frames(x)
     db = frame_db(fr)
     mask, floor, thr = segment(db)
@@ -211,6 +199,6 @@ def analyze(x: np.ndarray, dur_ms: int) -> tuple[list[Tell], dict]:
     ]
     if bl:
         tells.append(Tell("band_limited", "acoustic", 0.5, 0.0,
-                          f"phone-band audio (5-7.5 kHz is {rel_db:.0f} dB below 1-4 kHz, as after a phone codec): "
-                          "detectors are less reliable here", applicable=False))
+                          "phone-band audio (no content above 4 kHz) — spectral tells disabled, behavioral tells only",
+                          applicable=False))
     return tells, ctx

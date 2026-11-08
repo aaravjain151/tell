@@ -1,5 +1,7 @@
 # Learned tells: what gives an AI voice away, learned from every clip we have (2026-11-08)
 
+> **Status 2026-11-08 (morning): not in the engine.** The owner reverted the learned_tells voter and its two companion fixes (breath_proxy 0, Pellav2 every window) after live testing, so the engine runs thresholds 2026-11-07.3 again. The measurements below are kept as the record; the training code stays in `training/learned_tells/` (it imports `tell.signals.tell_features`, which left with the revert).
+
 Status: **shipped, on by default** (thresholds `2026-11-08.1`). Voter `learned_tells` (`services/api/tell/signals/learned.py`,
 weight 8.0), plus three engine fixes (Pellav2 on every window with a logit mean, `breath_proxy` weight 0, `band_limited`
 re-defined). `TELL_LEARNED_TELLS=0` turns the voter off. Code for the study: `training/learned_tells/`.

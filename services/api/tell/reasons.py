@@ -32,7 +32,7 @@ VOICE = "The voice may be an AI copy, not a real person."
 VOICE_SPLIT = "One voice check leaned toward AI, but the others did not agree."
 SCRIPTED = "The wording sounds scripted."
 
-VOICE_TELLS = {"pause_regularity", "breath_proxy", "pitch_stability", "noise_floor", "high_band", "neural_onnx", "neural_hf", "neural_pella", "learned_tells"}
+VOICE_TELLS = {"pause_regularity", "breath_proxy", "pitch_stability", "noise_floor", "high_band", "neural_onnx", "neural_hf", "neural_pella"}
 SCRIPT_TELLS = {"llm_isms", "disfluency", "sentence_uniformity", "contraction_rate"}
 MODEL_TELLS = {"llm_assistant_style", "llm_scam_framing"}   # model-made tells never become reasons
 _GIFT = re.compile(r"gift ?card|steam card|itunes card|google play|scratch", re.I)

@@ -131,37 +131,15 @@ def test_safe_loader_reads_plain_tensors(tmp_path):
     assert pella.safe_state_dict(f)["w"].tolist() == [1.0, 1.0, 1.0]
 
 
-def test_vote_scores_every_window_and_averages_logits(monkeypatch):
+def test_vote_averages_the_windows_and_reports_the_highest(monkeypatch):
     pytest.importorskip("torch"); pytest.importorskip("torchaudio"); pytest.importorskip("transformers"); pytest.importorskip("scipy")
     monkeypatch.setenv("PELLA_MODEL", pella.REPO)
     monkeypatch.setattr(pella, "_model", object())
     seen = {}
-
-    def fake(chunks):
-        seen["n"] = len(chunks)
-        return [0.2, 0.9, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5][:len(chunks)]
-    monkeypatch.setattr(pella, "score_windows", fake)
-    t = pella.pella_vote(tone(20))                       # 20 s -> 9 windows of 4 s at a 2 s hop: ALL scored (was capped at 3)
-    p = np.array([0.2, 0.9] + [0.5] * 7)
-    want = 1 / (1 + np.exp(-np.mean(np.log(p / (1 - p)))))
-    assert t.applicable and seen["n"] == 9 and abs(t.score - want) < 1e-9
-    assert "9 windows" in t.evidence and "0.90" in t.evidence
-
-
-def test_logit_mean_is_smooth_where_a_three_window_vote_jumps():
-    # one near-binary window flipping among 4 moves the probability mean by 0.25 but the logit mean far less near the ends
-    lo = pella.aggregate([0.001, 0.001, 0.001, 0.001])
-    one = pella.aggregate([0.999, 0.001, 0.001, 0.001])
-    assert lo <= 0.0101 and one < 0.1            # a plain mean of probabilities would jump to 0.25
-    assert pella.aggregate([0.5]) == pytest.approx(0.5) and pella.aggregate([0.0, 1.0]) == pytest.approx(0.5)
-
-
-def test_max_windows_env(monkeypatch):
-    assert pella.max_windows() == pella.DEFAULT_MAX_WINDOWS == 16
-    monkeypatch.setenv("PELLA_MAX_WINDOWS", "3")
-    assert pella.max_windows() == 3
-    monkeypatch.setenv("PELLA_MAX_WINDOWS", "junk")
-    assert pella.max_windows() == 16
+    monkeypatch.setattr(pella, "score_windows", lambda chunks: (seen.setdefault("n", len(chunks)), [0.2, 0.9, 0.5][:len(chunks)])[1])
+    t = pella.pella_vote(tone(20))
+    assert t.applicable and seen["n"] == 3 and abs(t.score - (0.2 + 0.9 + 0.5) / 3) < 1e-9
+    assert "3 windows" in t.evidence and "0.90" in t.evidence
 
 
 def test_vote_skips_silence_and_survives_inference_errors(monkeypatch):
