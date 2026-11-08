@@ -3,7 +3,7 @@
    No LAN, no cloud, no analytics; nothing is stored. Passive only: it never speaks to the caller. */
 (function () {
   "use strict";
-  var P = window.DSPcm, X = window.DSProtocol, V = window.DSVerdict;
+  var P = window.DSPcm, X = window.DSProtocol, V = window.DSVerdict, A = window.DSAuto, D = window.DSDemo;
   var HTML = document.documentElement, $ = function (id) { return document.getElementById(id); };
   var API = X.loopbackApi(location.search, "http://localhost:8000");
   var QS = new URLSearchParams(location.search);
@@ -16,6 +16,16 @@
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
   };
   var native = function () { return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.ListenService; };
+  /* Engine key = the engine's per-install API token. Entered once (typed with `make pair-android`, or pasted), or from a
+     pairing link's #token= fragment; kept in this app's own storage on the phone only. */
+  var TOKEN_KEY = "tell-api-token";
+  var TOKEN = (function () {
+    var t = X.tokenFromHash(location.hash);
+    if (/^#token=/.test(location.hash)) try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    if (t) store.set(TOKEN_KEY, t);
+    return t || X.cleanToken(store.get(TOKEN_KEY));
+  })();
+  var needKey = false;                    // the engine answered 401: no key, or a stale one
 
   var S = {
     mode: "boot",            // boot | offline | idle | starting | listening | ended
@@ -23,6 +33,9 @@
     ws: null, stream: null, ctx: null, node: null, wake: null, ready: false,
     tier: null, tick: -1, elapsed: 0, startedAt: 0, ticks: [], alert: "none", dismissed: false, lastSig: "",
     level: 0, maxLevel: 0, sentBytes: 0, foreign: false, err: null, installEvt: null, ping: 0,
+    auto: null, nativeAuto: false,   // auto-listen status from the native app; true while the native service streams the call
+    callActive: false, silenceChecked: false, blocked: false,   // callActive comes from the native telephony events
+    demo: false, demoStreamer: null, demoPlaying: false, demoKind: null,   // demo mode: recorded clip -> real engine (honestly labelled)
   };
 
   /* ---------- small helpers ---------- */
@@ -35,7 +48,8 @@
     var st = $("start"); st.disabled = m === "offline" || m === "boot";
     $("start-t").textContent = m === "offline" ? "Connect to your computer first" : "Start listening";
     $("dock-note").textContent = m === "offline" ? "Run the command above, then check again." : "Speaker mode. Put the call on speakerphone first.";
-    if (m === "offline") drawIdleHero("Offline", "", "Not connected to your computer", "The app opens, but the engine on your computer cannot be reached yet.");
+    if (m === "offline" && S.engine && needKey) drawIdleHero("Key", "", "Enter the engine key", "The engine is running but only answers apps that hold its key. Tap the key field below, then run make pair-android on your computer.");
+    else if (m === "offline") drawIdleHero("Offline", "", "Not connected to your computer", "The app opens, but the engine on your computer cannot be reached yet.");
     if (m === "idle") drawIdleHero("Ready", "", "Waiting for a call", "Put the call on speakerphone, then tap Start listening.");
   }
   function toast(t) { var e = $("toast"); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 3200); }
@@ -79,8 +93,12 @@
       '<ul class="checks">' +
       '<li data-ok="1"><i></i><span>This app is on your phone<small>' + (native() ? "Installed app" : "Opened in the browser") + "</small></span></li>" +
       '<li data-ok="' + ok(up) + '"><i></i><span>' + (up ? "Engine reachable" : "Engine not reachable") + "<small>" + esc(API) + (up ? " answers" : " does not answer yet") + "</small></span></li>" +
-      (egress === null ? "" : '<li data-ok="1"><i></i><span>Caller audio sent outside your computer: ' + egress + ' bytes<small>Reported by the engine.</small></span></li>') +
+      (egress === null ? "" : '<li data-ok="1"><i></i><span>Caller audio blocked from leaving by code: ' + egress + ' bytes<small>0 by design. Reported by the engine.</small></span></li>') +
+      '<li data-ok="' + ok(up && !needKey && !!TOKEN) + '"><i></i><span>' + (needKey || !TOKEN ? "Engine key needed" : "Engine key saved") +
+      "<small>" + (needKey || !TOKEN ? "Tap the field below, then run make pair-android on your computer (or paste the key from make pair-url)." : "Kept on this phone only.") + "</small></span></li>" +
       "</ul>" +
+      '<div class="cmd"><input type="password" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Engine key" placeholder="Engine key" data-key>' +
+      '<button type="button" data-savekey>Save</button></div>' +
       '<div class="sheet-actions"><button class="btn primary" type="button" data-recheck>Check connection</button>' +
       (S.installEvt && !native() ? '<button class="btn ghost" type="button" data-install>Add to Home screen</button>' : "") + "</div>";
   }
@@ -90,6 +108,12 @@
     }; });
     root.querySelectorAll("[data-recheck]").forEach(function (b) { b.onclick = function () { b.textContent = "Checking..."; probe().then(function () { renderConnect(); }); }; });
     root.querySelectorAll("[data-install]").forEach(function (b) { b.onclick = function () { S.installEvt.prompt(); S.installEvt = null; renderConnect(); }; });
+    root.querySelectorAll("[data-savekey]").forEach(function (b) { b.onclick = function () {
+      var inp = b.parentNode.querySelector("[data-key]"), t = X.cleanToken(inp && inp.value);
+      if (!t) { toast("That is not an engine key. Run make pair-url on your computer to see it."); return; }
+      TOKEN = t; store.set(TOKEN_KEY, t); needKey = false; inp.value = "";
+      toast("Engine key saved"); probe().then(function () { clearTimeout(conn.timer); if (conn.es) try { conn.es.close(); } catch (e) {} feed(); });
+    }; });
   }
   function renderConnect() {
     $("pair").innerHTML = connectHtml(true); bindConnect($("pair"));
@@ -101,12 +125,21 @@
       clearTimeout(to); S.engine = !!j.ok; S.health = j;
       return fetch(API + "/thresholds", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (th) {
         if (th && th.P_AI_THRESHOLD > 0 && th.P_AI_THRESHOLD < 1) S.pAiThr = th.P_AI_THRESHOLD;
-      }).catch(function () {});
+      }).catch(function () {}).then(function () {
+        // a cheap protected read: 401 means this app has no (or a stale) engine key
+        return fetch(API + "/history/status", { cache: "no-store", headers: X.authHeaders(TOKEN) }).then(function (r) { needKey = r.status === 401; }, function () {});
+      });
     }).catch(function () { clearTimeout(to); S.engine = false; S.health = null; }).then(function () {
-      chip(S.engine ? "up" : "down", S.engine ? "Your computer" : "Not connected");
-      if (S.mode === "boot" || S.mode === "offline" || S.mode === "idle") setMode(S.engine ? "idle" : "offline");
+      chip(S.engine ? (needKey ? "down" : "up") : "down", S.engine ? (needKey ? "Engine key needed" : "Your computer") : "Not connected");
+      if (S.mode === "boot" || S.mode === "offline" || S.mode === "idle") setMode(S.engine && !needKey ? "idle" : "offline");
       renderConnect();
     });
+  }
+
+  /* Does the engine still answer over the tunnel? Used to tell "the cable is gone" from "the mic is blocked". */
+  function reachable() {
+    var ctl = new AbortController(), to = setTimeout(function () { ctl.abort(); }, 1800);
+    return fetch(API + "/health", { cache: "no-store", signal: ctl.signal }).then(function (r) { clearTimeout(to); return !!r.ok; }, function () { clearTimeout(to); return false; });
   }
 
   /* ---------- live feed (SSE) ---------- */
@@ -114,14 +147,15 @@
   function feed() {
     clearTimeout(conn.timer);
     if (typeof EventSource === "undefined") return;
-    var es; try { es = new EventSource(API + "/live/events"); } catch (e) { return retry(); }
+    var es; try { es = new EventSource(X.feedUrl(API, TOKEN)); } catch (e) { return retry(); }
     conn.es = es;
     es.onopen = function () { conn.tries = 0; if (!S.engine) probe(); };
     es.onmessage = function (m) { var e; try { e = JSON.parse(m.data); } catch (x) { return; } if (e && typeof e === "object") onEvent(e); };
-    es.onerror = function () { es.close(); if (S.mode === "listening") lostNote(); retry(); if (S.mode !== "listening") probe(); };
+    // The SSE feed is only the display channel; the WebSocket carries the audio. An SSE drop is NOT a reason to blame the
+    // cable (that was the S20 FE bug). Retry quietly; only if the engine is also unreachable do we surface a connection loss.
+    es.onerror = function () { es.close(); retry(); if (S.mode !== "listening") probe(); };
   }
   function retry() { conn.tries++; conn.timer = setTimeout(feed, Math.min(15000, 1000 * Math.pow(2, Math.min(conn.tries - 1, 4)))); }
-  function lostNote() { var n = $("live-note"); n.textContent = "Lost contact with your computer. Check the USB cable."; n.classList.add("warn"); }
   function onEvent(e) {
     if (e.type === "state") {
       S.foreign = !!e.active && S.mode !== "listening" && S.mode !== "starting";
@@ -214,7 +248,7 @@
   function dismissAlert() {
     S.dismissed = true; $("alert").hidden = true;
     if (S.ws && S.ws.readyState === 1) try { S.ws.send(JSON.stringify({ type: "dismiss" })); } catch (e) {}
-    fetch(API + "/live/dismiss", { method: "POST" }).catch(function () {});
+    fetch(API + "/live/dismiss", { method: "POST", headers: X.authHeaders(TOKEN) }).catch(function () {});
   }
 
   /* ---------- level meter ---------- */
@@ -229,10 +263,18 @@
   function clock() {
     if (S.mode !== "listening") return;
     var s = (performance.now() - S.startedAt) / 1000;
-    $("live-sub").textContent = V.mmss(s) + " · speaker mode";
-    if (s > 8 && S.maxLevel < 0.003 && !$("live-note").classList.contains("warn")) {
-      var n = $("live-note"); n.classList.add("warn");
-      n.textContent = "No sound is reaching the microphone. Is the call on speakerphone? Some phones silence the mic during calls.";
+    $("live-sub").textContent = V.mmss(s) + (S.demoPlaying ? " · recorded demo" : " · speaker mode");
+    if (S.demoPlaying) return;   // recorded clip, not the mic: never run the mic-blocked check
+    if (s > 4 && S.maxLevel < 0.003 && !S.silenceChecked && !S.blocked) {
+      S.silenceChecked = true;
+      // No mic data. Only blame the cable if the engine is genuinely unreachable; otherwise it is the microphone.
+      reachable().then(function (ok) {
+        if (S.mode !== "listening" || S.maxLevel >= 0.003) return;   // a real sound arrived meanwhile
+        if (!ok) return endConnection();                              // engine gone: that IS a connection problem
+        if (S.callActive) return micBlocked();                        // call + silent mic = the phone is blocking it
+        var n = $("live-note"); n.classList.add("warn");              // not on a call (ambient demo): gentle hint
+        n.textContent = "No sound is reaching the microphone. Is the call on speakerphone? Some phones silence the mic during calls.";
+      });
     }
   }
   setInterval(clock, 500);
@@ -240,9 +282,34 @@
   /* ---------- listening ---------- */
   function fail(title, body) {
     S.err = { title: title, body: body }; cleanup();
-    var e = $("err"); e.hidden = false; e.innerHTML = "<h2>" + esc(title) + "</h2><p>" + esc(body) + "</p>";
+    var e = $("err"); e.hidden = false; e.className = "card err"; e.innerHTML = "<h2>" + esc(title) + "</h2><p>" + esc(body) + "</p>";
     setMode(S.engine ? "idle" : "offline"); $("err").hidden = false;
     HTML.dataset.tier = "";
+  }
+  /* The OS is blocking the microphone during the call. The engine and cable are fine; say so, and point to the Mac. */
+  function micBlocked() {
+    if (S.blocked) return;
+    S.blocked = true;
+    var mb = A.MIC_BLOCKED;
+    S.err = { title: mb.line, body: mb.sub }; cleanup();
+    var e = $("err"); e.hidden = false; e.className = "card err blocked";
+    e.innerHTML = "<h2>" + esc(mb.line) + "</h2><p>" + esc(mb.sub) + "</p>";
+    setMode(S.engine ? "idle" : "offline"); HTML.dataset.tier = "";
+  }
+  /* The audio WebSocket closed mid-call. Probe the engine before blaming the cable (that was the S20 FE mislabel). */
+  function endConnection() {
+    if (S.mode !== "listening" && S.mode !== "starting") return;
+    reachable().then(function (ok) {
+      if (S.mode !== "listening" && S.mode !== "starting") return;
+      if (!ok) return finish("Lost contact with your computer. Check the USB cable.");   // genuinely unreachable
+      if (S.callActive && S.maxLevel < 0.003) return micBlocked();                        // reachable, but the mic was blocked
+      finish();                                                                            // reachable: a clean end, no USB blame
+    });
+  }
+  function clearSilenceNote() {
+    S.silenceChecked = false;
+    var n = $("live-note");
+    if (n.classList.contains("warn")) { n.classList.remove("warn"); n.textContent = S.nativeAuto ? "Auto-listen. Audio goes only to your computer over USB. Nothing is saved." : "Audio goes only to your computer over USB. Nothing is saved."; }
   }
   function consent() {
     return new Promise(function (res) {
@@ -254,6 +321,7 @@
   }
   function start() {
     if (S.mode === "listening" || S.mode === "starting") return;
+    if (S.auto && /^(starting|listening|silent)$/.test(S.auto.state)) return enterAutoListening();
     $("err").hidden = true;
     consent().then(function (ok) { if (ok) begin(); });
   }
@@ -275,19 +343,20 @@
       if (n === "NotAllowedError" || n === "SecurityError") fail("Microphone is blocked", "Allow the microphone for Tell in your phone's app settings (Permissions > Microphone), then tap Start listening again.");
       else if (n === "NotFoundError") fail("No microphone found", "This phone did not offer a microphone to the app.");
       else if (m === "origin") fail("The engine refused this page", "Start the engine with make api-android so it accepts the app, then try again.");
+      else if (m === "key") fail("The engine needs this app's key", "Open Connection, tap the key field, then run make pair-android on your computer.");
       else if (m === "busy") fail("Another listening session is open", "Stop it on your computer, or wait a minute, then try again.");
       else fail("Could not start listening", "Check the USB cable and that the engine is running on your computer. (" + (m || n || "unknown") + ")");
     });
   }
-  function openSession() {
-    return fetch(API + "/session", { method: "POST" }).then(function (r) {
-      if (r.status === 403) throw new Error("origin"); if (r.status === 429) throw new Error("busy"); if (!r.ok) throw new Error("session " + r.status);
+  function openSession(source) {
+    return fetch(API + "/session", { method: "POST", headers: X.authHeaders(TOKEN) }).then(function (r) {
+      if (r.status === 401) { needKey = true; throw new Error("key"); } if (r.status === 403) throw new Error("origin"); if (r.status === 429) throw new Error("busy"); if (!r.ok) throw new Error("session " + r.status);
       return r.json();
     }).then(function (j) {
       return new Promise(function (res, rej) {
         var ws = new WebSocket(X.wsUrl(API, j.ws_path || "/ws/stream")); ws.binaryType = "arraybuffer"; var done = false;
         var t = setTimeout(function () { if (!done) { done = true; try { ws.close(); } catch (e) {} rej(new Error("no answer from the engine")); } }, 8000);
-        ws.onopen = function () { ws.send(JSON.stringify(X.hello(j.token))); };
+        ws.onopen = function () { ws.send(JSON.stringify(X.hello(j.token, source))); };
         ws.onmessage = function (m) {
           var d; try { d = JSON.parse(m.data); } catch (e) { return; }
           if (d.type === "ready" && !done) { done = true; clearTimeout(t); S.ready = true; res(ws); }
@@ -295,7 +364,7 @@
           else if (d.type === "warn" && d.code) toast(d.code === "lagging" ? "The engine is a little behind" : "The engine is busy");
           else if (d.type === "final") finish();
         };
-        ws.onclose = function () { clearTimeout(t); if (!done) { done = true; rej(new Error("connection closed")); } else if (S.mode === "listening") { finish("The connection to your computer closed."); } };
+        ws.onclose = function () { clearTimeout(t); if (!done) { done = true; rej(new Error("connection closed")); } else if (S.mode === "listening") { endConnection(); } };
         ws.onerror = function () {};
       });
     });
@@ -307,7 +376,7 @@
     return ctx.audioWorklet.addModule("worklet.js").then(function () {
       var src = ctx.createMediaStreamSource(stream), node = new AudioWorkletNode(ctx, "ds-capture", { numberOfOutputs: 1, outputChannelCount: [1] });
       var pipe = P.createPipeline({ inRate: ctx.sampleRate,
-        onLevel: function (l) { S.level = l; if (l > S.maxLevel) S.maxLevel = l; if (!meterRaf) meterRaf = requestAnimationFrame(drawMeter); },
+        onLevel: function (l) { S.level = l; if (l > S.maxLevel) S.maxLevel = l; if (l >= 0.003) clearSilenceNote(); if (!meterRaf) meterRaf = requestAnimationFrame(drawMeter); },
         onFrame: function (f) { if (S.ws && S.ws.readyState === 1 && S.ready) { if (S.ws.bufferedAmount < 1 << 20) S.ws.send(f.buffer); S.sentBytes += f.byteLength; } } });
       node.port.onmessage = function (m) { pipe.push(m.data); };
       var mute = ctx.createGain(); mute.gain.value = 0;
@@ -318,25 +387,32 @@
   }
   function resetSession() {
     S.tier = null; S.tick = -1; S.elapsed = 0; S.ticks = []; S.alert = "none"; S.dismissed = false; S.lastSig = ""; S.level = 0; S.maxLevel = 0; S.sentBytes = 0; S.ready = false;
+    S.silenceChecked = false; S.blocked = false;
     $("alert").hidden = true; $("read").hidden = true; $("tx").innerHTML = ""; $("tl").innerHTML = ""; $("why").innerHTML = ""; $("changed").hidden = true; $("caution").hidden = true;
   }
   function cleanup() {
     clearInterval(S.ping);
+    try { if (S.demoStreamer) S.demoStreamer.stop(); } catch (e) {} S.demoStreamer = null; S.demoPlaying = false;
     try { if (S.node) { S.node.port.onmessage = null; S.node.disconnect(); } } catch (e) {}
     try { if (S.stream) S.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
     try { if (S.ctx) S.ctx.close(); } catch (e) {}
     var ws = S.ws; S.ws = null; S.node = null; S.stream = null; S.ctx = null; S.ready = false;
     try { if (ws) { ws.onclose = null; ws.close(); } } catch (e) {}
-    try { if (S.wake) S.wake.release(); } catch (e) {} S.wake = null;
-    var svc = native(); if (svc && svc.stop) svc.stop().catch(function () {});
+    // release() returns a promise; a bare call left its rejection unhandled during a call teardown (logged as "undefined").
+    try { if (S.wake && S.wake.release) { var rp = S.wake.release(); if (rp && rp.catch) rp.catch(function () {}); } } catch (e) {} S.wake = null;
+    var svc = native(); if (svc && svc.stop && !S.nativeAuto) svc.stop().catch(function () {});
+    S.nativeAuto = false;
     S.level = 0; drawMeter();
   }
   function stop() {
+    if (S.demoPlaying) return stopDemo();
+    if (S.nativeAuto) { var svc = native(); if (svc && svc.stopAutoListen) svc.stopAutoListen().catch(function () {}); return finish(); }
     if (S.ws && S.ws.readyState === 1) try { S.ws.send('{"type":"stop"}'); } catch (e) {}
     finish();
   }
   function finish(why) {
     if (S.mode !== "listening" && S.mode !== "starting") return;
+    if (S.demo) return finishDemo(why);
     var secs = (performance.now() - S.startedAt) / 1000;
     cleanup(); $("alert").hidden = true;
     setMode("ended");
@@ -352,6 +428,159 @@
   }
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible" && S.mode === "listening" && (!S.wake || S.wake.released)) wakeLock(); });
 
+  /* ---------- auto-listen (native app only; behaviour in CallMonitor / CallListenService) ---------- */
+  function applyAuto(st, msg) {
+    S.auto = st && st.available ? st : null;
+    var view = A.status(S.auto), on = !!(S.auto && S.auto.enabled && !(S.auto.missing || []).length);
+    document.querySelectorAll("[data-auto]").forEach(function (b) { b.setAttribute("aria-checked", on ? "true" : "false"); b.disabled = !S.auto; });
+    $("auto").dataset.tone = view.tone; $("auto-line").textContent = view.line; $("auto-sub").textContent = view.sub;
+    var row = document.querySelector(".set-row"); row.dataset.tone = view.tone; $("set-auto-line").textContent = view.line; $("set-auto-sub").textContent = view.sub;
+    var denied = !!(S.auto && (S.auto.missing || []).length && (msg || S.auto.enabled));
+    document.querySelectorAll("[data-appsettings]").forEach(function (b) { b.hidden = !denied; });
+    ["auto-msg", "set-auto-msg"].forEach(function (id) { $(id).hidden = !msg; $(id).textContent = msg || ""; });
+  }
+  function refreshAuto() {
+    var svc = native();
+    if (!svc || !svc.getAutoListen) return applyAuto(null);
+    svc.getAutoListen().then(function (st) {
+      applyAuto(st);
+      if (/^(starting|listening|silent)$/.test(st.state)) enterAutoListening();
+    }).catch(function () { applyAuto(null); });
+  }
+  function setAuto(want) {
+    var svc = native(); if (!svc || !svc.setAutoListen) return;
+    svc.setAutoListen({ enabled: want }).then(function (st) { applyAuto(st, st.message || ""); if (st.enabled && !st.message) toast(A.ON); })
+      .catch(function () { applyAuto(S.auto, "Could not change the setting. Try again."); });
+  }
+  function toggleAuto() {
+    if (!S.auto) return;
+    var on = S.auto.enabled && !(S.auto.missing || []).length;
+    if (on) return setAuto(false);
+    if (S.auto.consented) return setAuto(true);           // the consent sheet is shown once
+    var back = !$("sheet-settings").hidden;
+    openSheet("sheet-auto");
+    $("auto-yes").onclick = function () { closeSheets(); setAuto(true); if (back) openSheet("sheet-settings"); };
+    $("auto-no").onclick = function () { closeSheets(); if (back) openSheet("sheet-settings"); };
+  }
+  /* The native service is streaming the call: show the live view (the page captures nothing itself). */
+  function enterAutoListening() {
+    if (S.nativeAuto) return;
+    if (S.mode === "listening" || S.mode === "starting") return;   // the page is listening by hand already
+    closeSheets(true); $("err").hidden = true; resetSession();
+    S.nativeAuto = true; S.startedAt = performance.now(); setMode("listening"); HTML.dataset.tier = "";
+    drawIdleHero("Listening", "Gathering speech", "Listening", "Tell started when you answered. Gathering the first few seconds before judging.");
+    $("live-note").textContent = "Auto-listen. Audio goes only to your computer over USB. Nothing is saved."; $("live-note").classList.remove("warn");
+    $("steps").hidden = true;
+    if (!conn.es) feed();
+  }
+  function onAuto(e) {
+    if (!e) return;
+    if (e.kind === "call") { var ph = String(e.state).split(":")[0]; S.callActive = ph === "offhook" || ph === "ringing"; return; }
+    if (e.kind === "level" && S.nativeAuto) { S.level = e.level || 0; if (S.level > S.maxLevel) S.maxLevel = S.level; if (S.level >= 0.003) clearSilenceNote(); if (!meterRaf) meterRaf = requestAnimationFrame(drawMeter); return; }
+    if (e.kind !== "state") return;
+    if (S.auto) S.auto.state = e.state;
+    if (e.state === "starting" || e.state === "listening") enterAutoListening();
+    else if (e.state === "silent" && S.nativeAuto) { var n = $("live-note"); n.classList.add("warn"); n.textContent = "No sound is reaching the microphone. Is the call on speaker? Android may be silencing the microphone during calls."; }
+    else if (e.state.indexOf("ended") === 0) {
+      var out = A.outcome(e.state);
+      if (out === "mic_silenced") { S.callActive = false; if (S.nativeAuto || S.mode === "listening") micBlocked(); else toast(A.MIC_BLOCKED.line); }
+      else { S.callActive = false; var why = A.endedText(e.state); if (S.nativeAuto) finish(why || undefined); else if (why) toast(why); }
+    }
+    applyAuto(S.auto);
+  }
+
+  /* ---------- Demo mode (stage): a BUNDLED recorded clip -> the REAL engine over the SAME /session + WS path.
+     The orb, verdict, 2x2 and scores are the engine's own output for a known input (rendered by onVerdict via the
+     live feed, exactly like a real call); nothing here fabricates a tier, score or alert. Always labelled
+     "RECORDED DEMO" on screen, never presented as a live call. Hidden and OFF by default: reached only by a
+     long-press on the logo or ?demo=1. Needs just the USB tunnel + engine (no mic, no call, no Wi-Fi). */
+  var DEMO_CLIPS = { scam: "demo/scam.pcm", human: "demo/human.pcm" };
+  function enterDemo() {
+    if (S.demo) return;
+    S.demo = true; HTML.dataset.demo = "1";
+    closeSheets(true); $("err").hidden = true; $("alert").hidden = true;
+    $("demo-banner").hidden = false;
+    if (!conn.es) feed();
+    probe();
+    showDemoChooser();
+    toast("Demo mode on");
+  }
+  function exitDemo() {
+    if (S.demoPlaying) cleanup();
+    S.demo = false; S.demoPlaying = false; S.demoKind = null; HTML.dataset.demo = "";
+    $("demo-banner").hidden = true;
+    try { document.querySelector(".dock-live .live-txt b").textContent = "Listening"; } catch (e) {}
+    clearScreen();
+  }
+  function showDemoChooser() {
+    resetSession(); S.mode = "demo"; HTML.dataset.mode = "demo"; HTML.dataset.tier = "";
+    $("dock").dataset.state = "demo"; $("pair").hidden = true; $("steps").hidden = true; $("err").hidden = true;
+    var st = $("start"); if (st) st.disabled = true;
+    updateDemoChooser();
+    drawIdleHero("Demo", "", "Recorded demo ready", "Pick a recorded call below. It plays into the real engine over USB; the verdict shown is the engine's own.");
+    $("read").hidden = !S.tier;
+  }
+  function updateDemoChooser() {
+    var off = !S.engine;
+    ["demo-scam", "demo-human"].forEach(function (id) { var b = $(id); if (b) b.disabled = off; });
+    $("demo-note").textContent = off ? "Not connected to your computer. Start the tunnel + engine, then pick a call."
+      : "Plays a recorded clip into the real engine over USB. The verdict shown is the engine's own.";
+  }
+  function startDemo(kind) {
+    if (S.demoPlaying) return;
+    if (!DEMO_CLIPS[kind]) return;
+    if (!S.engine) { renderConnect(); openSheet("sheet-connect"); return; }
+    var b = $("demo-" + kind), was = b ? b.textContent : "";
+    if (b) { b.disabled = true; b.textContent = "Loading..."; }
+    fetch(DEMO_CLIPS[kind], { cache: "force-cache" }).then(function (r) { if (!r.ok) throw new Error("clip " + r.status); return r.arrayBuffer(); })
+      .then(function (buf) {
+        if (b) b.textContent = was;
+        resetSession(); S.demoPlaying = true; S.demoKind = kind;
+        S.startedAt = performance.now(); S.mode = "listening"; HTML.dataset.mode = "listening"; HTML.dataset.tier = "";
+        $("dock").dataset.state = "live"; $("pair").hidden = true; $("steps").hidden = true;
+        $("live-note").textContent = "Recorded demo. A bundled clip is streaming to the real engine over USB. Verdicts are genuine."; $("live-note").classList.remove("warn");
+        $("live-sub").textContent = "0:00 · recorded demo";
+        try { document.querySelector(".dock-live .live-txt b").textContent = "Recorded demo"; } catch (e) {}
+        drawIdleHero("Listening", "Gathering speech", "Recorded demo playing", "A recorded " + (kind === "scam" ? "scam" : "human") + " call is streaming to the engine. Gathering the first few seconds before judging.");
+        return openSession("android demo (recorded clip: " + kind + ")").then(function (ws) {
+          S.ws = ws;
+          S.demoStreamer = D.createStreamer({
+            frames: D.frameClip(buf, D.FRAME_BYTES),
+            send: function (f) { if (S.ws && S.ws.readyState === 1 && S.ready && S.ws.bufferedAmount < 1 << 20) { S.ws.send(f); S.sentBytes += f.byteLength; } },
+            onFrame: function (f) { S.level = D.levelOf(f); if (S.level > S.maxLevel) S.maxLevel = S.level; if (!meterRaf) meterRaf = requestAnimationFrame(drawMeter); },
+            onDone: function () { if (S.ws && S.ws.readyState === 1) try { S.ws.send('{"type":"stop"}'); } catch (e) {} },
+          });
+          S.demoStreamer.start();
+          S.ping = setInterval(function () { if (S.ws && S.ws.readyState === 1) S.ws.send('{"type":"ping"}'); }, 10000);
+        });
+      })
+      .catch(function (e) {
+        if (b) { b.disabled = false; b.textContent = was; }
+        S.demoPlaying = false;
+        var m = e && e.message || "";
+        if (m === "origin") fail("The engine refused this page", "Start the engine with make api-android so it accepts the app, then try the demo again.");
+        else if (m === "busy") fail("Another session is open", "Stop it on your computer, or wait a minute, then try the demo again.");
+        else if (m === "key") fail("Engine key needed", "Paste the engine key (make pair-android on your computer), then try the demo again.");
+        else fail("Could not start the demo", "Check the USB cable and that the engine is running. (" + (m || "unknown") + ")");
+        if (S.demo) { S.mode = "demo"; HTML.dataset.mode = "demo"; $("dock").dataset.state = "demo"; }
+      });
+  }
+  function stopDemo() {
+    if (S.ws && S.ws.readyState === 1) try { S.ws.send('{"type":"stop"}'); } catch (e) {}
+    finishDemo();
+  }
+  function finishDemo(why) {
+    var secs = (performance.now() - S.startedAt) / 1000;
+    cleanup(); $("alert").hidden = true;
+    S.mode = "demo"; HTML.dataset.mode = "demo"; $("dock").dataset.state = "demo";
+    try { document.querySelector(".dock-live .live-txt b").textContent = "Listening"; } catch (e) {}
+    updateDemoChooser();
+    $("read").hidden = !S.tier;
+    $("orb-sub").textContent = S.tier ? "Recorded demo ended" : "";
+    if (!S.tier) drawIdleHero("Demo", "", "Recorded demo ready", "Pick a recorded call below. It plays into the real engine over USB; the verdict shown is the engine's own.");
+    else swapText($("headline").textContent || "Recorded demo", (why ? why + " " : "") + "Recorded demo ended after " + V.mmss(secs) + ". Pick another, or Exit demo. Nothing was saved.");
+  }
+
   /* ---------- sheets ---------- */
   var lastFocus = null;
   function openSheet(id) {
@@ -359,26 +588,44 @@
     var f = s.querySelector("button.primary, button"); if (f) f.focus();
   }
   function closeSheets(keep) {
-    ["sheet-consent", "sheet-speaker", "sheet-connect"].forEach(function (i) { $(i).hidden = true; }); $("scrim").hidden = true;
+    ["sheet-consent", "sheet-speaker", "sheet-connect", "sheet-auto", "sheet-settings"].forEach(function (i) { $(i).hidden = true; }); $("scrim").hidden = true;
     if (!keep && lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch (e) {}
   }
   document.querySelectorAll("[data-close]").forEach(function (b) { b.onclick = function () { closeSheets(); }; });
-  $("scrim").onclick = function () { if (!$("sheet-consent").hidden) $("consent-no").click(); else closeSheets(); };
+  $("scrim").onclick = function () { if (!$("sheet-consent").hidden) $("consent-no").click(); else if (!$("sheet-auto").hidden) $("auto-no").click(); else closeSheets(); };
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("scrim").hidden) $("scrim").click(); });
 
   $("start").onclick = start; $("stop").onclick = stop; $("again").onclick = function () { clearScreen(); start(); };
   $("clear").onclick = clearScreen; $("al-dismiss").onclick = dismissAlert;
   $("open-speaker").onclick = function () { openSheet("sheet-speaker"); };
   $("conn").onclick = function () { renderConnect(); openSheet("sheet-connect"); };
+  $("open-settings").onclick = function () { refreshAuto(); openSheet("sheet-settings"); };
+  document.querySelectorAll("[data-auto]").forEach(function (b) { b.onclick = toggleAuto; });
+  $("demo-scam").onclick = function () { startDemo("scam"); };
+  $("demo-human").onclick = function () { startDemo("human"); };
+  $("demo-exit").onclick = exitDemo;
+  /* Hidden entry, off by default: long-press the logo (or ?demo=1). Never shown in the normal flow. */
+  (function () {
+    if (QS.get("demo") === "1") setTimeout(enterDemo, 0);
+    var brand = document.querySelector(".brand"), t = 0;
+    if (!brand) return;
+    var rel = function () { clearTimeout(t); };
+    brand.addEventListener("pointerdown", function () { t = setTimeout(function () { if (!S.demo) enterDemo(); }, 1200); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(function (ev) { brand.addEventListener(ev, rel); });
+  })();
+  document.querySelectorAll("[data-appsettings]").forEach(function (b) { b.onclick = function () { var svc = native(); if (svc && svc.openAppSettings) svc.openAppSettings(); }; });
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") refreshAuto(); });   // permissions may have changed in Android settings
+  (function () { var svc = native(); if (svc && svc.addListener) try { svc.addListener("autoListen", onAuto); } catch (e) {} })();
   window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); S.installEvt = e; renderConnect(); });
 
   /* ---------- boot ---------- */
   if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0 && !native()) navigator.serviceWorker.register("sw.js").catch(function () {});
   if (QS.get("test") === "1") {            // test harness only (screenshots without a mic); never linked from the UI
     window.__ds = { S: S, onEvent: onEvent, setMode: function (m) { setMode(m); }, listening: function () { S.startedAt = performance.now(); resetSession(); setMode("listening"); drawIdleHero("Listening", "Gathering speech", "Listening", "Gathering the first few seconds before judging."); },
-      level: function (l) { S.level = l; S.maxLevel = Math.max(S.maxLevel, l); drawMeter(); }, finish: finish, sheet: openSheet };
+      level: function (l) { S.level = l; S.maxLevel = Math.max(S.maxLevel, l); drawMeter(); }, finish: finish, sheet: openSheet, auto: applyAuto, autoEvent: onAuto, micBlocked: micBlocked,
+      enterDemo: enterDemo, exitDemo: exitDemo, startDemo: startDemo, stopDemo: stopDemo, demoChooser: showDemoChooser };
   }
   setMode("boot"); chip("", "Checking"); drawIdleHero("...", "", "Looking for your computer", "One moment.");
-  renderConnect();
+  renderConnect(); refreshAuto();
   probe().then(feed);
 })();

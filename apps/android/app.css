@@ -147,7 +147,7 @@ main{flex:1;padding:0 var(--gut) calc(var(--dock-h) + env(safe-area-inset-bottom
 .dock{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;padding:12px var(--gut) calc(env(safe-area-inset-bottom) + 14px);
   background:linear-gradient(to top,var(--bg) 72%,transparent);z-index:20}
 .dock>div{display:none}
-.dock[data-state="idle"] .dock-idle,.dock[data-state="live"] .dock-live,.dock[data-state="end"] .dock-end{display:block}
+.dock[data-state="idle"] .dock-idle,.dock[data-state="live"] .dock-live,.dock[data-state="end"] .dock-end,.dock[data-state="demo"] .dock-demo{display:block}
 .dock-note{margin-top:10px;text-align:center;font-size:13px;color:var(--muted)}
 .dock-live{background:var(--plane);border-radius:28px;padding:14px 14px 12px 20px;box-shadow:0 0 0 1.5px var(--tier)}
 .live-row{display:flex;align-items:center;gap:14px}
@@ -168,6 +168,20 @@ main{flex:1;padding:0 var(--gut) calc(var(--dock-h) + env(safe-area-inset-bottom
 .dock-end .btn.primary{grid-column:1/3;min-height:56px;font-size:17px}
 .dock-end .btn.ghost{min-height:44px;padding:0 16px;font-size:15px}
 .dock-end{grid-template-columns:1fr auto}
+
+/* demo mode (stage): recorded clip -> real engine, always labelled */
+.demo-banner{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:center;gap:9px;
+  padding:9px 16px;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--on-tier);background:var(--amber);box-shadow:0 1px 0 rgba(0,0,0,.08)}
+.demo-dot{width:9px;height:9px;border-radius:50%;background:var(--on-tier);flex:none}
+@media (prefers-reduced-motion:no-preference){.demo-dot{animation:rec 1.6s ease-in-out infinite}}
+.dock-demo .demo-pick{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dock-demo .btn.demo-scam,.dock-demo .btn.demo-human{min-height:60px;border-radius:30px;font-size:17px;font-weight:500}
+.dock-demo .btn.demo-scam{background:color-mix(in srgb,var(--red) 16%,var(--bg));color:var(--red-t);box-shadow:inset 0 0 0 1.5px var(--red)}
+.dock-demo .btn.demo-human{background:color-mix(in srgb,var(--teal) 16%,var(--bg));color:var(--teal-t);box-shadow:inset 0 0 0 1.5px var(--teal)}
+.demo-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+.demo-foot .dock-note{margin-top:0;text-align:left;flex:1}
+.demo-foot .link{flex:none}
 
 /* red alert */
 .alertfull{position:fixed;inset:0;z-index:50;background:var(--alert-bg);color:var(--alert-fg);display:flex;overflow:auto;padding:calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px)}
@@ -205,3 +219,31 @@ main{flex:1;padding:0 var(--gut) calc(var(--dock-h) + env(safe-area-inset-bottom
 :root[data-mode="offline"] .advice{display:none}
 :root[data-mode="offline"] .hero h1{font-size:24px;margin-top:4px}
 .err{border:1.5px solid var(--amber)}
+/* honest "the phone is blocking the mic during the call" card: calm, not an error (engine and cable are fine) */
+.err.blocked{border-color:var(--line)}
+.err.blocked h2{font-weight:500;font-size:19px;line-height:1.3}
+.err.blocked p{margin-top:10px;color:var(--muted);font-size:15px;line-height:1.5}
+
+/* settings button + auto-listen (start when a call is answered) */
+.top-r{display:flex;align-items:center;gap:8px}
+.gear{width:44px;height:44px;border-radius:22px;background:var(--plane);display:grid;place-items:center}
+.gear svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+.auto-row,.set-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.set-row{margin-top:18px}
+.auto-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.auto-txt b{font-weight:500;font-size:16px;line-height:1.35}
+.auto-txt small{font-size:14px;color:var(--muted);line-height:1.4}
+.auto[data-tone="on"] .auto-txt small,.set-row[data-tone="on"] small{color:var(--teal-t)}
+.auto[data-tone="warn"] .auto-txt small,.set-row[data-tone="warn"] small{color:var(--amber)}
+.auto-sub{margin-top:10px;font-size:14px;color:var(--muted);line-height:1.45}
+.auto-sub:empty{display:none}
+.auto-msg{margin-top:12px;padding:10px 14px;border-radius:14px;background:var(--plane2);font-size:14px;line-height:1.45}
+.switch{flex:none;position:relative;width:56px;height:32px;border-radius:16px;background:var(--cell-off);transition:background .2s var(--ease)}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:var(--muted);transition:transform .2s var(--ease),background .2s var(--ease)}
+.switch::before{content:"";position:absolute;inset:-8px -4px}
+.switch[aria-checked="true"]{background:var(--teal)}
+.switch[aria-checked="true"]::after{transform:translateX(24px);background:var(--bg)}
+.switch:disabled{background:var(--plane2);cursor:not-allowed}
+.switch:disabled::after{background:var(--cell-off)}
+:root[data-mode="listening"] .auto,:root[data-mode="starting"] .auto{display:none}
+@media (prefers-reduced-motion:reduce){.switch,.switch::after{transition:none}}

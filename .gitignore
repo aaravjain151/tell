@@ -22,6 +22,10 @@ data/
 models/
 
 # --- Tell ---
+# Pre-rendered spoken verdicts (built by tools/render_verdict_audio.py). Audio + its manifest are never committed;
+# `make verdict-audio` regenerates them from the owner's Gradium key.
+apps/web/verdict_audio/
+data/verdict_audio/
 data/calls/*
 !data/calls/.gitkeep
 council/sessions/*
@@ -49,3 +53,4 @@ apps/android/native/*.apk
 *.aab
 *.jks
 *.keystore
+apps/android/native/www/

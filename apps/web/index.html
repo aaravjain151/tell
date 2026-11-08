@@ -7,6 +7,13 @@
 <title>Tell</title>
 <meta name="description" content="Is the voice on the line human, a disclosed AI, an undisclosed AI, or a scam? Tell answers that on this machine, and nothing leaves it.">
 <script>
+// One-time pairing (make pair-url): the engine's API token arrives in the URL FRAGMENT, which the browser never sends to
+// any server. Read it once, keep it in this tab's sessionStorage only, and remove it from the address bar and history.
+try{
+  var tm = location.hash.match(/^#token=([A-Za-z0-9_-]{32,128})$/);
+  if (tm){ window.__tellTok = tm[1]; try{ sessionStorage.setItem("tell-token", tm[1]); }catch(e){} }
+  if (/^#token=/.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
+}catch(e){}
 try{
   document.documentElement.classList.add("js");
   var qv = new URLSearchParams(location.search).get("view");
@@ -83,6 +90,7 @@ h1,h2,p{margin:0}
 .net i{width:8px;height:8px;background:var(--unsure)}
 .net[data-state="up"] i{background:var(--teal)}
 .net[data-state="demo"] i{background:var(--amber)}
+.net[data-state="pair"] i{background:var(--blue)}
 .net b{font-weight:500;color:var(--ink)}
 .paren{background:none;border:0;padding:0;min-height:44px;cursor:pointer;color:var(--ink)}
 .paren:hover{text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:1px}
@@ -437,6 +445,7 @@ html[data-live="on"] .tabs a[data-page="live"] i,html[data-live="on"] .tabbar a[
 .home-hero[data-s="armed"] .home-px i.on{background:var(--teal)}
 .home-hero[data-s="live"] .home-px i.on{background:var(--tier)}
 .home-hero[data-s="off"] .home-px i.on{background:var(--unsure)}
+.home-hero[data-s="pair"] .home-px i.on{background:var(--blue)}
 .home-sub{margin-top:20px;max-width:56ch;font-size:16px;color:var(--muted)}
 .home-act{display:flex;flex-wrap:wrap;align-items:center;gap:8px 28px;margin-top:28px}
 .lastcall{display:grid;gap:6px;margin-top:12px}
@@ -756,8 +765,10 @@ html[data-sens="quiet"] #caution{display:none}
       <label class="btn" for="audio" id="uploadlbl" tabindex="0" role="button">Upload audio</label>
       <input class="vh" type="file" id="audio" accept="audio/*" tabindex="-1">
       <button class="btn" id="speak" type="button">Speak verdict</button>
+      <label class="rt-q" id="autospeak-wrap" title="Play the pre-rendered spoken verdict automatically after each result"><input type="checkbox" id="autospeak"> Speak automatically</label>
       <div class="attach" id="attach"><b id="attachname"></b><span id="attachmeta"></span><button class="link" id="detach" type="button">Remove</button></div>
     </div>
+    <p class="srcnote" id="speaknote">Spoken verdict voiced by Gradium (rendered ahead of time; nothing is sent during a call).</p>
     <p class="status" id="status" role="status" aria-live="polite"></p>
     <p class="alert" id="alert" role="alert"></p>
   </section>
@@ -914,8 +925,30 @@ html[data-sens="quiet"] #caution{display:none}
 <script>
 "use strict";
 // Dev/test override (?api=http://localhost:8011). Loopback hosts only, so a crafted link can never point the recorder at another machine.
-const API = (() => { try{ const u = new URL(new URLSearchParams(location.search).get("api") || "http://localhost:8000");
-  return ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname) ? u.origin : "http://localhost:8000"; }catch(e){ return "http://localhost:8000"; } })();
+// Default 127.0.0.1, the address `make api`/`make demo` bind: "localhost" makes the browser try ::1 first.
+const API_DEFAULT = "http://127.0.0.1:8000";
+const API = (() => { try{ const u = new URL(new URLSearchParams(location.search).get("api") || API_DEFAULT);
+  return ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname) ? u.origin : API_DEFAULT; }catch(e){ return API_DEFAULT; } })();
+// The engine's per-install API token, from the one-time pairing link (see the first <script>). Sent as a header on every
+// data/control request; only the live feed carries it as ?token= because EventSource cannot set headers.
+let TOKEN = (() => { let t = ""; try{ t = sessionStorage.getItem("tell-token") || ""; }catch(e){} return t || window.__tellTok || ""; })();
+let PAIR = false;     // the engine answered 401: this page is not paired (or its token is stale)
+const PUBLIC_PATHS = ["/health", "/ready", "/thresholds"];
+function authed(path, opt){
+  const o = Object.assign({}, opt || {});
+  if (TOKEN && !PUBLIC_PATHS.includes(path.split("?")[0])) o.headers = Object.assign({}, o.headers || {}, {"X-Tell-Token": TOKEN});
+  return o;
+}
+function onUnauthorized(){
+  if (TOKEN){ TOKEN = ""; try{ sessionStorage.removeItem("tell-token"); }catch(e){} window.__tellTok = ""; }
+  if (!PAIR){ PAIR = true; try{ paintConn(); renderHome(); }catch(e){} }
+}
+async function api(path, opt){
+  const r = await fetch(API + path, authed(path, opt));
+  if (r.status === 401) onUnauthorized();
+  return r;
+}
+const feedUrl = () => API + "/live/events" + (TOKEN ? "?token=" + encodeURIComponent(TOKEN) : "");
 const $ = id => document.getElementById(id);
 const SAMPLES = JSON.parse($("samples-data").textContent);
 const TIER = {human:"Human", ai_disclosed:"AI, said so", ai_undisclosed:"AI, didn't say so", scam:"Scam pattern", unsure:"Unsure"};
@@ -959,16 +992,45 @@ function setChip(state, text){ const c = $("chip"); c.dataset.state = state; $("
 const tick = () => { $("clock").textContent = new Date().toLocaleTimeString([], {hour12:false}); };
 tick(); setInterval(tick, 1000);
 
-async function probe(){
-  try{
-    const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 2500);
-    const j = await (await fetch(API + "/health", {cache:"no-store", signal: ctl.signal})).json(); clearTimeout(to);
-    try{ const th = await (await fetch(API + "/thresholds", {cache:"no-store"})).json(); if (th && th.P_AI_THRESHOLD > 0 && th.P_AI_THRESHOLD < 1) P_AI_THR = th.P_AI_THRESHOLD; }catch(e){}
-    apiUp = !!j.ok; HEALTH = j; probed = true; renderHome(); $("thr").textContent = "thresholds " + String(j.thresholds_version || "");
-    setChip("up", `<span>On this machine · </span><b>${Number((j.egress||{}).caller_audio_bytes_sent) || 0} B out</b>`);
-  }catch(e){
-    apiUp = false; probed = true; renderHome(); setChip("demo", "<span>Demo mode · run </span><b>make api</b>");
-  }
+/* Connection state. One source of truth for the chip, the Home hero and the privacy rows: /health, polled every 2 s
+   until the engine answers and every 10 s after (the OS network count is cumulative, so it stays current). The old
+   one-shot probe left the chip on "Checking"/"Demo mode" and the privacy rows on "Engine not connected" forever when
+   the page opened before the engine finished starting, while the retrying live feed already showed ARMED. */
+let probeTimer = 0, probeBusy = false;
+async function timedJson(url, ms, opt){
+  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), ms);
+  try{ const r = await fetch(url, Object.assign({cache:"no-store", signal: ctl.signal}, opt || {})); return {status: r.status, j: await r.json().catch(() => null)}; }
+  finally{ clearTimeout(to); }
+}
+function paintConn(){
+  if (apiUp && PAIR) setChip("pair", "<span>Pair this page · run </span><b>make pair-url</b>");
+  else if (apiUp) setChip("up", `<span>On this machine · </span><b>${Number(((HEALTH || {}).egress || {}).caller_audio_bytes_sent) || 0} B out</b>`);
+  else if (probed) setChip("demo", "<span>Demo mode · run </span><b>make api</b>");
+}
+async function loadThresholds(){
+  try{ const th = (await timedJson(API + "/thresholds", 2000)).j; if (th && th.P_AI_THRESHOLD > 0 && th.P_AI_THRESHOLD < 1) P_AI_THR = th.P_AI_THRESHOLD; }catch(e){}
+}
+async function checkPair(){                     // a cheap protected read: 401 = not paired; any other answer = paired
+  const r = await jget("/history/status");
+  if (r.status && r.status !== 401 && PAIR){ PAIR = false; paintConn(); renderHome(); }
+  if (r.ok && r.j) HSTAT = r.j;
+}
+function probe(){                              // concurrent callers share one request
+  if (!probeBusy) probeBusy = doProbe().finally(() => { probeBusy = false; });
+  return probeBusy;
+}
+async function doProbe(){
+  clearTimeout(probeTimer);
+  let j = null;
+  try{ j = (await timedJson(API + "/health", 1500)).j; }catch(e){ j = null; }
+  const was = apiUp;
+  apiUp = !!(j && j.ok); probed = true; HEALTH = apiUp ? j : null;
+  if (apiUp) $("thr").textContent = "thresholds " + String(j.thresholds_version || "");
+  try{ paintConn(); renderHome(); }catch(e){}
+  if (apiUp && !was){ loadThresholds(); checkPair().catch(() => {}); }
+  clearTimeout(probeTimer);
+  probeTimer = setTimeout(probe, apiUp ? 10000 : 2000);
+  return apiUp;
 }
 
 /* ---------- pixel meters: discrete cells, like the logo's machine half ---------- */
@@ -1163,6 +1225,7 @@ function render(v, {animate = true, live = false, textOnly = false} = {}){
   document.documentElement.dataset.tier = v.tier;
   $("tierlabel").textContent = TIER[v.tier] || v.tier;
   setHeadline(v.headline); $("advice").textContent = v.advice;
+  maybeAutoSpeak(v.tier);
   lastProv = textOnly ? "Your transcript (no audio)" : live ? "Live analysis" : "Sample (stored)";
   $("prov").dataset.kind = textOnly ? "text" : live ? "live" : "sample";
   showProvenance(lastProv);
@@ -1222,7 +1285,7 @@ async function analyze(){
   if (text) fd.append("transcript", text);
   if (audio) fd.append("audio", audio, audio.name || "clip.webm");
   try{
-    const r = await fetch(API + "/analyze", {method:"POST", body:fd}), j = await r.json();
+    const r = await api("/analyze", {method:"POST", body:fd}), j = await r.json();
     if (!r.ok) throw new Error(j.detail || r.statusText);
     log(`POST localhost:8000/analyze (${audio ? Math.round((audio.size||0)/1024) + " KB audio, " : ""}${text.length} chars), loopback only`);
     render(j, {live: true, textOnly: !audio}); window.scrollTo({top: 0, behavior: REDUCED ? "auto" : "smooth"});
@@ -1258,7 +1321,7 @@ async function loadRedteam(){
   $("rt").hidden = true;
   if (!apiUp) return;
   try{
-    const r = await fetch(API + "/redteam/samples", {cache:"no-store"});
+    const r = await api("/redteam/samples", {cache:"no-store"});
     if (!r.ok) throw new Error(r.statusText);
     const rows = await r.json();
     if (!Array.isArray(rows) || !rows.length) return;
@@ -1275,8 +1338,8 @@ async function pickClip(id){
   showError(""); setStatus(`Loading ${l.name} (${l.sub}) from the local API…`);
   try{
     const [a, t] = await Promise.all([
-      fetch(`${API}/redteam/clip/${u}${phone ? "?variant=opus8k" : ""}`),
-      c.has_text ? fetch(`${API}/redteam/text/${u}`) : Promise.resolve(null)]);
+      api(`/redteam/clip/${u}${phone ? "?variant=opus8k" : ""}`),
+      c.has_text ? api(`/redteam/text/${u}`) : Promise.resolve(null)]);
     if (!a.ok) throw new Error("clip " + a.status);
     const blob = await a.blob(), text = t && t.ok ? await t.text() : "";
     $("transcript").value = text; setMode("edit");
@@ -1375,17 +1438,49 @@ async function toggleRecord(){
   }catch(e){ stream.getTracks().forEach(t => t.stop()); showError("Couldn't start recording: " + e.message); }
   recStarting = false;
 }
-async function speak(){
-  if (!lastVerdict){ setStatus("Analyze a call first."); return; }
-  if (!apiUp){ showError("Spoken verdicts need the local API and a GRADIUM_API_KEY."); return; }
-  const fd = new FormData(); fd.append("headline", lastVerdict.headline);          // only our own wording is ever spoken
-  setStatus("Asking Gradium for the voice. Only our own text leaves this device.");
+// Pre-rendered spoken verdicts live next to this page (verdict_audio/<tier>.wav), rendered ahead of time by
+// tools/render_verdict_audio.py. Playing one is a same-origin, loopback read: no network, no Gradium, nothing leaves
+// the device — it works with Wi-Fi off. Only if the file is missing do we fall back to the live Gradium path.
+const VERDICT_AUDIO_BASE = "verdict_audio/";
+let autoSpeak = false, lastSpokenTier = null;
+try{ autoSpeak = localStorage.getItem("ds-autospeak") === "1"; }catch(e){}
+
+async function playPrerendered(tier){
   try{
-    const r = await fetch(API + "/speak", {method:"POST", body:fd});
+    const r = await fetch(VERDICT_AUDIO_BASE + encodeURIComponent(tier) + ".wav", {cache:"no-store"});
+    if (!r.ok) return false;
+    const b = await r.blob();
+    if (!b || !b.size) return false;
+    await new Audio(URL.createObjectURL(b)).play();
+    return true;
+  }catch(e){ return false; }
+}
+
+async function speak(auto){
+  const v = lastVerdict;
+  if (!v){ if (!auto) setStatus("Analyze a call first."); return; }
+  const tier = v.tier;
+  if (await playPrerendered(tier)){                                   // pre-rendered, local, offline
+    log(`Spoke verdict (pre-rendered Gradium voice, played locally for "${tier}"): 0 bytes out, 0 caller audio, 0 caller words`);
+    if (!auto) setStatus("");
+    return;
+  }
+  if (!apiUp){ if (!auto) showError("No pre-rendered verdict audio yet (run make verdict-audio). The live path needs the local API and a GRADIUM_API_KEY."); return; }
+  const fd = new FormData(); fd.append("headline", v.headline); fd.append("tier", tier); fd.append("mode", "live");  // only our own wording
+  if (!auto) setStatus("No pre-rendered file found — asking Gradium live. Only our own text leaves this device.");
+  try{
+    const r = await api("/speak", {method:"POST", body:fd});
     if (!r.ok){ const j = await r.json(); throw new Error(j.detail || r.statusText); }
     new Audio(URL.createObjectURL(await r.blob())).play();
-    log(`POST /speak: ${lastVerdict.headline.length} characters of our own wording out, 0 caller audio, 0 caller words`); setStatus("");
-  }catch(e){ setStatus(""); showError("Couldn't speak the verdict: " + e.message); }
+    log(`POST /speak (live — pre-rendered file missing): ${v.headline.length} characters of our own wording out, 0 caller audio, 0 caller words`); if (!auto) setStatus("");
+  }catch(e){ if (!auto){ setStatus(""); showError("Couldn't speak the verdict: " + e.message); } }
+}
+
+function maybeAutoSpeak(tier){
+  if (!autoSpeak || !tier) return;
+  if (tier === lastSpokenTier) return;                                // don't repeat the same tier back to back
+  lastSpokenTier = tier;
+  speak(true);
 }
 
 /* ---------- tooltip on marked phrases ---------- */
@@ -1478,7 +1573,10 @@ $("trust-list").addEventListener("click", e => {
 $("rtmore").addEventListener("click", () => { rtAll = !rtAll; syncRt(); });
 $("rtq").addEventListener("change", () => { if (rtCur) pickClip(rtCur.id); });
 $("rec").addEventListener("click", toggleRecord);
-$("speak").addEventListener("click", speak);
+$("speak").addEventListener("click", () => speak(false));
+(() => { const cb = $("autospeak"); if (!cb) return; cb.checked = autoSpeak;
+  cb.addEventListener("change", () => { autoSpeak = cb.checked; try{ localStorage.setItem("ds-autospeak", autoSpeak ? "1" : "0"); }catch(e){}
+    if (autoSpeak && lastVerdict){ lastSpokenTier = null; maybeAutoSpeak(lastVerdict.tier); } }); })();
 $("toggle").addEventListener("click", () => setMode($("paper").dataset.mode === "read" ? "edit" : "read"));
 $("detach").addEventListener("click", () => { clearAudio(); setStatus(""); });
 $("transcript").addEventListener("input", () => document.querySelectorAll(".sample").forEach(b => b.setAttribute("aria-pressed", "false")));
@@ -1620,9 +1718,9 @@ function onFeed(raw){
 const conn = {ok:false, es:null, tries:0, timer:0};
 function connect(){
   clearTimeout(conn.timer);
-  let es; try{ es = new EventSource(API + "/live/events"); }catch(x){ return feedDown(); }
+  let es; try{ es = new EventSource(feedUrl()); }catch(x){ return feedDown(); }
   conn.es = es;
-  es.onopen = () => { conn.ok = true; conn.tries = 0; L.lost = false; if (mode === "offline") setLive("empty"); $("retry-note").textContent = ""; drawBar(); };
+  es.onopen = () => { conn.ok = true; conn.tries = 0; L.lost = false; if (mode === "offline") setLive("empty"); $("retry-note").textContent = ""; drawBar(); if (!apiUp) probe(); };
   es.onmessage = m => { conn.ok = true; onFeed(m.data); };
   es.onerror = () => { es.close(); feedDown(); };
 }
@@ -1637,12 +1735,12 @@ function feedDown(){
 async function stopLive(){
   if (L.ended){ clearSession(); return; }
   if (recorder && recorder.state === "recording"){ recorder.stop(); return; }
-  try{ const r = await fetch(API + "/live/stop", {method:"POST"}); if (!r.ok) throw new Error(String(r.status)); }
+  try{ const r = await api("/live/stop", {method:"POST"}); if (!r.ok) throw new Error(String(r.status)); }
   catch(x){ barNote = "Could not stop from here. End it where it was started."; drawBar(); setTimeout(() => { barNote = ""; drawBar(); }, 6000); }
 }
 async function dismissAlert(){
   L.dismissed = true; $("redbar").hidden = true; HTML.dataset.banner = "0";
-  try{ await fetch(API + "/live/dismiss", {method:"POST"}); }catch(x){}
+  try{ await api("/live/dismiss", {method:"POST"}); }catch(x){}
 }
 function openMore(){ $("more").open = true; }
 function liveInit(){
@@ -1665,14 +1763,14 @@ function liveInit(){
 /* ---------- product shell: pages, home, history, block list, settings ---------- */
 const PAGES = ["home", "live", "history", "people", "block", "settings"];
 let HEALTH = null, HSTAT = null, LAST = null, page = "home", probed = false;
-async function refreshHealth(){ const h = await jget("/health"); if (h.ok && h.j){ HEALTH = h.j; renderHome(); } const s = await jget("/history/status"); if (s.ok){ HSTAT = s.j; renderHome(); } }
+async function refreshHealth(){ await probe(); const s = await jget("/history/status"); if (s.ok){ HSTAT = s.j; renderHome(); } }
 const PREFS = (() => { try{ return Object.assign({follow:true, sens:"sensitive"}, JSON.parse(localStorage.getItem("ds-prefs") || "{}")); }catch(e){ return {follow:true, sens:"sensitive"}; } })();
 const savePrefs = () => { try{ localStorage.setItem("ds-prefs", JSON.stringify(PREFS)); }catch(e){} };
 const lget = (k, d) => { try{ const v = JSON.parse(localStorage.getItem(k) || "null"); return v == null ? d : v; }catch(e){ return d; } };
 const lset = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } };
 async function jget(path, opt){
   const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 4000);
-  try{ const r = await fetch(API + path, Object.assign({cache:"no-store", signal: ctl.signal}, opt || {}));
+  try{ const r = await fetch(API + path, authed(path, Object.assign({cache:"no-store", signal: ctl.signal}, opt || {}))); if (r.status === 401) onUnauthorized();
     let j = null; try{ j = await r.json(); }catch(e){}
     return {ok: r.ok, status: r.status, j};
   }catch(e){ return {ok:false, status:0, j:null}; } finally{ clearTimeout(to); }
@@ -1716,7 +1814,8 @@ function renderHome(){
   const hero = $("home-hero"); if (!hero) return;
   let s, h, sub;
   if (mode === "on"){ s = "live"; h = "Listening now"; sub = "A call is in progress. Open the live view to see the verdict as it changes."; }
-  else if (conn.ok || apiUp){ s = "armed"; h = "Armed"; sub = "Waiting for a call to play on this Mac. Answer a call on your iPhone through Calls on Other Devices, or on this Mac, and it starts by itself."; }
+  else if (apiUp && PAIR){ s = "pair"; h = "Pair this page"; sub = "Pair this page with Tell: run make pair-url in a terminal and open the link it prints. The engine is running; it only answers pages that hold its key."; }
+  else if (apiUp){ s = "armed"; h = "Armed"; sub = "Waiting for a call to play on this Mac. Answer a call on your iPhone through Calls on Other Devices, or on this Mac, and it starts by itself."; }
   else if (conn.tries > 0 || probed){ s = "off"; h = "Not connected"; sub = "The engine is not running. Start it in a terminal and this page connects by itself."; }
   else { s = "checking"; h = "Checking"; sub = "Looking for the Tell engine on this machine."; }
   hero.dataset.s = s; $("home-h").textContent = h; $("home-sub").textContent = sub;
@@ -1739,10 +1838,12 @@ function renderHome(){
 function renderFacts(el, short){
   const e = (HEALTH && HEALTH.egress) || null, os = (HEALTH && HEALTH.os_network) || null;
   const bytes = e ? (Number(e.caller_audio_bytes_sent) || 0) : null;
-  const osTxt = !HEALTH ? "Engine not connected" : !os ? "Not reported" : os.os_check !== "ok" ? "Not measurable here" : String(os.os_outbound_count) + " connections";
+  const osTxt = !HEALTH ? "Engine not connected" : !os ? "Not reported" : os.os_check !== "ok" ? "Not measurable here" : String(Number(os.os_outbound_count) || 0);
   const rows = [];
-  rows.push(`<div><span>Caller audio sent off this device</span><b class="${short ? "big" : ""}">${bytes == null ? "n/a" : bytes + " B"}</b></div>`);
-  rows.push(`<div><span>Outbound connections seen by the operating system</span><b>${esc(osTxt)}</b></div>`);
+  // Wording (docs/THREAT-MODEL.md): the audio figure is a code guarantee, 0 by construction (privacy.record_egress refuses
+  // audio); the OS figure is the operating system's own count of engine connections since the engine started.
+  rows.push(`<div><span>Caller audio blocked from leaving by code (0 by design)</span><b class="${short ? "big" : ""}">${bytes == null ? "n/a" : bytes + " B"}</b></div>`);
+  rows.push(`<div><span>Engine network connections seen by the OS since start</span><b>${esc(osTxt)}</b></div>`);
   rows.push(`<div><span>Listens to</span><b>The caller’s side only</b></div>`);
   rows.push(`<div><span>Stored by default</span><b>Nothing</b></div>`);
   if (!short){
@@ -1760,6 +1861,7 @@ async function loadHistory(){
   const body = $("hist-body"); $("hist-act").hidden = true; msg("hist-msg", "", "");
   panel(body, "loading", "Reading your history");
   const st = await jget("/history/status");
+  if (st.status === 401){ panel(body, "offline", "Pair this page with Tell", "History lives on the engine, which only answers pages that hold its key. Run this in a terminal and open the link it prints.", "<code>make pair-url</code>"); return; }
   if (!st.ok){
     HSTAT = null; panel(body, "offline", "Engine not connected", "History lives on the engine. Start it and this page connects by itself.", "<code>make api</code>"); return;
   }
@@ -1796,6 +1898,7 @@ const sameNumber = (a, b) => cleanNumber(a).replace(/^\+/, "") === cleanNumber(b
 async function loadBlock(){
   const body = $("block-body"); panel(body, "loading", "Loading your list");
   const r = await jget("/blocklist");
+  if (r.status === 401){ blockMode = "unknown"; BLOCK = []; msg("block-mode", "", ""); panel(body, "offline", "Pair this page with Tell", "Your block list lives on the engine, which only answers pages that hold its key. Run this in a terminal and open the link it prints.", "<code>make pair-url</code>"); return; }
   if (r.ok && r.j && Array.isArray(r.j.items)){ blockMode = "engine"; BLOCK = r.j.items; msg("block-mode", "", "Stored on the engine, on this machine."); }
   else {
     blockMode = "local"; BLOCK = lget("ds-blocklist", []);
@@ -1872,7 +1975,7 @@ async function renderSettings(){
   $("pref-follow").checked = PREFS.follow;
   document.querySelectorAll('input[name="sens"]').forEach(r => { r.checked = r.value === PREFS.sens; });
   if (!HSTAT){ const s = await jget("/history/status"); if (s.ok) HSTAT = s.j; }
-  if (!HEALTH){ const h = await jget("/health"); if (h.ok) HEALTH = h.j; }
+  if (!HEALTH) await probe();
   renderFacts($("set-facts"), false);
 }
 $("pref-follow").addEventListener("change", e => { PREFS.follow = e.target.checked; savePrefs(); });

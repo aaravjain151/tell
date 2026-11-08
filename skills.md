@@ -3,7 +3,7 @@
 Every tool and every human reads this first. Edit *this* file; `CLAUDE.md`, `AGENTS.md` and `.cursor/rules/tell.mdc` are thin pointers.
 
 ## 1. Overview
-Tell is a privacy-first detector that classifies the voice on a call as **Human · AI (disclosed) · AI (undisclosed) · Scam**, with the specific "tells" that fired, and never sends caller audio off-device. Built at HACK1984 (Privacy-First track + Gradium side prize). Product brief: `pm/PRODUCT.md`. Decisions: `pm/DECISIONS.md`.
+Tell is a privacy-first detector that classifies the voice on a call as **Human · AI (disclosed) · AI (undisclosed) · Scam**, with the specific "tells" that fired, and never sends caller audio off-device. Built at HACK1984, targeting the Privacy-First (main) track, Most Startup-able, and the Best Use of Gradium side prize (which stacks with Privacy-First). We used Gradium to clone our own teammates' voices for the red-team attacker calls and to speak the verdict — only our own script text is ever sent to Gradium, never a caller. Product brief: `pm/PRODUCT.md`. Decisions: `pm/DECISIONS.md`.
 
 Core loop: user feeds a clip or mic → local analysis → verdict card with evidence + "bytes leaving device: 0".
 
@@ -99,6 +99,7 @@ python3 council/ask.py "question" --paste
 - Gradium CLI fails → `uvx gradium --help`; confirm `GRADIUM_API_KEY` in env; the CLI reads `gsk_…` keys.
 
 ## 10. Recent lessons
+- 2026-11-08 · pm · Demo: run `python3 scripts/demo_preflight.py` before any stage run (stdlib, loopback only, exit 1 on red). voice-talk (attacker app) and `tools/ios/bridge.py` both default to port 8765, so never run them together. `listen.py --watch` ignores the browser, so it can stay armed while the voice-talk bot plays through `--now`. Stale pre-rename engines (`doublespeak.main:app`) can linger on :8000: check `lsof -iTCP:8000 -sTCP:LISTEN`.
 - 2026-11-07 · pm · Product name is **Tell** again (D-013 supersedes D-010). Renamed: visible strings everywhere, Python package `services/api/tell`, settings `TELL_*` (old `DOUBLESPEAK_*` still read as a fallback via `tell/env.py`), keychain service `tell` (old key migrated, never replaced), macOS app bundle `Tell.app`. Deliberately NOT renamed: bundle/application ids `dev.doublespeak.*` and `com.doublespeak.tap-audio` (installed, signed, TCC grants), the GitHub repo, Xcode target/folder/module names, the signature prefix `ds1:`, the `ds-` localStorage keys, the root legacy prototype package `doublespeak/`, and the deprecated `services/api/doublespeak` alias. Grep for `doublespeak` before adding any new one; each remaining hit has one of those reasons.
 - 2026-11-07 · pm · Fresh-clone check for #37: uvicorn exits on a missing `--env-file`, so `make api` must only pass it when `.env` exists; macOS `/usr/bin/python3` is 3.9 and cannot install the lock (setup now picks python3.11+); the red-team tests import `engines.py`, so `tools/redteam/requirements.txt` is part of the lock.
 - 2026-11-07 · backend · Phone-band audio (≤ 4 kHz content) kills spectral tells; always compute `band_limited` first and down-weight spectral signals when true.

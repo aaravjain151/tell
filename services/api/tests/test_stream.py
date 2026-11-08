@@ -8,6 +8,7 @@ import time
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 from starlette.websockets import WebSocketDisconnect
 
 from tell import pipeline, session as sm
@@ -45,7 +46,7 @@ _OPEN = []
 
 @pytest.fixture
 def client():
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         yield c
         for w in _OPEN:                      # a failing test must not leave a socket that hangs the portal
             try:
@@ -413,7 +414,7 @@ def test_wipe_discards_inflight_result(client, monkeypatch):
     while not s.inflight and time.time() < deadline:
         time.sleep(0.01)
     assert s.inflight
-    ws.send_json({"type": "stop"})
+    ws.send_json({"type": "kill"})          # kill wipes at once; a graceful stop lets it land (test_stream_tail.py)
     f, seen = read_until(ws, lambda m: m["type"] == "final")
     gate.set()
     time.sleep(0.2)

@@ -12,13 +12,39 @@ call app audio --> tap_audio --stream --> tools/macos/listen.py --WS /ws/stream-
                                                                                          \--> GET /live/events (SSE) --> page
 ```
 
-* `tools/macos/listen.py` spawns `tap_audio --stream`, opens a session (`POST /session`, allowed Origin), does the
-  token hello (side `far`), pipes 100 ms PCM frames, prints one status line per verdict.
+* `tools/macos/listen.py` spawns `tap_audio --stream`, opens a session (`POST /session`, allowed Origin + the
+  engine's API token from `~/Library/Application Support/Tell/api_token`), does the per-session token hello (side
+  `far`), pipes 100 ms PCM frames, prints one status line per verdict.
 * The API keeps a 30 s RAM ring, analyses the last 10 s every 3 s of audio, and runs a `Stabiliser` over the tick
   verdicts. It changes only what the live stream DISPLAYS. The stored per-window tier, `scorer.py` and
   `thresholds.py` are untouched (golden eval identical).
 * `GET /live/events` is a read-only Server-Sent-Events feed for the page (schema in `tell/live.py` and
   `services/api/skills.md`). `POST /live/dismiss` or the WS message `{"type":"dismiss"}` acknowledges a red alert.
+
+## Auth: the per-install API token
+
+The feed carries the live window transcript, so loopback alone is not enough (any local process, another account on
+the Mac, malware or a package's install script can reach 127.0.0.1). Every data and control route needs the engine's
+token (`services/api/tell/api_token.py`; threat model in `docs/THREAT-MODEL.md`):
+
+| Client | How it gets the token |
+|---|---|
+| web page | `make pair-url` (also printed by `make demo` / `make web`) prints `http://localhost:5173/#token=...`. The page reads the fragment once, keeps it in this tab's `sessionStorage`, removes it from the address bar. Without it the page says "Pair this page". |
+| `tools/macos/listen.py` | reads the 0600 file (or `TELL_API_TOKEN_FILE` / `TELL_API_TOKEN`); a missing file prints its path |
+| `tools/ios/bridge.py` | same file, on the Mac; the iPhone never sees it (it only talks to the bridge) |
+| menu-bar app | same file; "Open Tell" opens the paired page link |
+| Android app | "Engine key" field on the Connection sheet: tap it, run `make pair-android` (types the key over adb), or paste it |
+
+Sent as `Authorization: Bearer <token>` or `X-Tell-Token`. Only `GET /live/events` also accepts `?token=` (EventSource
+cannot set headers); the engine strips it from the request before uvicorn's access log sees it. `/health`, `/ready` and
+`/thresholds` stay public and carry counts only. Emergency escape, OFF by default: `TELL_COMPANION_ALLOW=1` lets a
+request with an allowed browser Origin through without the token (the pre-token behaviour; any local process can forge
+an Origin, so turn it off again).
+
+```
+make demo          # prints the pairing link
+make pair-url      # print it again
+```
 
 ## Using it
 
@@ -54,6 +80,20 @@ ring.
 * A friendly call that turns into a scam goes from `steady/human` to an alert within a few ticks; a long human call
   with stray blips never alerts (both in `tests/test_live.py`). The notification fires only when the alert CHANGES to
   amber or red, with fixed wording, no sound unless `--sound`, and never any caller text.
+
+## The last seconds are scored (final flush)
+
+A tick only runs every 3 s of audio and a busy engine can skip one, so the last few seconds of a call used to be thrown
+away when it ended. In a replay of `long_tech_scam.wav` (28 s) the last tick covered audio to 20 s: the card-number
+request at the end was never scored and the stable state stayed amber. Now a GRACEFUL end (`stop`, a clean close
+1000/1001, max length) lets a tick already in flight land, then, if at least 2 s of new non-silent audio arrived after
+the last scored window, runs ONE more analysis over the last 10 s up to the end of received audio, through the same
+stabiliser. It is sent as a `verdict` with `"tail": true` BEFORE `final` (and before `ended` on `/live/events`); `final`
+gains `"tail": scored|covered|no_new_audio|silence|timeout|failed|closed`. The whole flush is bounded by
+`params.final_flush_s` (`TELL_STREAM_FINAL_S`, default 6 s, never above `TELL_ANALYZE_TIMEOUT_S`); past it the session
+ends without it and the API logs why. Kill, panic, `DELETE /session/{id}`, heartbeat timeout and errors still wipe at once
+with no extra analysis. `listen.py` sends `stop` on file end and Ctrl-C and waits up to 12 s, printing the tail verdict
+(`LAST WORDS | ...`) and a `FINAL | shown=... alert=...` line. Tests: `services/api/tests/test_stream_tail.py`.
 
 ## Measured (replay, this branch, real API, whisper + stub LLM)
 

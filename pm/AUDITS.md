@@ -170,3 +170,34 @@ Learned fusion (PR #82): not on main, not refitted.
 Bar (replay catch better AND held-out false alarms no higher than the fusion): catch met; false alarms not shown (single-group 2-9% of codec windows, held-out LibriSpeech FPR@0.5 0.01-0.03 vs Pellav2 0.00; 12 clips cannot bound it). **Not wired.**
 Caveats: speaker count is estimated; voice memos in quiet rooms, not phone calls; channels simulated; 45 windows from 12 clips are not independent; the loss concealment is ours, not libopus PLC.
 Next: more speakers on more devices and real calls; investigate the Pellav2 low-bitrate-loss false alarms before any threshold work.
+
+## Learned tells: logistic regression over every voice clip, held out (2026-11-08, thresholds 2026-11-07.3 -> 2026-11-08.1) - SHIPPED, on by default
+Full write-up: docs/LEARNED-TELLS.md. Code: training/learned_tells/, services/api/tell/signals/{learned,tell_features}.py.
+Data: 435 human clips (400 LibriSpeech / 80 speakers, 23 Sanath, 12 phone memos / 4 est. speakers) vs 484 AI (426 Qwen3-TTS 0.6B
+incl. 18 Sanath clones, 18 Gradium, 40 macOS say); pure tests: 2 owner files, 9 ElevenLabs lines, 4 Qwen 1.7B takes, 4 QA calls.
+3,488 windows (4 s, 2 s hop) per condition; degrade.py identical for both classes.
+Protocol: every clip scored by a model that never saw its speaker group; leave-one-generator-out; 12 memos also held out together;
+Sanath vs his clones split by script. Scaler/PCA/C fitted on training folds only.
+Finding 1: our hand-written tells are weak on unseen generators (interpretable L2: AUC 0.83 seen, 0.70 held-out Qwen); the strongest,
+phone-robust ones are cepstral peak prominence (too regular), pause-level wobble (rendered silence), slow spectral change, clean gaps
+between harmonics. Several directions are generator-specific (pitch speed: up for Gradium/ElevenLabs, down for Qwen/say).
+Finding 2: a linear read-out of Pellav2's frozen w2v-BERT layer 12 (PCA-32 + L2 logistic regression) generalises: held-out Qwen AUC
+1.00 / 0.99 / 1.00 (clean/opus8k/g711). Calibrated to the human side (logit 0 = 99th pct of held-in humans), it is the voter.
+Engine, voice only, catch at p_ai >= 0.60 with 0 human false alarms before and after (n = 435 humans):
+
+| held out | clean | opus8k | g711 | replay |
+|---|---|---|---|---|
+| nothing (484 AI) | 0.61 -> 0.94 | 0.38 -> 0.57 | 0.25 -> 0.51 | 0.00 -> 0.00 |
+| Qwen (426) | 0.55 -> 0.90 | 0.32 -> 0.44 | 0.18 -> 0.42 | 0.00 -> 0.00 |
+| Gradium (18) | 0.94 -> 1.00 | 0.56 -> 0.72 | 0.28 -> 0.56 | 0.00 -> 0.00 |
+| say (40) | 1.00 -> 1.00 | 1.00 -> 1.00 | 1.00 -> 1.00 | 0.00 -> 0.00 |
+
+Lossy paths (our 6 kbps + burst-loss concealment), human false alarms at 0.60: 156 -> 73 (pstn chain), 161 -> 68 (opus loss).
+Owner files (real pipeline): rough_morning clean 0.40 human -> 0.67 AI; long_tech_scam 0.15 -> 0.57 (unsure); both still human under
+codecs and replay. ElevenLabs (never trained; concatenation of all 9 lines) 0.69 -> 0.80 AI in clean/opus8k/g711, human in replay;
+single lines are < 3 s and not scored. QA calls 0.64-0.67 -> 0.76-0.79 (all AI) except replay.
+Engine fixes: Pellav2 all windows (cap 3 -> 16) + mean logit (P clipped 0.01); breath_proxy 1.2 -> 0 (scored ~0.1-0.27 on everything);
+band_limited = 5-7.5 kHz vs 1-4 kHz < -37 dB (old rule flagged 71% of clean clips; new: 0/949 clean, 949/949 opus8k/g711/replay).
+The fixes alone raise lossy false alarms (156 -> 221); they only ship with the voter. Golden eval identical (PASS).
+Not improved: replay chain (catch 0 everywhere at 0.60). Caveats: read speech + one conversational speaker + 12 memos; simulated
+channels; weight 8 and the Pellav2 clip were chosen on the same folds; tiny ElevenLabs/owner test sets.

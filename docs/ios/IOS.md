@@ -62,7 +62,7 @@ To prove it compiles for a device without signing (done in this repo): `xcodebui
    ```
    python3 tools/ios/bridge.py --token K7QM-4TXD
    ```
-   It prints the consent line, starts `iproxy`, connects, and the phone's pill turns to "Your computer". If `iproxy` or the phone is missing it says so loudly and tells you the fix. `--url`, `--origin`, `--udid` and `--port` exist; the engine URL must be loopback.
+   It prints the consent line, starts `iproxy`, connects, and the phone's pill turns to "Your computer". If `iproxy` or the phone is missing it says so loudly and tells you the fix. `--url`, `--origin`, `--udid` and `--port` exist; the engine URL must be loopback. The bridge reads the engine's API token from `~/Library/Application Support/Tell/api_token` (created when the engine first starts; a missing file is reported with its path); the phone never sees that token, only its own pairing code.
 3. Tap **Start listening** on the phone. The Listening bar shows a timer, level bars and a big Stop. Amber and red give a haptic; red takes over the screen with **Dismiss** (the bridge sends it on its own engine session only, so it never clears another listener's alert).
 4. The code changes every time the app launches. The iOS Simulator shares the Mac's loopback: use `--direct` instead of iproxy.
 

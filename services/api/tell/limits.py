@@ -2,7 +2,9 @@
 
 Threat: the API listens on localhost, so (a) any web page the user has open can try to POST to it or read from it,
 (b) DNS rebinding can make a hostile hostname resolve to 127.0.0.1, (c) a huge upload or many parallel analyses
-can wedge a laptop mid-demo. Everything is configured by env vars (see .env.example) and read at call time.
+can wedge a laptop mid-demo, (d) any other local process can connect to loopback without a browser at all, so every
+route except PUBLIC_PATHS needs the per-install API token (api_token.py; docs/THREAT-MODEL.md). Everything is
+configured by env vars (see .env.example) and read at call time.
 
 CORS tradeoff: a page opened from file:// sends `Origin: null`. `null` is also what sandboxed iframes and some
 redirects send, so any site can forge it. It is therefore refused unless listed explicitly in TELL_CORS_ORIGINS.
@@ -25,7 +27,7 @@ from fastapi import HTTPException
 from starlette.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from . import env as _env
+from . import api_token, env as _env
 
 log = logging.getLogger("tell.limits")
 
@@ -99,8 +101,28 @@ async def _reply(send: Send, status: int, detail: str, headers: list[tuple[bytes
     await send({"type": "http.response.body", "body": body})
 
 
+PUBLIC_PATHS = frozenset({"/health", "/ready", "/thresholds"})   # readable without the API token; no call content
+QUERY_TOKEN_PATHS = frozenset({"/live/events"})                 # EventSource cannot set headers: ?token= only here
+
+
+def companion_allow() -> bool:
+    """TELL_COMPANION_ALLOW=1: emergency escape (OFF by default). A request that carries an ALLOWED browser Origin
+    passes without the API token, i.e. the pre-token behaviour for pages and companions that cannot be paired.
+    Any local process can forge an Origin header, so this reopens the hole the token closes. Never on by default."""
+    return _env.get("TELL_COMPANION_ALLOW") == "1"
+
+
+def needs_token(method: str, path: str, hdrs: dict[str, str]) -> bool:
+    if path in PUBLIC_PATHS:
+        return False
+    if method == "OPTIONS" and "access-control-request-method" in hdrs:   # CORS preflight carries no data
+        return False
+    return True
+
+
 class GuardMiddleware:
-    """Outermost: Host allow-list (DNS rebinding) and Origin allow-list (cross-site callers)."""
+    """Outermost: Host allow-list (DNS rebinding), Origin allow-list (cross-site callers) and the per-install API
+    token (other local processes; tell/api_token.py). Every route except PUBLIC_PATHS needs the token, deny by default."""
 
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
@@ -117,6 +139,19 @@ class GuardMiddleware:
         if origin is not None and origin not in allowed_origins():
             await _reply(send, 403, "origin not allowed")
             return
+        path = scope.get("path", "")
+        presented = api_token.from_headers(hdrs)
+        if path in QUERY_TOKEN_PATHS and scope.get("query_string"):
+            q_token, rest = api_token.split_query(scope["query_string"])
+            scope["query_string"] = rest          # in place: uvicorn's access log reads this same dict, so no token in logs
+            presented = presented or q_token
+        if needs_token(scope.get("method", "GET"), path, hdrs) and not api_token.matches(presented):
+            if not (companion_allow() and origin is not None):
+                extra = [(b"www-authenticate", b'Bearer realm="tell"')]
+                if origin is not None:                 # allowed page: let it READ the 401 and show "pair this page"
+                    extra += [(b"access-control-allow-origin", origin.encode("latin-1")), (b"vary", b"Origin")]
+                await _reply(send, 401, "API token required: see make pair-url", extra)
+                return
         await self.app(scope, receive, send)
 
 
@@ -175,7 +210,7 @@ def install(app: Any) -> None:
     """Wire CORS, Host/Origin guards, body limit and the generic error handler onto the app (last added = outermost)."""
     app.add_middleware(BodyLimitMiddleware)
     app.add_middleware(CORSMiddleware, allow_origins=allowed_origins(), allow_methods=["GET", "POST", "DELETE"],
-                       allow_headers=["Content-Type"], allow_credentials=False)
+                       allow_headers=["Content-Type", "Authorization", "X-Tell-Token"], allow_credentials=False)
     app.add_middleware(GuardMiddleware)
 
     from fastapi.responses import JSONResponse

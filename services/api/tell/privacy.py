@@ -25,7 +25,10 @@ class AudioEgressError(RuntimeError):
     pass
 
 
-ALLOWED_EGRESS_KINDS = frozenset({"text", "verdict_tts"})   # llm.py (anthropic, dev) and speak.py (Gradium TTS)
+ALLOWED_EGRESS_KINDS = frozenset({"text", "verdict_tts", "verdict_tts_prerender"})
+# text: llm.py (anthropic, dev).  verdict_tts: speak.py live Gradium TTS (only our fixed wording).
+# verdict_tts_prerender: tools/render_verdict_audio.py renders our fixed verdict lines ahead of time (BUILD time
+# only, never during a call); serving those cached files records no egress, so call-time counters stay 0.
 
 
 def record_egress(kind: str, nbytes: int) -> None:

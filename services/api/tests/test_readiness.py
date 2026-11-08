@@ -7,6 +7,7 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 
 from tell import localhost, net_monitor, offline_guard, privacy, readiness, stt
 from tell.main import app
@@ -20,7 +21,7 @@ def isolated(monkeypatch):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(stt, "_model", None)
     monkeypatch.setattr(neural, "_hf", None)
-    monkeypatch.setattr(net_monitor, "snapshot_report", lambda: {"os_check": "ok"})
+    monkeypatch.setattr(net_monitor, "cumulative_report", lambda: {"os_check": "ok"})
     monkeypatch.setattr(localhost._OPENER, "open", Mock(side_effect=OSError("down")))
     monkeypatch.setenv("TELL_WARMUP", "0")
 
@@ -144,12 +145,12 @@ def test_schema_endpoint_never_loads_models(monkeypatch):
                         SimpleNamespace(try_to_load_from_cache=lambda *args: None))
     monkeypatch.setenv("TELL_STT", "whisper")
     monkeypatch.setenv("HF_SPOOF_MODEL", "test/model")
-    with TestClient(app) as client:
+    with TestClient(app, headers=AUTH) as client:
         response = client.get("/ready")
     assert response.status_code == 200
     result = response.json()
     assert set(result) == {"ready", "degraded", "components", "offline_models", "os_network", "privacy_posture", "thresholds_version"}
-    assert set(result["components"]) == {"stt", "anti_spoof_hf", "pellav2", "llm", "voicestudio_stt"}
+    assert set(result["components"]) == {"stt", "anti_spoof_hf", "pellav2", "learned_tells", "llm", "voicestudio_stt"}
     for component in result["components"].values():
         assert set(component) == {"status", "detail"}
         assert component["status"] in ("ready", "degraded", "off")
@@ -176,9 +177,9 @@ def test_failures_are_isolated(monkeypatch):
     monkeypatch.setenv("TELL_STT", "whisper")
     monkeypatch.setenv("HF_SPOOF_MODEL", "test/model")
     monkeypatch.setattr(readiness, "_cached", broken)
-    monkeypatch.setattr(net_monitor, "snapshot_report", broken)
+    monkeypatch.setattr(net_monitor, "cumulative_report", broken)
     monkeypatch.setattr(offline_guard, "is_enforced", broken)
-    result = TestClient(app).get("/ready").json()
+    result = TestClient(app, headers=AUTH).get("/ready").json()
     assert not result["ready"]
     assert result["degraded"] == ["stt", "anti_spoof_hf"]
     assert result["os_network"]["os_check"] == "unavailable"

@@ -147,14 +147,19 @@ python run_pipeline_tests.py
 
 *Every voice has a tell.* A privacy-first detector that classifies the voice on a call as **Human · AI (identified itself) · AI (undisclosed) · Scam pattern**, shows the exact tells that fired, and never sends caller audio off the device.
 
-Built at HACK1984 (Privacy-First track · Best use of Gradium).
+Built at HACK1984 — targeting the Privacy-First (main) track, Most Startup-able, and the Best Use of Gradium side prize (it stacks with Privacy-First). We used Gradium to clone our own teammates' voices for the red-team attacker clips and to speak the verdict; only our own script text is ever sent to Gradium, never a caller.
 
 ## Run it
 ```
 make setup && make test && make eval     # pinned deps · eval ≥ 0.85 / 0.90 · same as CI
-make api                                 # http://localhost:8000  (docs at /docs)
-make web                                 # http://localhost:5173
+make demo                                # engine on 127.0.0.1:8000 + page on :5173, models offline; prints the pairing link
+make pair-url                            # prints http://localhost:5173/#token=...  open it once per tab to pair the page
 ```
+The loopback API needs a per-install token on every data and control route (`/health` and `/ready` stay public, counts
+only). The engine creates it on first start in `~/Library/Application Support/Tell/api_token` (0600). The page gets it
+from the pairing link's `#token=` fragment, which never reaches any server. `tools/macos/listen.py`, `tools/ios/bridge.py`
+and the menu-bar app read the file themselves. Threat model and limits: `docs/THREAT-MODEL.md`.
+`make api` / `make web` still work separately (`/docs` now needs the token too).
 Optional: `cp .env.example .env`, add `GRADIUM_API_KEY`, then `make redteam` generates attacker clips and the 🔊 button speaks the verdict.
 
 ## How it works

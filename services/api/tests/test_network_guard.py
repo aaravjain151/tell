@@ -15,6 +15,7 @@ import urllib.request
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 
 from tell import localhost, pipeline, privacy
 from tests.synth import make_call, to_wav_bytes
@@ -261,7 +262,7 @@ def client(guard, engines, monkeypatch, tmp_path):
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("TELL_CALLS_DIR", str(tmp_path / "calls"))
     from tell.main import app
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         yield c
 
 
@@ -283,7 +284,7 @@ def test_api_startup_warmup_stays_on_loopback(guard, engines, monkeypatch, tmp_p
     monkeypatch.setenv("TELL_STT", "voicestudio")
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     from tell.main import app
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         c.get("/health")
     guard.assert_clean()
     assert engines.urls, "warm-up should have exercised the fake local engines"

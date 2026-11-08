@@ -3,7 +3,8 @@
 The page only DISPLAYS. It cannot control a session and never sees audio, tokens or session ids. The stabiliser only
 changes what the live stream SHOWS; it never edits a stored tier and the scorer/thresholds are untouched.
 
-GET /live/events  (text/event-stream; loopback client + allowed Origin/Host only; max 4 subscribers -> 429)
+GET /live/events  (text/event-stream; loopback client + allowed Origin/Host + the API token, as a header or, for a
+  browser EventSource, `?token=` which limits.GuardMiddleware strips before logging; max 4 subscribers -> 429)
   Each frame is `data: <json>` followed by a blank line. Event schema (field names are a contract with the page):
 
   {"type":"state","active":bool,"source":str,"elapsed_s":num,"listening":bool}
@@ -18,6 +19,8 @@ GET /live/events  (text/event-stream; loopback client + allowed Origin/Host only
          "alert": "none|amber|red",
          "since_s": num,              # seconds (audio clock) since tier/state/alert last changed
          "reasons": [str, ...]}       # <= 4 fixed plain sentences, never caller text
+      On a graceful end (stop, normal close, max length) one last verdict scores the unscored tail; it carries
+      "tail": true and always comes BEFORE that session's "ended". The key is absent on ordinary ticks.
   {"type":"ended","reason":str}
       A session stopped (stop|kill|disconnect|heartbeat_timeout|max_length|deleted|panic|ended ...).
 
@@ -43,7 +46,7 @@ from .stabiliser import INTENT_FAMILIES, RawTick, Stabiliser
 
 router = APIRouter()
 
-MAX_SUBSCRIBERS = 4
+MAX_SUBSCRIBERS = 24   # raised from 4 for demo robustness (multiple tabs + probes)
 QUEUE_MAX = 64
 STATE_EVERY_S = 5.0
 LOOPBACK_CLIENTS = {"127.0.0.1", "::1", "localhost", "testclient"}   # "testclient" is Starlette's TestClient only
@@ -202,11 +205,14 @@ class Hub:
         self.publish({"type": "ended", "reason": reason})
         self.publish(self.state())
 
-    def on_tick(self, s: Any, d: dict, stable: dict, tick: int, personal_alert: str | None = None) -> None:
+    def on_tick(self, s: Any, d: dict, stable: dict, tick: int, personal_alert: str | None = None,
+                tail: bool = False) -> None:
         if s.id in self.sessions and not s.closed:
             ev = {"type": "verdict", "tick": tick, "elapsed_s": round(s.received_s, 1), "verdict": d, "stable": stable}
             if personal_alert is not None:           # only present when the user opted in: otherwise the event is unchanged
                 ev["personal_alert"] = personal_alert
+            if tail:                                 # the final-flush verdict of a graceful end (precedes "ended")
+                ev["tail"] = True
             self.publish(ev)
 
     def dismiss_all(self) -> int:

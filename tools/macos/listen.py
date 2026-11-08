@@ -10,6 +10,10 @@ anywhere; the API is on loopback and this tool REFUSES any non-loopback --url. I
 caller. Notifications use fixed wording and never contain what was said. It stops on Ctrl-C, when the call ends, or after
 90 s of silence, and the API wipes its buffer when the stream closes.
 
+Auth: the engine requires its per-install API token to create a session. This tool reads it from the engine's 0600
+file (~/Library/Application Support/Tell/api_token, or TELL_API_TOKEN_FILE / TELL_API_TOKEN) and sends it as the
+X-Tell-Token header; the error names the path when the file is missing (start the engine once to create it).
+
 --watch only arms for call apps (default: FaceTime, Phone, callservicesd, avconferenced, zoom.us, WhatsApp,
 Microsoft Teams), matched by exact process name or bundle id. It never arms on music or browsers unless you list them
 with --call-process. OPT-IN labelled capture (OFF by default, for building real evaluation data): with
@@ -32,6 +36,7 @@ import signal
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 import wave
 from pathlib import Path
@@ -40,6 +45,7 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[2]
 LOOPBACK = {"127.0.0.1", "localhost", "::1"}
 DEFAULT_TAP = ROOT / "tools" / "macos" / "tap_audio" / ".build" / "release" / "tap_audio"
+VERDICT_AUDIO_DIR = ROOT / "apps" / "web" / "verdict_audio"   # pre-rendered spoken verdicts (make verdict-audio)
 DEFAULT_CALL_PROCESSES = ("FaceTime", "Phone", "callservicesd", "avconferenced", "zoom.us", "WhatsApp",
                           "Microsoft Teams")
 CONSENT = ("Tell will listen to this call. The audio is analysed in memory on THIS machine only: nothing is "
@@ -54,6 +60,7 @@ SAVE_BANNER = "!!! SAVING AUDIO TO DISK (labelled capture) !!!"
 SAVE_TAG = " | SAVING AUDIO TO DISK"
 NETWORK_FS = ("smbfs", "nfs", "afpfs", "webdav", "cifs", "ftp", "fuse", "osxfuse", "macfuse", "sshfs", "9p", "ncpfs", "davfs")
 END_POLLS = 3                          # consecutive polls without the call app before we call the call over
+STOP_WAIT_S = 12.0                     # after `stop`: the API's final flush is bounded at 6 s (+ an in-flight tick)
 
 
 # ---------------------------------------------------------------------------------------------- pure helpers
@@ -85,6 +92,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--poll-s", type=float, default=2.0, help="--watch: seconds between tap_audio --list polls")
     ap.add_argument("--speed", type=float, default=1.0, help="--file: 1 = real time")
     ap.add_argument("--sound", action="store_true", help="play a sound with notifications (off by default)")
+    ap.add_argument("--speak", action="store_true", help="speak the verdict aloud when the stable tier changes, using "
+                    "the PRE-RENDERED local Gradium clips in apps/web/verdict_audio (run `make verdict-audio` first). "
+                    "No network, no caller audio — it only plays a local file. Off by default.")
     ap.add_argument("--no-notify", action="store_true", help="never show a macOS notification")
     ap.add_argument("--save-labeled", metavar="DIR", help="OPT-IN: write the analysed audio + sidecar under DIR/<label>/ "
                     "(needs --label, --speaker, --consent-note)")
@@ -167,6 +177,20 @@ def status_line(m: dict, latency: float | None, saving: bool = False) -> str:
             f"alert={st.get('alert', '?'):<5}| raw={m.get('tier')} p_scam={m.get('p_scam')} p_ai={m.get('p_ai')}{lat}")
 
 
+TAIL_TEXT = {"scored": "last seconds scored", "covered": "last seconds already covered",
+             "no_new_audio": "no unscored audio", "silence": "last seconds were silence",
+             "timeout": "last seconds NOT scored (engine too slow)", "failed": "last seconds NOT scored (analysis failed)",
+             "closed": "last seconds NOT scored (session wiped)"}
+
+
+def final_line(final: dict, stable: dict | None) -> str:
+    """One line after the session ends: the final stable answer and what happened to the unscored tail."""
+    st = stable or {}
+    tail = TAIL_TEXT.get(final.get("tail") or "", "tail not reported")
+    return (f"FINAL | shown={st.get('tier', 'none')} {st.get('state', '-')} alert={st.get('alert', 'none')} | "
+            f"{final.get('ticks', 0)} verdicts | {tail}")
+
+
 def notify(text: str, sound: bool) -> None:
     if sys.platform != "darwin":
         return
@@ -179,6 +203,21 @@ def notify(text: str, sound: bool) -> None:
 
 def say(msg: str) -> None:
     print(msg, flush=True)
+
+
+def play_verdict(tier: str, audio_dir: Path = VERDICT_AUDIO_DIR) -> bool:
+    """Play the PRE-RENDERED local clip for `tier` with afplay. No network; it only reads a local file. Returns
+    True if a file was found and playback was started. Never raises."""
+    if sys.platform != "darwin" or not tier:
+        return False
+    wav = audio_dir / f"{tier}.wav"
+    if not wav.is_file():
+        return False
+    try:
+        subprocess.Popen(["afplay", str(wav)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except (OSError, subprocess.SubprocessError):
+        return False
 
 
 def banner(on: bool, label: str = "", saving: bool = False) -> None:
@@ -215,10 +254,42 @@ def list_producing(tap: str) -> list[tuple[str, str]]:
     return parse_list(r.stdout)
 
 
-def create_session(base: str, origin: str) -> dict:
+class TokenMissing(RuntimeError):
+    pass
+
+
+def api_token_path() -> Path:
+    """Same place the engine writes it (services/api/tell/api_token.py): TELL_API_TOKEN_FILE, else per-user app support."""
+    override = os.environ.get("TELL_API_TOKEN_FILE")
+    if override:
+        return Path(override).expanduser()
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "Tell" / "api_token"
+    return Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "tell" / "api_token"
+
+
+def load_api_token() -> str:
+    """TELL_API_TOKEN, else the engine's 0600 token file. Never printed."""
+    env = (os.environ.get("TELL_API_TOKEN") or "").strip()
+    if env:
+        return env
+    p = api_token_path()
+    try:
+        tok = p.read_text(encoding="ascii").strip()
+    except (OSError, UnicodeDecodeError):
+        tok = ""
+    if not tok:
+        raise TokenMissing(f"no Tell API token at {p}. Start the engine once (make demo or make api) to create it, "
+                           "then run this again.")
+    return tok
+
+
+def create_session(base: str, origin: str, api_token: str | None = None) -> dict:
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))      # a loopback call must never use a proxy
-    req = urllib.request.Request(base.rstrip("/") + "/session", method="POST", data=b"{}",
-                                 headers={"Origin": origin, "Content-Type": "application/json"})
+    headers = {"Origin": origin, "Content-Type": "application/json"}
+    if api_token:
+        headers["X-Tell-Token"] = api_token
+    req = urllib.request.Request(base.rstrip("/") + "/session", method="POST", data=b"{}", headers=headers)
     with opener.open(req, timeout=10) as r:
         return json.loads(r.read())
 
@@ -347,7 +418,8 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
     """Stream `frames` to the API until they end, `stop` is set, or silence lasts too long. Returns the reason."""
     import websockets
 
-    info = await asyncio.get_running_loop().run_in_executor(None, create_session, args.url, args.origin)
+    info = await asyncio.get_running_loop().run_in_executor(None, create_session, args.url, args.origin,
+                                                            getattr(args, "api_token", None))
     u = urlparse(args.url)
     ws_url = f"{'wss' if u.scheme == 'https' else 'ws'}://{u.netloc}{info['ws_path']}"
     reason = "ended"
@@ -364,7 +436,7 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
         loop = asyncio.get_running_loop()
         t_start = loop.time()
         sent_at: list[float] = []                       # wall time at which each whole second of audio was sent
-        state = {"alert": "none", "sent": 0}
+        state = {"alert": "none", "sent": 0, "stable": None, "spoken": None}
 
         async def reader() -> None:
             async for raw in ws:
@@ -373,7 +445,9 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
                     end = m.get("window", [0, 0])[1]
                     idx = int(end) - 1
                     lat = loop.time() - sent_at[idx] if 0 <= idx < len(sent_at) else None
-                    say(status_line(m, lat, saving))
+                    line = status_line(m, lat, saving)
+                    say(line.replace("LISTENING", "LAST WORDS", 1) if m.get("tail") else line)
+                    state["stable"] = m.get("stable")
                     if saver:
                         saver.tick(m)
                     new = (m.get("stable") or {}).get("alert", "none")
@@ -381,11 +455,16 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
                     state["alert"] = new
                     if text and not args.no_notify:
                         notify(text, args.sound)
+                    if args.speak:
+                        stable_tier = (m.get("stable") or {}).get("tier")
+                        if stable_tier and stable_tier != state.get("spoken") and play_verdict(stable_tier):
+                            state["spoken"] = stable_tier
                 elif m.get("type") in ("warn", "error"):
                     say(f"LISTENING | {m.get('type')}: {m.get('code')}")
                     if m.get("type") == "error":
                         return
                 elif m.get("type") == "final":
+                    say(final_line(m, state["stable"]))
                     return
 
         rd = asyncio.ensure_future(reader())
@@ -429,12 +508,14 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
         finally:
             if not rd.done():
                 try:
-                    if reason == "call ended":
-                        await asyncio.sleep(2.0)       # let the last tick finish
+                    # stop is a graceful end: the API lets the in-flight tick land, scores the unscored tail once
+                    # (bounded by its final_flush_s, 6 s by default) and only then sends `final`. Wait for it.
+                    say("finishing: scoring the last seconds ...")
                     await ws.send(json.dumps({"type": "stop"}))
-                    await asyncio.wait_for(rd, 8)
+                    await asyncio.wait_for(rd, STOP_WAIT_S)
                 except Exception:  # noqa: BLE001 — closing anyway; the server wipes on disconnect
                     rd.cancel()
+                    say("FINAL | no final answer from the API in time (it wipes the session anyway)")
             banner(False)
             if saver:
                 saver.close()
@@ -461,6 +542,13 @@ async def main_async(args: argparse.Namespace) -> int:
             say(f"stopped: {r}")
             return 0
         return await watch(args, stop)
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            say(f"the engine refused the API token (401). It reads {api_token_path()}; restart the engine or unset a "
+                "stale TELL_API_TOKEN.")
+        else:
+            say(f"the API at {args.url} answered {e.code}")
+        return 1
     except OSError as e:
         say(f"cannot reach the API at {args.url}: {e}")
         return 1
@@ -501,7 +589,7 @@ async def watch(args: argparse.Namespace, stop: asyncio.Event) -> int:
     if task is not None:
         sess_stop.set()
         try:
-            await asyncio.wait_for(task, 12)
+            await asyncio.wait_for(task, STOP_WAIT_S + 4)
         except Exception:  # noqa: BLE001
             task.cancel()
     return 0
@@ -523,6 +611,11 @@ def main(argv: list[str] | None = None) -> int:
     err = save_error(args)
     if err:
         print(err, file=sys.stderr)
+        return 2
+    try:
+        args.api_token = load_api_token()
+    except TokenMissing as e:
+        print(str(e), file=sys.stderr)
         return 2
     if not consent(args):
         return 1

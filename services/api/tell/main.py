@@ -7,7 +7,7 @@ import os
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
-from . import blocklist, env as _env, feedback, limits, net_monitor, offline_guard, pipeline, privacy, readiness, secure_store, speak, thresholds, uploads
+from . import api_token, blocklist, env as _env, feedback, limits, net_monitor, offline_guard, pipeline, privacy, readiness, secure_store, speak, thresholds, uploads
 from .audio import AudioDecodeError
 from .redteam import router as redteam_router
 from .live import router as live_router
@@ -15,6 +15,7 @@ from .personal import router as personal_router
 from .stream import router as stream_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+api_token.install_log_filter()     # second line of defence: no ?token= value in uvicorn's access log (see api_token.py)
 uploads.keep_uploads_in_memory()   # caller audio never touches disk, even for large uploads
 app = FastAPI(title="Tell", version="0.1.0")
 limits.install(app)  # CORS allow-list, Host/Origin guard, body limit (see limits.py)
@@ -24,6 +25,22 @@ app.include_router(live_router)
 app.include_router(personal_router)
 app.include_router(blocklist.router)
 app.include_router(feedback.router)
+
+
+@app.on_event("startup")
+def security_start() -> None:
+    """Create (or reuse) the per-install API token and start the engine-lifetime OS network watcher.
+    Logs the token's PATH, never its value."""
+    lg = logging.getLogger("tell.main")
+    try:
+        api_token.ensure()
+        lg.info("API token: %s (0600). Pair the web page with: make pair-url",
+                "from TELL_API_TOKEN" if _env.get("TELL_API_TOKEN") else api_token.token_path())
+    except api_token.TokenError as e:
+        lg.error("API token unavailable, every protected route will answer 401: %s", e)
+    if limits.companion_allow():
+        lg.warning("TELL_COMPANION_ALLOW=1: requests with an allowed Origin skip the API token. Turn it off after use.")
+    net_monitor.CUMULATIVE.start()
 
 
 @app.on_event("startup")
@@ -51,8 +68,11 @@ def warm_up() -> None:
 
 @app.get("/health")
 def health() -> dict:
+    """Public (no API token): counters and switches only, never call content, numbers or remote addresses.
+    `egress.caller_audio_bytes_sent` is 0 by construction (privacy.record_egress refuses audio); `os_network` is the
+    OS's own count of engine connections to non-loopback addresses SINCE ENGINE START (net_monitor.Cumulative)."""
     return {"ok": True, "thresholds_version": thresholds.THRESHOLDS_VERSION, "egress": privacy.report(),
-            "os_network": net_monitor.snapshot_report(), "offline_models": offline_guard.is_enforced(),
+            "os_network": net_monitor.cumulative_report(), "offline_models": offline_guard.is_enforced(),
             "llm_provider": os.environ.get("LLM_PROVIDER", "stub")}
 
 
@@ -79,15 +99,38 @@ async def analyze(audio: UploadFile | None = File(default=None), transcript: str
 
 
 @app.post("/speak")
-async def speak_verdict(headline: str = Form(...), evidence: str = Form(default="")) -> Response:
-    """Spoken verdict via Gradium TTS. Only the verdict *text* leaves the device, never audio."""
+async def speak_verdict(headline: str = Form(default=""), tier: str = Form(default=""),
+                        evidence: str = Form(default=""), mode: str = Form(default="auto")) -> Response:
+    """Spoken verdict. Only Tell's own fixed verdict wording is ever voiced, never caller audio or words.
+
+    mode=auto (default): serve the PRE-RENDERED cached WAV for the tier if present (no network, no egress), else
+    fall back to the live Gradium path. mode=prerendered: cached only (503 if missing). mode=live: force Gradium.
+    The `X-Tell-Speak-Source` response header says which path served it ("prerendered" or "live")."""
+    want_tier = tier or speak.tier_for_headline(headline)
+    # Pre-rendered first (unless the caller forced live). This path touches no network and records no egress.
+    if mode in ("auto", "prerendered") and want_tier:
+        try:
+            wav = speak.prerendered_wav(want_tier)
+            return Response(content=wav, media_type="audio/wav", headers={"X-Tell-Speak-Source": "prerendered"})
+        except ValueError as e:
+            raise HTTPException(400, str(e)) from e
+        except speak.SpeakUnavailable as e:
+            if mode == "prerendered":
+                raise HTTPException(503, str(e)) from e
+            # mode=auto: fall through to the live path below.
+    if mode == "prerendered":
+        raise HTTPException(400, "mode=prerendered needs a known tier or headline")
+    # Live Gradium fallback. Needs a headline; derive it from the tier if only a tier was sent.
+    if not headline and want_tier:
+        from .scorer import COPY
+        headline = COPY[want_tier][0]
     try:
         wav = speak.verdict_wav(headline, evidence)
     except speak.SpeakUnavailable as e:
         raise HTTPException(503, str(e)) from e
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
-    return Response(content=wav, media_type="audio/wav")
+    return Response(content=wav, media_type="audio/wav", headers={"X-Tell-Speak-Source": "live"})
 
 
 @app.get("/history/status")

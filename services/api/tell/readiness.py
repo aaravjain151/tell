@@ -77,6 +77,18 @@ def _pella() -> dict:
     return _state("degraded", "cached but not loaded yet" if path is not None and path.exists() else "not cached, run make models")
 
 
+def _learned() -> dict:
+    """learned_tells voter: off unless enabled; ready when its pinned JSON weights parse (no model library, no inference)."""
+    from .signals import learned
+    if not learned.enabled():
+        return _state("off", "TELL_LEARNED_TELLS off")
+    if not os.environ.get("PELLA_MODEL"):
+        return _state("off", "needs the Pellav2 embedding (PELLA_MODEL not configured)")
+    if learned.load() is None:
+        return _state("degraded", (learned._error or "weights not loaded")[:120])
+    return _state("ready", "pinned weights loaded; votes with the Pellav2 embedding")
+
+
 def _ollama() -> dict:
     provider = os.environ.get("LLM_PROVIDER", "").lower()
     if provider in ("", "stub"):
@@ -120,14 +132,15 @@ def _check(check: Callable[[], dict]) -> dict:
 def report() -> dict:
     """Return a fresh snapshot without changing model state or analysis counters."""
     components = {name: _check(check) for name, check in (
-        ("stt", _stt), ("anti_spoof_hf", _hf), ("pellav2", _pella), ("llm", _ollama), ("voicestudio_stt", _voicestudio),
+        ("stt", _stt), ("anti_spoof_hf", _hf), ("pellav2", _pella), ("learned_tells", _learned), ("llm", _ollama),
+        ("voicestudio_stt", _voicestudio),
     )}
     degraded = [name for name, component in components.items() if component["status"] == "degraded"]
     stt_ready = any(components[name]["status"] == "ready" for name in ("stt", "voicestudio_stt"))
     try:
-        network = net_monitor.snapshot_report()
+        network = net_monitor.cumulative_report()     # since engine start; counts only, never addresses
     except Exception:  # noqa: BLE001
-        network = {"os_check": "unavailable", "os_outbound_count": 0, "os_outbound_seen": []}
+        network = {"os_check": "unavailable", "os_outbound_count": 0}
     try:
         offline = bool(offline_guard.is_enforced())
     except Exception:  # noqa: BLE001
