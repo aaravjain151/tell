@@ -3,7 +3,7 @@
    No LAN, no cloud, no analytics; nothing is stored. Passive only: it never speaks to the caller. */
 (function () {
   "use strict";
-  var P = window.DSPcm, X = window.DSProtocol, V = window.DSVerdict, A = window.DSAuto;
+  var P = window.DSPcm, X = window.DSProtocol, V = window.DSVerdict, A = window.DSAuto, D = window.DSDemo;
   var HTML = document.documentElement, $ = function (id) { return document.getElementById(id); };
   var API = X.loopbackApi(location.search, "http://localhost:8000");
   var QS = new URLSearchParams(location.search);
@@ -24,6 +24,7 @@
     tier: null, tick: -1, elapsed: 0, startedAt: 0, ticks: [], alert: "none", dismissed: false, lastSig: "",
     level: 0, maxLevel: 0, sentBytes: 0, foreign: false, err: null, installEvt: null, ping: 0,
     auto: null, nativeAuto: false,   // auto-listen status from the native app; true while the native service streams the call
+    demo: false, demoStreamer: null, demoPlaying: false, demoKind: null,   // demo mode: recorded clip -> real engine (honestly labelled)
   };
 
   /* ---------- small helpers ---------- */
@@ -281,7 +282,7 @@
       else fail("Could not start listening", "Check the USB cable and that the engine is running on your computer. (" + (m || n || "unknown") + ")");
     });
   }
-  function openSession() {
+  function openSession(source) {
     return fetch(API + "/session", { method: "POST" }).then(function (r) {
       if (r.status === 403) throw new Error("origin"); if (r.status === 429) throw new Error("busy"); if (!r.ok) throw new Error("session " + r.status);
       return r.json();
@@ -289,7 +290,7 @@
       return new Promise(function (res, rej) {
         var ws = new WebSocket(X.wsUrl(API, j.ws_path || "/ws/stream")); ws.binaryType = "arraybuffer"; var done = false;
         var t = setTimeout(function () { if (!done) { done = true; try { ws.close(); } catch (e) {} rej(new Error("no answer from the engine")); } }, 8000);
-        ws.onopen = function () { ws.send(JSON.stringify(X.hello(j.token))); };
+        ws.onopen = function () { ws.send(JSON.stringify(X.hello(j.token, source))); };
         ws.onmessage = function (m) {
           var d; try { d = JSON.parse(m.data); } catch (e) { return; }
           if (d.type === "ready" && !done) { done = true; clearTimeout(t); S.ready = true; res(ws); }
@@ -324,6 +325,7 @@
   }
   function cleanup() {
     clearInterval(S.ping);
+    try { if (S.demoStreamer) S.demoStreamer.stop(); } catch (e) {} S.demoStreamer = null; S.demoPlaying = false;
     try { if (S.node) { S.node.port.onmessage = null; S.node.disconnect(); } } catch (e) {}
     try { if (S.stream) S.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
     try { if (S.ctx) S.ctx.close(); } catch (e) {}
@@ -335,12 +337,14 @@
     S.level = 0; drawMeter();
   }
   function stop() {
+    if (S.demoPlaying) return stopDemo();
     if (S.nativeAuto) { var svc = native(); if (svc && svc.stopAutoListen) svc.stopAutoListen().catch(function () {}); return finish(); }
     if (S.ws && S.ws.readyState === 1) try { S.ws.send('{"type":"stop"}'); } catch (e) {}
     finish();
   }
   function finish(why) {
     if (S.mode !== "listening" && S.mode !== "starting") return;
+    if (S.demo) return finishDemo(why);
     var secs = (performance.now() - S.startedAt) / 1000;
     cleanup(); $("alert").hidden = true;
     setMode("ended");
@@ -412,6 +416,97 @@
     applyAuto(S.auto);
   }
 
+  /* ---------- Demo mode (stage): a BUNDLED recorded clip -> the REAL engine over the SAME /session + WS path.
+     The orb, verdict, 2x2 and scores are the engine's own output for a known input (rendered by onVerdict via the
+     live feed, exactly like a real call); nothing here fabricates a tier, score or alert. Always labelled
+     "RECORDED DEMO" on screen, never presented as a live call. Hidden and OFF by default: reached only by a
+     long-press on the logo or ?demo=1. Needs just the USB tunnel + engine (no mic, no call, no Wi-Fi). */
+  var DEMO_CLIPS = { scam: "demo/scam.pcm", human: "demo/human.pcm" };
+  function enterDemo() {
+    if (S.demo) return;
+    S.demo = true; HTML.dataset.demo = "1";
+    closeSheets(true); $("err").hidden = true; $("alert").hidden = true;
+    $("demo-banner").hidden = false;
+    if (!conn.es) feed();
+    probe();
+    showDemoChooser();
+    toast("Demo mode on");
+  }
+  function exitDemo() {
+    if (S.demoPlaying) cleanup();
+    S.demo = false; S.demoPlaying = false; S.demoKind = null; HTML.dataset.demo = "";
+    $("demo-banner").hidden = true;
+    try { document.querySelector(".dock-live .live-txt b").textContent = "Listening"; } catch (e) {}
+    clearScreen();
+  }
+  function showDemoChooser() {
+    resetSession(); S.mode = "demo"; HTML.dataset.mode = "demo"; HTML.dataset.tier = "";
+    $("dock").dataset.state = "demo"; $("pair").hidden = true; $("steps").hidden = true; $("err").hidden = true;
+    var st = $("start"); if (st) st.disabled = true;
+    updateDemoChooser();
+    drawIdleHero("Demo", "", "Recorded demo ready", "Pick a recorded call below. It plays into the real engine over USB; the verdict shown is the engine's own.");
+    $("read").hidden = !S.tier;
+  }
+  function updateDemoChooser() {
+    var off = !S.engine;
+    ["demo-scam", "demo-human"].forEach(function (id) { var b = $(id); if (b) b.disabled = off; });
+    $("demo-note").textContent = off ? "Not connected to your computer. Start the tunnel + engine, then pick a call."
+      : "Plays a recorded clip into the real engine over USB. The verdict shown is the engine's own.";
+  }
+  function startDemo(kind) {
+    if (S.demoPlaying) return;
+    if (!DEMO_CLIPS[kind]) return;
+    if (!S.engine) { renderConnect(); openSheet("sheet-connect"); return; }
+    var b = $("demo-" + kind), was = b ? b.textContent : "";
+    if (b) { b.disabled = true; b.textContent = "Loading..."; }
+    fetch(DEMO_CLIPS[kind], { cache: "force-cache" }).then(function (r) { if (!r.ok) throw new Error("clip " + r.status); return r.arrayBuffer(); })
+      .then(function (buf) {
+        if (b) b.textContent = was;
+        resetSession(); S.demoPlaying = true; S.demoKind = kind;
+        S.startedAt = performance.now(); S.mode = "listening"; HTML.dataset.mode = "listening"; HTML.dataset.tier = "";
+        $("dock").dataset.state = "live"; $("pair").hidden = true; $("steps").hidden = true;
+        $("live-note").textContent = "Recorded demo. A bundled clip is streaming to the real engine over USB. Verdicts are genuine."; $("live-note").classList.remove("warn");
+        $("live-sub").textContent = "0:00 · recorded demo";
+        try { document.querySelector(".dock-live .live-txt b").textContent = "Recorded demo"; } catch (e) {}
+        drawIdleHero("Listening", "Gathering speech", "Recorded demo playing", "A recorded " + (kind === "scam" ? "scam" : "human") + " call is streaming to the engine. Gathering the first few seconds before judging.");
+        return openSession("android demo (recorded clip: " + kind + ")").then(function (ws) {
+          S.ws = ws;
+          S.demoStreamer = D.createStreamer({
+            frames: D.frameClip(buf, D.FRAME_BYTES),
+            send: function (f) { if (S.ws && S.ws.readyState === 1 && S.ready && S.ws.bufferedAmount < 1 << 20) { S.ws.send(f); S.sentBytes += f.byteLength; } },
+            onFrame: function (f) { S.level = D.levelOf(f); if (S.level > S.maxLevel) S.maxLevel = S.level; if (!meterRaf) meterRaf = requestAnimationFrame(drawMeter); },
+            onDone: function () { if (S.ws && S.ws.readyState === 1) try { S.ws.send('{"type":"stop"}'); } catch (e) {} },
+          });
+          S.demoStreamer.start();
+          S.ping = setInterval(function () { if (S.ws && S.ws.readyState === 1) S.ws.send('{"type":"ping"}'); }, 10000);
+        });
+      })
+      .catch(function (e) {
+        if (b) { b.disabled = false; b.textContent = was; }
+        S.demoPlaying = false;
+        var m = e && e.message || "";
+        if (m === "origin") fail("The engine refused this page", "Start the engine with make api-android so it accepts the app, then try the demo again.");
+        else if (m === "busy") fail("Another session is open", "Stop it on your computer, or wait a minute, then try the demo again.");
+        else fail("Could not start the demo", "Check the USB cable and that the engine is running. (" + (m || "unknown") + ")");
+        if (S.demo) { S.mode = "demo"; HTML.dataset.mode = "demo"; $("dock").dataset.state = "demo"; }
+      });
+  }
+  function stopDemo() {
+    if (S.ws && S.ws.readyState === 1) try { S.ws.send('{"type":"stop"}'); } catch (e) {}
+    finishDemo();
+  }
+  function finishDemo(why) {
+    var secs = (performance.now() - S.startedAt) / 1000;
+    cleanup(); $("alert").hidden = true;
+    S.mode = "demo"; HTML.dataset.mode = "demo"; $("dock").dataset.state = "demo";
+    try { document.querySelector(".dock-live .live-txt b").textContent = "Listening"; } catch (e) {}
+    updateDemoChooser();
+    $("read").hidden = !S.tier;
+    $("orb-sub").textContent = S.tier ? "Recorded demo ended" : "";
+    if (!S.tier) drawIdleHero("Demo", "", "Recorded demo ready", "Pick a recorded call below. It plays into the real engine over USB; the verdict shown is the engine's own.");
+    else swapText($("headline").textContent || "Recorded demo", (why ? why + " " : "") + "Recorded demo ended after " + V.mmss(secs) + ". Pick another, or Exit demo. Nothing was saved.");
+  }
+
   /* ---------- sheets ---------- */
   var lastFocus = null;
   function openSheet(id) {
@@ -432,6 +527,18 @@
   $("conn").onclick = function () { renderConnect(); openSheet("sheet-connect"); };
   $("open-settings").onclick = function () { refreshAuto(); openSheet("sheet-settings"); };
   document.querySelectorAll("[data-auto]").forEach(function (b) { b.onclick = toggleAuto; });
+  $("demo-scam").onclick = function () { startDemo("scam"); };
+  $("demo-human").onclick = function () { startDemo("human"); };
+  $("demo-exit").onclick = exitDemo;
+  /* Hidden entry, off by default: long-press the logo (or ?demo=1). Never shown in the normal flow. */
+  (function () {
+    if (QS.get("demo") === "1") setTimeout(enterDemo, 0);
+    var brand = document.querySelector(".brand"), t = 0;
+    if (!brand) return;
+    var rel = function () { clearTimeout(t); };
+    brand.addEventListener("pointerdown", function () { t = setTimeout(function () { if (!S.demo) enterDemo(); }, 1200); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(function (ev) { brand.addEventListener(ev, rel); });
+  })();
   document.querySelectorAll("[data-appsettings]").forEach(function (b) { b.onclick = function () { var svc = native(); if (svc && svc.openAppSettings) svc.openAppSettings(); }; });
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") refreshAuto(); });   // permissions may have changed in Android settings
   (function () { var svc = native(); if (svc && svc.addListener) try { svc.addListener("autoListen", onAuto); } catch (e) {} })();
@@ -441,7 +548,8 @@
   if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0 && !native()) navigator.serviceWorker.register("sw.js").catch(function () {});
   if (QS.get("test") === "1") {            // test harness only (screenshots without a mic); never linked from the UI
     window.__ds = { S: S, onEvent: onEvent, setMode: function (m) { setMode(m); }, listening: function () { S.startedAt = performance.now(); resetSession(); setMode("listening"); drawIdleHero("Listening", "Gathering speech", "Listening", "Gathering the first few seconds before judging."); },
-      level: function (l) { S.level = l; S.maxLevel = Math.max(S.maxLevel, l); drawMeter(); }, finish: finish, sheet: openSheet, auto: applyAuto, autoEvent: onAuto };
+      level: function (l) { S.level = l; S.maxLevel = Math.max(S.maxLevel, l); drawMeter(); }, finish: finish, sheet: openSheet, auto: applyAuto, autoEvent: onAuto,
+      enterDemo: enterDemo, exitDemo: exitDemo, startDemo: startDemo, stopDemo: stopDemo, demoChooser: showDemoChooser };
   }
   setMode("boot"); chip("", "Checking"); drawIdleHero("...", "", "Looking for your computer", "One moment.");
   renderConnect(); refreshAuto();
