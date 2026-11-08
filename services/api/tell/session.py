@@ -438,6 +438,15 @@ class Registry:
         s.close(reason)
         return True
 
+    def close_all(self, reason: str) -> int:
+        """End every live session now (wipe, no tail analysis). Pending tokens stay valid for sessions not yet opened."""
+        with self._lock:
+            sessions = list(self._sessions.values())
+            self._sessions.clear()
+        for s in sessions:
+            s.close(reason)
+        return len(sessions)
+
     def panic(self) -> int:
         with self._lock:
             sessions = list(self._sessions.values())

@@ -282,3 +282,13 @@ def test_play_verdict_needs_a_local_file(tmp_path):
     # No file for this tier -> returns False (and never raises), so listen falls back to silence, not a crash.
     assert L.play_verdict("scam", audio_dir=tmp_path) is False
     assert L.play_verdict("", audio_dir=tmp_path) is False
+
+
+def test_page_stop_holds_until_the_call_ends_then_rearms():
+    # main_async keeps ws_state armed (no disarm) after STOPPED_FROM_PAGE, so the same call never re-arms.
+    w = L.WatchState(end_polls=2)
+    assert w.update("FaceTime") == "arm"
+    assert L.STOPPED_FROM_PAGE == "stopped from the page"
+    assert [w.update("FaceTime") for _ in range(5)] == [None] * 5     # call still going: stays idle
+    assert w.update(None) is None and w.update(None) == "stop"        # call over
+    assert w.update("FaceTime") == "arm"                               # the next call is heard again

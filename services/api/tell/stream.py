@@ -53,6 +53,13 @@ async def delete_session(sid: str) -> dict:
     return {"deleted": True}
 
 
+@router.post("/live/stop")
+async def live_stop() -> dict:
+    """Stop button on the page: end the live session(s) at once and wipe them, like DELETE /session/{id}.
+    The client gets final{reason:"stopped"}; listen.py then stays idle until that call ends."""
+    return {"stopped": REGISTRY.close_all("stopped")}
+
+
 @router.post("/panic")
 async def panic() -> dict:
     blocklist.wipe()   # the user's own encrypted local lists go too (docs/BLOCK-SPAM.md)
@@ -220,11 +227,11 @@ async def _serve(ws: WebSocket, out: _Out, s: Session) -> None:
     if flush and not s.closed:                        # one last verdict over the unscored tail, before final/ended
         final["tail"] = await s.finish(out)
         final["ticks"] = s.ticks
-    if s.closed and s.close_reason in ("deleted", "panic") and reason != s.close_reason:
+    if s.closed and s.close_reason in ("deleted", "panic", "stopped") and reason != s.close_reason:
         final["reason"] = reason = s.close_reason     # wiped from outside while flushing
     s.close(reason or "ended")                        # wipe BEFORE telling the client
     s.cancel_job()
-    if reason in ("stop", "kill", "max_length", "deleted", "panic"):
+    if reason in ("stop", "kill", "max_length", "deleted", "panic", "stopped"):
         await out(final)
     try:
         await ws.close()
