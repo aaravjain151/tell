@@ -228,3 +228,80 @@ head at a proposed weight on all held-out reals, and a look at the Pellav2 low-b
 * Recordings are phone voice memos in quiet rooms: not phone calls, no real network codec, no real replay. All channels are simulated.
 * 45 windows from 12 clips; windows of one clip are not independent. Each guessed speaker read the same three scripts: content is balanced but narrow.
 * opus_lowbitrate_with_loss uses our own burst-loss concealment, not libopus PLC, so the Pellav2 false alarms there may partly be that artefact.
+
+## Qwen-Sanath pairs (2026-11-08): bigger paired set, head retrain, fusion refit
+Status: **evaluated, still NOT wired.** No `scorer.py`/`thresholds.py`/`W_*` change, no voter wired, golden eval untouched. Tools: `finetune/qwen_pairs.py`,
+`finetune/head_train_eval.py --sanath-pairs {script|speaker} [--no-sanath-fakes]`, `tools/qwen_cues*.py --scripts {old|new|all}`, `tools/personal/fusion.py --groups`.
+
+### New data (local, gitignored, READ-ONLY; only JSON/CSV committed)
+Sanath added recordings and PAIRED Qwen3-TTS clones of his own voice. `data/calls/qwen3tts` is now **20 clips** (was 9); `data/calls/human/sanath` is **20
+reads** of the same scripts (plus `raw/` iPhone m4a). **18 scripts** now exist as both a real reading and a Qwen clone (was 8); the 10 new ones are
+address_send, coffee_7, dinner_plans, morning_routine, new_internship, number_appointment, room_booking, rough_morning, stolen_package, urgent_recording.
+Labels are the folders only: `qwen3tts` = AI (Qwen clone of Sanath), `human/**` = human. Humans for false alarms: Sanath (20), the 4 friend phone-memo groups
+(`humans_new`, 12 clips), and 40 LibriSpeech speakers (one utterance each, reference transcript). SHA-256 per clip and the label/source/group of every clip:
+`docs/head-finetune/pairs_manifest.json`. The two `~/Downloads/data_calls_qwen3tts_*` owner files are byte-identical to `rough_morning`/`long_tech_scam` in
+the folder (hash-checked) and are not treated separately now that the folder clips carry them. No audio is committed.
+
+### 1) Shipped detector on the pairs (full table: `docs/head-finetune/pairs_eval_report.md`)
+Each clip is run through the real local pipeline (LLM stub, local whisper, Pellav2 + HF on, CPU) at clean / opus8k / g711_mulaw8k / chain_replay_call; the two
+existing heads (`head_pella_mlp.pt`, `head_hum_cluster_pella_mlp.pt`) are scored on the same production windows. Paired AUC is a bootstrap over scripts; "new
+scripts only" holds out the 8 the cue study and the heads already saw. Headlines:
+* Shipped **fused p_ai** tells a Qwen clone of Sanath from the real Sanath only when clean (AUC 0.95 [0.85, 1.00] all 18 pairs; 1.00 on the 10 new) and is at
+  or near chance through the phone band (opus8k 0.75, g711 0.65, replay 0.65). At the shipping cut p_ai >= 0.60 the catch is **2/20 clean and 1/20** in every
+  codec; human false alarms are 1/20 Sanath (a scam-script read, tier "scam"), 0/12 friends, 0/40 LibriSpeech, in all four conditions.
+* **Pellav2** (paired) is 1.00 AUC clean/opus8k/g711 but **0.52 [0.35, 0.70] on the replay chain**; catch 14/20 clean -> 3/20 opus8k -> 0/20 g711 and replay.
+* **HF (garystafford)** scores the Sanath clone *below* the real Sanath (AUC 0.12-0.39, i.e. worse than chance on this voice) and flags **12-21 of 40**
+  clean/codec LibriSpeech humans - a shipping-voter false-alarm problem, not a head problem.
+
+### 2) Qwen cue study on all 18 pairs, held out by script (`docs/qwen-cues-2026-11-08/`, `tools/qwen_cues_*.py --scripts new`)
+Re-ran the paired statistics and the shadow-layer leave-one-script-out AUC with 18 pairs, and separately on the 10 NEW scripts as a held-out-by-script
+replication of the 2026-11-07 findings. What holds on the new scripts: "voice too clean" (qwen_cpp_db clip-AUC 0.96 [0.89, 1.00] clean, paired dz +1.9 to
++2.5, 10/10 scripts same sign; HNR +1.85 dB), "fewer/shorter sentence-end pauses" (gap after a full stop 571 vs 324 ms, 7/9; qwen_long_pause_per_min AUC
+0.76-0.80), "stronger 4-16 Hz syllable rhythm" (modulation_4_16_ratio dz +1.4, AUC 0.74-0.75 incl. replay), "more 500-1000 Hz energy" (qwen_lowmid_balance_db
+AUC 0.75-0.77, all conditions). What does NOT replicate on the new scripts: flatter/slower pitch (qwen_f0_rate_st_s AUC ~0.57, CI includes 0.5) and crisp
+onsets (channel; the floor-matched control removes it). CPP survives the replay chain on the old 8 (AUC 0.77) but not the new 10 (0.32). So the robust,
+script-general cues are roughness, sentence-end pause length and syllable rhythm; pitch and onset are weak or mostly channel.
+
+### 3) Head retrain with the extra pairs (full table: `docs/head-finetune/tables_pairs.md`)
+`--sanath-pairs script` replaces the old Sanath rows (10 real + 9 clone) with the 18+2 pairs and refolds. Held-out protocol unchanged - leave-one-generator-out
+x leave-speakers-out - PLUS Sanath split BY SCRIPT: his 18 scripts are spread over the 5 folds, both the real reading and the clone of a script in the same
+fold, so no script is in train and test (`--sanath-pairs speaker` holds Sanath out entirely as the stricter check). The friends stay as extra held-out folds
+(cluster grouping). Results (window AUC / TPR@0.5 / FPR@0.5, out-of-fold):
+
+| set | block | clean | opus8k | g711 | chain_replay_call |
+|---|---|---|---|---|---|
+| Sanath pairs, 77 real / 72 clone | shipped Pellav2 (current) | 1.00 / 0.57 / 0.00 | 0.99 / 0.15 | 0.97 / 0.00 | 0.63 / 0.00 |
+| | head, Qwen seen (script split) | 1.00 / 0.99 | 1.00 / 0.99 | 1.00 / 0.99 | **0.98 / 0.47** / 0.00 |
+| | head, every Sanath clone held out (loo_qwen) | 1.00 / 0.50 | 1.00 / 0.67 | 1.00 / 0.61 | **0.88 / 0.21** / 0.00 |
+| new scripts only, 45 / 38 | head, Qwen seen | 1.00 / 1.00 | 1.00 / 1.00 | 1.00 / 1.00 | 0.98 / 0.42 / 0.00 |
+| | head, loo_qwen | 1.00 / 0.39 | 1.00 / 0.63 | 1.00 / 0.58 | 0.83 / 0.13 / 0.00 |
+
+Replay-chain catch on Sanath clones is clearly higher than the old 8-pair head (was AUC ~0.80, TPR@0.5 ~0.26) and far above shipped Pellav2 (0.63 / 0.00).
+Across all 522 reals the held-out-generator replay AUC rises too (Qwen 0.67, Gradium 0.81, say 0.92, vs the 2026-11-07 0.63 / 0.77 / 0.89). **Human false alarms
+did not rise**: at 0.5 the retrained head is 0.00 on Sanath and friends everywhere, 0.00-0.04 on LibriSpeech (0.10-0.15 only in chain_pstn_voip, where shipped
+Pellav2 is 0.57). The `--no-sanath-fakes` ablation drops the paired replay TPR from 0.47 to 0.18, so the gain needs clones of that speaker in training. The bar
+(better held-out-generator replay catch AND false alarms no higher than the current fusion) is met on replay catch and on false alarms *for these sources*, but
+it is still ONE AI speaker on SYNTHETIC channels with ESTIMATED friend groups, so `neural_head` stays NOT wired. Heads are local only (`data/finetune/head_pella_mlp.pt`,
+`head_hum_cluster_pella_mlp.pt`; 1.07 MB; not committed); the committed JSON is `results_pairs_{script,script_nofakes,speaker}_hum_cluster_pella_mlp.json`.
+
+### 4) Learned fusion refit with several human speakers (full table: `docs/head-finetune/pairs_fusion.md`)
+`tools/personal/fusion.py --groups` on 440 rows (every Tell + shadow feature per clip, 47 speaker groups: Sanath, 4 friend clusters, 40 LibriSpeech, 2 Gradium
+voices). The two protocols disagree, and the disagreement is the finding:
+* **leave-one-speaker-group-out** (asked for): holding out Sanath's group removes every Qwen clone and, since no other Qwen clip exists, the whole engine. The
+  learned LR is **worse than the hand-tuned p_ai in every cell** - Qwen-vs-all-humans AUC 0.64 [0.52, 0.76] vs 0.74 (delta -0.10 [-0.21, 0.00]); paired Sanath
+  delta -0.29 to -0.36; all-AI-vs-humans a tie (-0.03 [-0.10, 0.03]). It cannot learn an engine it never saw and gives up some of the hand-tuned clean margin.
+* **groups + Sanath by script** (his voice/engine seen, only the test script held out): the learned LR instead beats the hand fusion by +0.13 to +0.35 AUC and
+  catches 19/20 clones clean, 16/20 g711. The whole gain comes from having seen the engine - the leak we cannot ship on.
+
+So the hand-tuned fusion stays the right default; a learned fusion needs Qwen clones of speakers OTHER than the test speaker before leave-speaker-out can show a
+real gain. Not wired, consistent with PR #82's shadow-only stance.
+
+### What would change the call (be specific)
+1. **Qwen clones of more speakers** - the single biggest gap. Every negative result above (leave-speaker-out fusion, the "one engine = one speaker" caveat) is
+   caused by Qwen existing only as Sanath. Target: **~8-12 more consenting speakers, each with ~10-15 scripts recorded AND cloned in Qwen3-TTS** (so ~100-180
+   paired clips), mixing genders and accents. That alone would let leave-one-speaker-group-out actually test Qwen generalisation.
+2. **Real phone CALLS, not memos/renders** - a handful of genuine captured calls (both human and clone played down a real line), to replace the synthetic replay
+   chain that currently erases CPP on the hard clips.
+3. **A second modern engine with multiple speakers** (e.g. ElevenLabs or Qwen 1.7B) so "held-out generator" is more than Gradium/`say`.
+4. **Fix the shipping voters' own false alarms** before any threshold move: HF flags 12-21/40 clean LibriSpeech and scores this voice below chance; Pellav2 flags
+   7/12 phone-memo humans under low-bitrate loss. These are independent of the head and matter more for shipped accuracy than wiring a new voter.
