@@ -1,0 +1,2418 @@
+{
+ "archives": {
+  "dev-clean": {
+   "url": "https://www.openslr.org/resources/12/dev-clean.tar.gz",
+   "sha256": "76f87d090650617fca0cac8f88b9416e0ebf80350acb97b343a85fa903728ab3",
+   "licence": "CC BY 4.0",
+   "attribution": "LibriSpeech corpus, Panayotov, Chen, Povey, Khudanpur, ICASSP 2015, https://www.openslr.org/12"
+  },
+  "test-clean": {
+   "url": "https://www.openslr.org/resources/12/test-clean.tar.gz",
+   "sha256": "39fde525e59672dc6d1551919b1478f724438a95aa55f874b576be21967e6c23",
+   "licence": "CC BY 4.0",
+   "attribution": "LibriSpeech corpus, Panayotov, Chen, Povey, Khudanpur, ICASSP 2015, https://www.openslr.org/12"
+  }
+ },
+ "files": [
+  {
+   "file": "dev-clean/84/84-121550-0000.flac",
+   "sha256": "dbd3048279d25cb4adaa25e246db50ffa01b7714e6f091691abe908027951daf",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/84/84-121550-0033.flac",
+   "sha256": "1062b8912c076011198172736d37aff40446d30ca57a8522960de9c70d4988d6",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/84/84-121123-0025.flac",
+   "sha256": "07c26f98bf3465924a1d7d26884b4edfd0c77279ea96599d6e812a366b43fd7e",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/84/84-121550-0006.flac",
+   "sha256": "b6b087f1e8bb47e080790c8faf1ababbe6f628912e539b99422c1eb27d871a21",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/84/84-121550-0012.flac",
+   "sha256": "5b8b7cb809626dfb7ebc9382edabe62a7c7d02f377d4c042c094ed5d525d43ff",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/84/84-121123-0003.flac",
+   "sha256": "dec25161df1b6a2e7016f5a80c3dd3e172ce55123b771b9d00be19875bcaad46",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/174/174-50561-0016.flac",
+   "sha256": "ed5cd226e2d54df81525f8f6f81966a511579a0b805499506024b3fa376388bf",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/174/174-168635-0014.flac",
+   "sha256": "6f0a45d444dd8a1b15d9bb7c884c8fdb63174270670f20be3e84e08e1d1a1e97",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/174/174-84280-0006.flac",
+   "sha256": "ef84ad407fc095ede82c23493ee0056f954a6273975b30b6801c5ca9f6a42b77",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/174/174-168635-0010.flac",
+   "sha256": "7e27ead4f8e1c7b11b59efd4255e4b64462916a69f1f3fcbb983326af332b369",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/174/174-168635-0011.flac",
+   "sha256": "5063f09545eb609cb9c3511b72d1c1e71e16262ce6d50748472d0d5188c24583",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/174/174-50561-0005.flac",
+   "sha256": "25c81fd3af839dad7f0185dba4c836479d4f3fdc828d9c0ae605960ed542ff5c",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/251/251-118436-0020.flac",
+   "sha256": "2d3ba95acbb6788d3514f0f0f44b119685d7b747c8fe349136491fd07e06f24f",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/251/251-136532-0005.flac",
+   "sha256": "7071a9139da3fae68115349523d97b0b02654fe492e9ec9d95e1f5536e43320c",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/251/251-118436-0002.flac",
+   "sha256": "d5e4ce91236c75b32b0f3e5ccc1d6ce2792ff2b20aedd95e172f329de8b164d5",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/251/251-136532-0021.flac",
+   "sha256": "8b67f6d0581b97ebb45308fadee7a0f1b223a8fbdc1173813de91481c1de43c3",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/251/251-136532-0000.flac",
+   "sha256": "39a86dd81ef6a0259f2915845794396df1f420956e31e99179a315f23a6c6ae2",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/251/251-118436-0009.flac",
+   "sha256": "f1036184c17d337d2437d9ce6c6a5656862d12aff286376dc2e5791fbd5711bb",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/422/422-122949-0008.flac",
+   "sha256": "d231e6341c433954be841566b03bcc2efe61ec2e07ac7aee97f91348472e65b9",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/422/422-122949-0021.flac",
+   "sha256": "2dba3af5b78d8b59b4510507a9b509d6aaf7e035e95a732aa832e6d9635fe912",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/422/422-122949-0005.flac",
+   "sha256": "7d335299d8f61bfbf2621fca11337c17d959a999366285eada534c7a7f5707d2",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/422/422-122949-0024.flac",
+   "sha256": "110b56c8bf53cf2bc6d0402af741e196afa84bba21b9d908dad7c9468ddcb825",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/422/422-122949-0004.flac",
+   "sha256": "c0c4decdc4777371e154e98abef0f572e5a0db3bab4713a03d4fc64ea3809923",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/422/422-122949-0031.flac",
+   "sha256": "f5d71747b78a4f7b2ae8d68392ebc8316c30dc6d49d0d23853e401250ce553c9",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/652/652-130726-0031.flac",
+   "sha256": "fcd322a16fc99aebff7f3a722c6876762ea42d22f6b361be28e1479b93334192",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/652/652-130737-0006.flac",
+   "sha256": "3f7b658202e3c8b9a840e943d59d9ef341397645032dbe9a04b2519caef6aaad",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/652/652-130726-0024.flac",
+   "sha256": "169e9f7e47d6d3b99034c30927e17327d87c2ede94df86798121fad142e140ea",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/652/652-130737-0001.flac",
+   "sha256": "ab442edaad572f5e4e7d792d3f4dd2a79de9f44165e753d15b906f184953769a",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/652/652-130726-0023.flac",
+   "sha256": "9be091d7e2124f516a3447a54ef002062fc93275eab598e95d071db468dd5eea",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/652/652-130726-0013.flac",
+   "sha256": "5ab31d73d212b5f1e55bb8f7b66c6882b437b0548c827fca93eea9d9c0795cde",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/777/777-126732-0019.flac",
+   "sha256": "18f702d17fa9cf155110aa47e4336b6ae8bdb9523771dd16ca88defb3a4b05b2",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/777/777-126732-0030.flac",
+   "sha256": "630ffb03558c5a02ce355940f73a429b53be7fa81415f8de29c25f7cacd246e5",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/777/777-126732-0059.flac",
+   "sha256": "301a0009e5ed53481d596ce09376168d48a9f8b1a39a261d1d9b5a7fbc376588",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/777/777-126732-0041.flac",
+   "sha256": "294edeeb140369ee1f4dcebaa179017c0628181a7dbbd6111c3a232a64a7d575",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/777/777-126732-0066.flac",
+   "sha256": "c86c3984a8943cd683007540761bc6b327c74c9f64b5e0edce57a1de9383a7e4",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/777/777-126732-0032.flac",
+   "sha256": "3988255836cf926c5fe92f16ae8a50d42b7eba4c6e75adda0561b93129297bfd",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/1272/1272-135031-0020.flac",
+   "sha256": "293af6add35a8f87e03f4ec59ef6e23538293c6fc8be45346dd17f6a69cc7f1f",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1272/1272-128104-0012.flac",
+   "sha256": "222cd90cd9edf086096fb0abba901b772f8ca4e763d5becb803b0a7f9b16ace9",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1272/1272-128104-0003.flac",
+   "sha256": "60d72657439cd3092fc2313efe0fabd31f0cd2f28f8ca46a21380c290b2e031d",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1272/1272-128104-0000.flac",
+   "sha256": "4e25e22555cd16e90edb0a3b49fdcf1fe652b2a1250ab643634db33895c75b41",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1272/1272-141231-0019.flac",
+   "sha256": "42735cf9485cd4c93d766d01cddebabed5a21f49e26a9c6dd15f8e5db2f6b5a6",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1272/1272-135031-0023.flac",
+   "sha256": "9d37ebdf780a28eaeebaada1f12bc2b2a2fca2278c09a2652f5e5b7e9420aa04",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/1462/1462-170145-0013.flac",
+   "sha256": "0dccf382748d63dc8a4219bf4a53d72a516f76f21dabc7a847c8a79c5c696b42",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1462/1462-170142-0031.flac",
+   "sha256": "275e1909f5108311368085fb4290e3ff85c36af0b2cab471d3605f914038c4d2",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1462/1462-170145-0015.flac",
+   "sha256": "534c2c3ae077c302594c0afe6cecdeb94ce6f9eed0f385ae0ae5fc7ed6cff375",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1462/1462-170142-0021.flac",
+   "sha256": "ed63ad7cad45aaffdbd86e4c7343e83b9fc5a847b37fd793f82102fbd8fb580f",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1462/1462-170142-0000.flac",
+   "sha256": "08c17c6a59de702386a5c79b49b9d8f7fce1870b2d89b68607523f11d07b61ce",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1462/1462-170138-0013.flac",
+   "sha256": "b46d8d1d5ad9b4bcd0a0f41509b04cfdeb4b5814562a878a0deffd22a3a6f29b",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/1673/1673-143397-0014.flac",
+   "sha256": "5b2a807613c586d3cc435b8ddde319d3731aa9545d30b91a379edbee2b03f9bc",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1673/1673-143396-0002.flac",
+   "sha256": "d6dfc50025e5af2388d576375e589b265295cdfc6408730667c9c8bc8b9a001c",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1673/1673-143397-0006.flac",
+   "sha256": "0f8a57ad67af84b1ae4c3c702694b0fb4c47826a486908765f308e5d4abfcadf",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1673/1673-143396-0015.flac",
+   "sha256": "4ed79242a2ae07800af5673ee5b5451e3ddf0619b978c77a57e70b2b8a3a7d65",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1673/1673-143397-0001.flac",
+   "sha256": "ba8bc880cb06ac6c658abe6c739388082bd4bc588773e16d9a4e8d0030165f98",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1673/1673-143397-0017.flac",
+   "sha256": "68eaf08e8c1144b26a0cf61fcb3ef14c7dbb529bb7fcf4cc51a92aeb1cd47847",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/1919/1919-142785-0010.flac",
+   "sha256": "e4e47bf5562219729988000bf7bcac64f775520bf539d22940d882bc787e3aef",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1919/1919-142785-0022.flac",
+   "sha256": "e8f1c17ac9dd8957e0181cd2fbc2d44442655587f2ff95d8839124f9992826e8",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1919/1919-142785-0036.flac",
+   "sha256": "b8503213260ba9abfe25dbadbf235330a5c96d7769b7c730f4ce4ead1cbac054",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1919/1919-142785-0013.flac",
+   "sha256": "88fac1496569c20bfdb6fb798baa9df007f6cd2064ea9c86969286f443ed1142",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1919/1919-142785-0050.flac",
+   "sha256": "4eb91526f8ed0efad334ff7c8f2919f600c303c1dccb999b08fa6e31de5b90c8",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1919/1919-142785-0003.flac",
+   "sha256": "a94224c80d76de097d12c6b2daa6ec9481c86261637afe64887a85ea18221c41",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/1988/1988-24833-0015.flac",
+   "sha256": "9dfadfce1bb5395e2b7e2035f044de02c20dc1d8c6047a016dfffd18a8f8d7a0",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1988/1988-24833-0004.flac",
+   "sha256": "d0eab0fd4176635f06f1893ad868336ec471d8d4a01ed752dad44b14e772e526",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1988/1988-148538-0009.flac",
+   "sha256": "3d82a68a9edbe3810b1f3d791e12e0e141baa2e09bc07dcce63f59fa8a707f52",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1988/1988-24833-0020.flac",
+   "sha256": "2ec0369c44b2ae5c4319327a95d36a3f2581c17eede7e95cdb0b5f16013b44ac",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1988/1988-147956-0012.flac",
+   "sha256": "dbe57999419e19ab9c121ef09934a5d4df5cd9969da1e0025dbf51f6728af047",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1988/1988-147956-0026.flac",
+   "sha256": "1ebe0d33c3ca3a3f93348ef230a4cd9f43a97aa13a4a7b4c3441a6ed1f3a9ea4",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/1993/1993-147964-0002.flac",
+   "sha256": "f5b989660819a077a9766dfa4a446f5149e647d6ab91341b3af8f3d2614d0077",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1993/1993-147964-0008.flac",
+   "sha256": "f993dc296618f641bd277dda7891d9003148a1e5cd37a963a9ee5bd17391fcdb",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1993/1993-147149-0016.flac",
+   "sha256": "1636d4a4860b6523e97df573f1a2f269c49ff11b7ab1773b5591bd28191d31f6",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1993/1993-147149-0001.flac",
+   "sha256": "d8c5f5d5555e9eb441272cebac5ee97cd6c0b26aa4ce05ff7465bccf840e96ad",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1993/1993-147964-0009.flac",
+   "sha256": "5d22e85018f8464a127abf19ae76cc7d2767cc4e198f8520a63dcdeac0e320b6",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/1993/1993-147965-0008.flac",
+   "sha256": "f1394b646204373ce388fc46b28cb6c9fa11fb8e1a096c18a4d9fa87db62c187",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/2035/2035-152373-0017.flac",
+   "sha256": "3bdaa9b1445fa6ae4a10778367553572d4e3e8946f6617a56c07fba92a40a0a9",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2035/2035-147961-0011.flac",
+   "sha256": "3c2dd341a9f5a8db7ec72f886abe4efd266775f782cc4a46fa0cd1b25919e8a2",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2035/2035-147961-0037.flac",
+   "sha256": "d21aab543c47141f0693eb569c8868aeb96abdfa34954f005f1ecd3c23f0a6a3",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2035/2035-152373-0018.flac",
+   "sha256": "a7537becba8d528afad6d64efea48c5fe460987a2842039e99614595b6f47a37",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2035/2035-152373-0016.flac",
+   "sha256": "b70e3f9a5cf9e5a330e066d3bd908b6b16b6223550a8399484ffcc0caa553c36",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2035/2035-152373-0015.flac",
+   "sha256": "6769aeeeb099eb34339d05f336972cdcc17a713032de323143424c7bd3527303",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/2078/2078-142845-0017.flac",
+   "sha256": "0b8e9bd843972a6db46386db5c7528af3f0971612674383fa26d03367b129536",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2078/2078-142845-0020.flac",
+   "sha256": "9851d1bb0603e037423a2550efa9b7738b257343f20288dd11a7245d4db5a20d",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2078/2078-142845-0013.flac",
+   "sha256": "f77ebdea58b99a74edbd59ac87565ef48ed0989a07ed337fb55cfdc2b5b3315d",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2078/2078-142845-0011.flac",
+   "sha256": "d6fdb91035192bace08559961f08860771d4aae10443f8339c6f0f15091568d0",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2078/2078-142845-0046.flac",
+   "sha256": "203a281cdeca35ac0c5ed9f6a197f1cc200f43b5e2a857df0634de1035c1e1bb",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2078/2078-142845-0018.flac",
+   "sha256": "d011b0bdffe23e1f5739fd756fc5230a804860b6dc0cd89a53efdf5922d6f290",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/2086/2086-149220-0023.flac",
+   "sha256": "110176e20529453953418ec6b9004b75ae9cd07e45a98af1d9ab3bc43e532db0",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2086/2086-149220-0031.flac",
+   "sha256": "2b18108fbac35e541c1ca7914677e139b5a8d962ae2790c3e93e087f848f2b8c",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2086/2086-149214-0003.flac",
+   "sha256": "cda6f9efb12201abbd2721d67e74e5cb1ec326128a161de4dff7b63433abc5ea",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2086/2086-149220-0033.flac",
+   "sha256": "220c124b9c58023763ccc64033679f442c7c7299a52121139473b9d4cf6fa441",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2086/2086-149214-0001.flac",
+   "sha256": "66aeeda853ab8421f1df70deda5b5ff0b5b9564065f50e1c1ac9aff1457e72d7",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2086/2086-149220-0036.flac",
+   "sha256": "3feb5e5e31763d40db1c3d0baa1cca0b2610db6b5eb9c52a8a36423975729132",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/2277/2277-149897-0005.flac",
+   "sha256": "61a532c7d431449bfc8d5ed7573007007abd3407d1a16254762ae50f5c9fe56d",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2277/2277-149874-0005.flac",
+   "sha256": "058df714bba209bdec07e7b907ff0db816ae806356ae28c81265548063b3e231",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2277/2277-149897-0019.flac",
+   "sha256": "ac6871cec1feb1c90d0014211cdb9822bec2ca7460d10edc05aa6f3536a4ae27",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2277/2277-149874-0020.flac",
+   "sha256": "2b15000889841afe04b6a116ef3b9ca988881bdd58471eee21bde41859e6094a",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2277/2277-149874-0012.flac",
+   "sha256": "cdb3ac24131e24a64ada589b4b6a8f37fd3d70034d34544f3d12086afbee3a4b",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2277/2277-149874-0008.flac",
+   "sha256": "9500df73325055da73c2ae1b63847a50710eca1be12c7e7ad82d53d325e61f20",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/2412/2412-153947-0015.flac",
+   "sha256": "e6164e7a26e5faf51a9020f7080f2d4140448fbf43b4aed21e0f94601912a8f1",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2412/2412-153954-0007.flac",
+   "sha256": "b515633c7cd7cbc79afa0e02a72ebe2a522dcc86655a8e87bff3d2b2f9bcaeae",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2412/2412-153948-0013.flac",
+   "sha256": "438fbde007e2a012c358e34b0f6b377bc6ffcc148653c9ffbe8692c4e9dea99f",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2412/2412-153954-0018.flac",
+   "sha256": "021a75525efb92dfd1ec92ec832b9644b69d63936751eb796e5b47c4e7421829",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2412/2412-153954-0020.flac",
+   "sha256": "d0b9fe2f339e8aa86cced03092e83d7b77ed3e61c3e15f814eec366c0382229a",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2412/2412-153954-0003.flac",
+   "sha256": "9844109ffbdd5630d3de9199bfb0c4edfbfb2287513550840b0b7e78696559b3",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/2428/2428-83705-0011.flac",
+   "sha256": "6f9379821aabe95032ab268ac2c011899437ab605b7473c2862580e0d0fff582",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2428/2428-83699-0012.flac",
+   "sha256": "b4cd64dad6dab765a2b383c9905a9b1e0d9fd5fed6686ef34f5a2ec34327f165",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2428/2428-83699-0016.flac",
+   "sha256": "39971705be8a671f3912090728e9b704d3aef402d37e9565a068fdf5bf83bcf9",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2428/2428-83699-0020.flac",
+   "sha256": "506083199284bfdfe5a14da85dd04c598269a949c5cbd007cb83b44b61a51699",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2428/2428-83705-0035.flac",
+   "sha256": "96ff83140b17a007a4fdf61ed9da3fdb123916fa8723228b776dcfe7e9f867ac",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2428/2428-83705-0032.flac",
+   "sha256": "6aea0737a9033e063bacd0ae832fdcdd5d1185502dfbaca64dcf34957f719b76",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/2803/2803-154328-0000.flac",
+   "sha256": "1207002aee04ed3f0ae73b07838f53b6841640c5f34afaebc67d71fadb8160f1",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2803/2803-154328-0023.flac",
+   "sha256": "2042b1f7e03c1ea0bc3282c699232b36b28bbd884fd5d594d895a6cc7219ec34",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2803/2803-154320-0000.flac",
+   "sha256": "c03cf32b36cc772a1448763e7856e53dbfa6b1679c2f4aeba20dd55d85953075",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2803/2803-161169-0006.flac",
+   "sha256": "21825c34d6ce40fcc42165c4c9e19ed59dd0e961d196569ab23e24cd63002a1d",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2803/2803-161169-0016.flac",
+   "sha256": "e68360b5eb671f59a01c5770745a90692bc6bed1b4edc3e62c7bfba43c0aafed",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2803/2803-154328-0009.flac",
+   "sha256": "2bf8d9f4b8708045e6e55198c91cbae35569be5013bd2152899460a119b4027e",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/2902/2902-9008-0005.flac",
+   "sha256": "fea1eb72ee2e600b4ae47791b090007b17610e75f3cb53f19a6ab562d44da4c0",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2902/2902-9006-0009.flac",
+   "sha256": "94edb9c03e5cbcfa7ad42d63d4c355517793240a26dfd69e594c5bfa3e91e592",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2902/2902-9006-0016.flac",
+   "sha256": "fe8f88c2a4a6c7a0f9140274d4d04d78869e97029a0fb80c3b70389d6733b990",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2902/2902-9008-0010.flac",
+   "sha256": "3970f89fe03204ef6b018992d4795abcfc3ae032e4c8349d132168af29ba6022",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2902/2902-9008-0004.flac",
+   "sha256": "ac2a7ad8bf87b4593c2a2af83e5ea643804b116d54c9790216f7f46405016724",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/2902/2902-9008-0007.flac",
+   "sha256": "c31b7b0ae00979a4ab3fe6f6741fa0a8a89f52ecf199920fea4d86955a262a0a",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/3000/3000-15664-0018.flac",
+   "sha256": "6ba75686ba88d70e39c01375e945d974cc0b0e0083a6a0e5b2f2133d15f9e252",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3000/3000-15664-0037.flac",
+   "sha256": "7a0b5ba822f546872faf2f2b240c5b77196187cf5e40167c92c3facce31664b4",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3000/3000-15664-0028.flac",
+   "sha256": "0a313376c464eee48922a66f8c0d7a5edcc7ee4895c5b1894c60a758569558c3",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3000/3000-15664-0007.flac",
+   "sha256": "3a6cd6ef0a5abfff39c96790f998c82ae680c98f0872c37e567a84e7e7e22918",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3000/3000-15664-0044.flac",
+   "sha256": "91414505168a582dde81e0988e8b9acfa9fcf4514a5f3624b4066bc2ab6ce59a",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3000/3000-15664-0014.flac",
+   "sha256": "3c61d57cfa6784598246dfbcffbc959bbb92f85164ad64b7408ad1f806912f95",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/3081/3081-166546-0030.flac",
+   "sha256": "2141705c03f94669a77dfc0b7b73e7345dc2b413a017f2fa6350177b01b5d967",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3081/3081-166546-0026.flac",
+   "sha256": "b498c222de3e4c3c8c788031ca99bdfbd85509a0a990b80d84beaffdd49bad0d",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3081/3081-166546-0031.flac",
+   "sha256": "945c68d75561eea8dc14f0feb72897ca082bfd491ba17491e51e93e2099d5e10",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3081/3081-166546-0062.flac",
+   "sha256": "ec4d07b35f38025029766fce1d7f348cdb0c668d683980ab5ec110c8b94c7537",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3081/3081-166546-0088.flac",
+   "sha256": "13ec0d43730df76a615d753ad7bceb734c26af5c28aa8a4145b372155b7b7707",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3081/3081-166546-0020.flac",
+   "sha256": "944bba7d2e2ffa1dac4016f67315d8c9d8ed2c3a5d5c95103f7a519af40d8790",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/3170/3170-137482-0020.flac",
+   "sha256": "626d1a780d53d2fbca42f090571cf86a149df37c23a652022c3739f4a7bf42de",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3170/3170-137482-0048.flac",
+   "sha256": "ae74c478aa94115676d9c8baa49ab359f29b0b2d347d8e89c07d7e80166fa054",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3170/3170-137482-0005.flac",
+   "sha256": "84b89d841afc3e6756e9e10794a83157fc0ae6f12cc5b6a40d538b79a00cb135",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3170/3170-137482-0043.flac",
+   "sha256": "6d2b4f60a2cdde76ca78fa0a6356ef41a066801cef7b962857f0f7470e50d934",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3170/3170-137482-0015.flac",
+   "sha256": "b5e395f527a10d1075d46d16e755716f5a5f7b632801363d138f8c361c74fbe5",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3170/3170-137482-0025.flac",
+   "sha256": "de956d41f02afab212b67750624b5465221fb392bab87e552bc9014140da80f0",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/3536/3536-23268-0027.flac",
+   "sha256": "6dd9d45354d15a6d6f8a2ff80b839ce04bffd7aa38acc74b4d6f73486ecb16ca",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3536/3536-23268-0011.flac",
+   "sha256": "3d6418a891a77164840fadb5c8f1d44b473e7ec77e5b4c6fbdd0a3c58fc50767",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3536/3536-8226-0002.flac",
+   "sha256": "aa0febfcc0193ee24677e2c540b6826371e53e2821011db40ca5a1c9f082dba6",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3536/3536-23268-0007.flac",
+   "sha256": "0c359420caffa0017921f9cfd9be33fd50c728d0be42283b6ead4e3cf887528c",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3536/3536-8226-0022.flac",
+   "sha256": "b7d9435e49055d28f5354f40017a20b4e142e2311f0c82c1fa1647d586be0d7b",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3536/3536-23268-0030.flac",
+   "sha256": "86397f9b54d2f5aef7cb94b56f7fc4e6827b3b171a370316f2e62a8159906c33",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/3576/3576-138058-0013.flac",
+   "sha256": "87f34142bcc0de28f9c5c9e1114e00425276a76b0a0ac085f0ee809997a2589d",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3576/3576-138058-0030.flac",
+   "sha256": "49e93daea7228bd1f0398ec30b2eb3fbbd6ac685ba4d7f4c335c7194a6a11a7a",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3576/3576-138058-0040.flac",
+   "sha256": "c951b715748a8fa6d3e291538b88c47506d8ed29481ad4f92a968d9684e244e2",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3576/3576-138058-0012.flac",
+   "sha256": "763e2d89e0c83f37612f361f98e847cfbca8683f8f933f5ea4fc38344593c883",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3576/3576-138058-0016.flac",
+   "sha256": "10b8e2d3b663a360336f3c5a834cc829107c052c1a873c51e219b3e1bb3afa5d",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3576/3576-138058-0026.flac",
+   "sha256": "c491fdd7968b60fefca52b1190712a6ef4e4255a2391201d578a5acc92515173",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/3752/3752-4943-0013.flac",
+   "sha256": "d0edd09802fe5d9f33b1e81d72236efe9f8961fcffed43ac29581af30da4f25e",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3752/3752-4944-0053.flac",
+   "sha256": "9c5470f891ae40d8957c2876dc138a74481033ae718f28528e437d383f829d06",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3752/3752-4944-0059.flac",
+   "sha256": "e896424b0daa364a558e13025a723844021b0c7aaf3fd65e55bf2305741a00f2",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3752/3752-4943-0021.flac",
+   "sha256": "03570cac42f0e822b751380859aeed85de2271c6e3191256911d4df5645e3483",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3752/3752-4943-0011.flac",
+   "sha256": "d3c11405b59426aa87cc71ee5e513e40c55762226ee0a5294375b52e5617061a",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3752/3752-4943-0000.flac",
+   "sha256": "1c5eb27a35b417a40f4393e94f5e94229d7a2c78057656154dfa2735b9781483",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/3853/3853-163249-0041.flac",
+   "sha256": "031e5c2dc0e429febae97c763fd4aa01e0fbbf2374a715460ce5782d9c9a88c0",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3853/3853-163249-0025.flac",
+   "sha256": "d0c5457e5d7ad02a0cab9cbb26b7a1135257d8269386758ebad58fa195c48d37",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3853/3853-163249-0027.flac",
+   "sha256": "2eea85631d38666ebdd7c4dc1861238c9df9aa9fb443bc291e98eb87a660eb35",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3853/3853-163249-0045.flac",
+   "sha256": "f16d9739453ef18529bb07cb45016a26968f41663a6a38b0b51474348708f5a6",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3853/3853-163249-0049.flac",
+   "sha256": "d47a9dafb1c523c64a2ad4c654ee38c3a8ec9fef5435ec8406aac689df640af6",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/3853/3853-163249-0008.flac",
+   "sha256": "cbfa78626a51199ca2d44f17500ea360bfaf6e1e2acd5aae7b51ddd39ac2167c",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/5338/5338-284437-0004.flac",
+   "sha256": "a286855b1eb9ce9f162979b21df5d307b66aeda97297290f129d5a4f7d0c4724",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5338/5338-24615-0008.flac",
+   "sha256": "f06b2a6179b3e4c91b484029848a48b95b9f92795df134a87ac55a4b2b875432",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5338/5338-284437-0015.flac",
+   "sha256": "62731c32ccf857141e3cf11fdc68f1146eba70cbcb6a4b6af0e56d0175d95db2",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5338/5338-284437-0010.flac",
+   "sha256": "d6f1e0b4924ea7a4d239b2ba72fc7039057e8438510f7137657a15c2e4ea2e11",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5338/5338-284437-0020.flac",
+   "sha256": "7980838901a120b839688492059d4c1674df2633b9342dda42fef95af487e717",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5338/5338-24615-0001.flac",
+   "sha256": "f32da77a011ca932b75fedf3fb66bf6a38fda57fa4779647ac7ff83f5f6a2ee8",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/5536/5536-43358-0015.flac",
+   "sha256": "25c16926981c864cd4f16c09ae63913d7acfc3219828dd02e1343291819bdd27",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5536/5536-43358-0004.flac",
+   "sha256": "3e1d4ba3aa1d430eb1f193d35dd3faca3e13af7fca90caff90074e9b91a6eeff",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5536/5536-43358-0006.flac",
+   "sha256": "d4fb00ef61d919935a255ba696b534a59180ba42927d563158578331db5cb939",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5536/5536-43359-0012.flac",
+   "sha256": "af8a5bc0511aaabd08e37a80027202e51f165e1bf114918f4e9cb70e42316b68",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5536/5536-43358-0009.flac",
+   "sha256": "b385f5267063f1b6b7bf21e24d420617fc4643ff5f103e23ad105b54153c3d08",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5536/5536-43363-0013.flac",
+   "sha256": "43a382dd7ca61f59d67a68c9c678132e5e2b7ad3dfca61ee1aa52b3b5b7e4175",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/5694/5694-64025-0023.flac",
+   "sha256": "e1bbabc7d6727b8d3a9992233b3fc9ea377a26ea49c2e482e2d5ca8e772f7a48",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5694/5694-64029-0011.flac",
+   "sha256": "870b176d862b42fcf170e80752f063896f34f70a541aa833c9ea8e895526f46f",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5694/5694-64038-0005.flac",
+   "sha256": "bfd5de92ed3b7143315fb653ea140a6ad5111222c80499bdda1d93f11e3013c6",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5694/5694-64029-0022.flac",
+   "sha256": "6a4dbe56d8dd784b8f96ba570a7d19ca98651e7cd9a476d5901aa4173e125730",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5694/5694-64025-0021.flac",
+   "sha256": "92599f7a16b4d0b8f5ade1bb489d27aa3619c9cd354aeac520bdd6b5ad476bbf",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5694/5694-64038-0003.flac",
+   "sha256": "3c4591874aeceb37bcf6f8519fa01bb8b48f9e610c6d31ac25d234e8723ec415",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/5895/5895-34629-0015.flac",
+   "sha256": "d226354a1aa012c6267ff27f36a9589b68333c96dff58ea30356b9bc3bd21870",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5895/5895-34629-0009.flac",
+   "sha256": "7e9dad8ee266b0e33ff5901b91f6f67ab123919629a21f63b03704fa4a663570",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5895/5895-34615-0012.flac",
+   "sha256": "4d1d0c3b99225034f9c3acf6bd72cfb11e379da8461c5ac49a7db691de0658de",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5895/5895-34629-0013.flac",
+   "sha256": "6eba942dd4592e6b52c0d40c34d1197462272983d361f8f8f21760f82144a0a8",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5895/5895-34615-0014.flac",
+   "sha256": "2334f988c9cb7173a833cea0c6ab5a8a9dd0653b411e1a83268ce974cb24cf44",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/5895/5895-34615-0015.flac",
+   "sha256": "a9c335b580da98173674a393efb1b06b38db7665f77cf10752052787b00ee949",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/6241/6241-61946-0000.flac",
+   "sha256": "799919027c14f647e2c620ce7acda114d573730d5aeced841eab7ec6975a914e",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6241/6241-61943-0017.flac",
+   "sha256": "56f65fd05215de9a8bd5902ae3e0c4ac5a721ba1af6a23f3893d8b98bf629c8a",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6241/6241-61946-0002.flac",
+   "sha256": "82a45983d1a81d6cda86afc0cb99adf482af0d308f4a9c688b2453865cc8dbe4",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6241/6241-61946-0003.flac",
+   "sha256": "5f0e5467328d140c088bb606f1ba02a9cc750f82cbe6757321b1f3f49aa2b9bc",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6241/6241-61946-0011.flac",
+   "sha256": "c105f91d0a8bf90b527183deaae11a2c166e1f6da11aafd4487ec8695f4f637a",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6241/6241-61943-0024.flac",
+   "sha256": "66bdc7312206c45a43a43441ef294743def3c352ced435c503354f250b584000",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/6295/6295-244435-0009.flac",
+   "sha256": "fd89d4d906579b2135ddcf6bdc53ec03923f7dffcc27c3795fad17a2dc06f264",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6295/6295-244435-0031.flac",
+   "sha256": "a2bcb895c9def2c1f749060024717af9e2ac685fdd9255ef2b2cc78feb865146",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6295/6295-64301-0029.flac",
+   "sha256": "d58cd3b260fe5043340c494107ffadc51b98a502727e1880d6e3dafa44f8eba5",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6295/6295-64301-0020.flac",
+   "sha256": "f5b775712025009b45ecd272dda5f0d77e814a9e5629724f749ad887f62275e2",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6295/6295-64301-0028.flac",
+   "sha256": "18b3055333effff6016be1ceb6b24f9f48142af7adf324ed0103b691c299b8c1",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6295/6295-64301-0002.flac",
+   "sha256": "1cf7c1497a58e27e06c256fee082c1fa958e558bcc38b8ff11c6ce698ec0102b",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/6313/6313-76958-0013.flac",
+   "sha256": "54e90ab5e9fe88ffae1872a86c00522e2abcf06a254dea5e76b5e5fcacfc4cf8",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6313/6313-66129-0033.flac",
+   "sha256": "c6e514356d67d5893e5ede6654e2feee68e330d13c71242bb8ac87eb5575bb2d",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6313/6313-66129-0017.flac",
+   "sha256": "d705fd8a865578494f2f03b0088cad7d4f00c3158293b69c336a952c4eb21f18",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6313/6313-66125-0011.flac",
+   "sha256": "15105128a9b695c4f1efc09824d948931d0411f777049d30be24d1e55c8b4159",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6313/6313-76958-0014.flac",
+   "sha256": "03bcd7eb474689f9b3793baabe699e44a27d347e442a00e864a8720e25190ed1",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6313/6313-66129-0016.flac",
+   "sha256": "0640055049684429839aa7109e12f660b6a0680b9d3283a69a6cc5317c06ee0c",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/6319/6319-275224-0014.flac",
+   "sha256": "36c8523c479356763ee13e9deffb4ed2c4dcc0cffe35aed235cddae5d27a3a2a",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6319/6319-57405-0005.flac",
+   "sha256": "877eed9666b4fae87fd4c4147c35f426d4b41e5731e7b3dd4cce731233b7134f",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6319/6319-275224-0018.flac",
+   "sha256": "908453a8dea785088fa8d4583fd46881f67783693ffcfae9062555a4c293fa5f",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6319/6319-275224-0000.flac",
+   "sha256": "9260301eaea4fc4455552f278bb846381b4fae7fb6e3285a4a25cc9c436f11b5",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6319/6319-57405-0000.flac",
+   "sha256": "9a9675d31b8efcc3377910fa1aa86ae9eda393cb3c05025fa1473c0ee5bf0f89",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6319/6319-57405-0003.flac",
+   "sha256": "76702df3a3a9caef0cfc9145d622047ceee315767e93b4903d791881043283e1",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/6345/6345-93302-0003.flac",
+   "sha256": "90536c1d9245b3b8fc43169a02aa186bd5c22140e6ac84a4fd3dd7afe4984b8f",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6345/6345-93302-0015.flac",
+   "sha256": "5911290829223d52659aebeb66441fe759f6f634051bfbe924aea92e53491ef7",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6345/6345-93306-0019.flac",
+   "sha256": "62d30c4e63cee18cf11a255cee51d8c61095393ce6292456d6cdb008af0faf2e",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6345/6345-93306-0005.flac",
+   "sha256": "a87d2e52b34a97528505020692b533204af81a1636b9f98416028ca1e54be75e",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6345/6345-64257-0019.flac",
+   "sha256": "6cdc5aa6f6b21a51099498c557108c457bedfa541d7f5a02ae1a03a6d48c518b",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/6345/6345-64257-0003.flac",
+   "sha256": "b8135e70bd88402d51421c2e510c4a7f6bc34d036a300e836e04eec4c510564d",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/7850/7850-281318-0013.flac",
+   "sha256": "c66c5de7fc246870ab9cecd54d893f7e30025c177da326206a043ee2ebd6a0c7",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/7850/7850-73752-0006.flac",
+   "sha256": "f0cafb2ab106a0c440cf3aec7908841351002707339853e6517ab5692262447e",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/7850/7850-281318-0023.flac",
+   "sha256": "61a472c1dea8a268c457b204753c98b836c075270f2632afc4edbf7a914c41aa",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/7850/7850-111771-0009.flac",
+   "sha256": "ab40ae134d950a6324518d5ca9d8b505e8a1d1518429597fc4d1e74561279320",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/7850/7850-286674-0003.flac",
+   "sha256": "bdeb6f781315595a95012ac84194826ad7cba60ab2381889b467d733d0814755",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/7850/7850-286674-0005.flac",
+   "sha256": "92c3f04fe287915111592cc32579f92677f57baaa07ef3d3f63124e66c13c8e9",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/7976/7976-110523-0010.flac",
+   "sha256": "e64a4a86ebc60ee9605f74dc60fc22a801395ac7f0dc3e1911f726a80c19bfa7",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/7976/7976-110124-0001.flac",
+   "sha256": "d7657a4692e6e39421ba028c02c5547efc234ddfa47a050fafe01f9fc63f4ae1",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/7976/7976-110523-0013.flac",
+   "sha256": "50f578941e4d0ae883166d7a48e034128afef910d58d71906bdc7ff3ff6acd8a",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/7976/7976-110124-0010.flac",
+   "sha256": "b16df0f248964378066ac6fa00f086752f4076257e135ef7a665265429ba0f1f",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/7976/7976-110124-0009.flac",
+   "sha256": "f6cff50fdcdc17c0bf21d500a84f1101b24353890d946f4db703c0acd6f19105",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/7976/7976-110523-0007.flac",
+   "sha256": "9671c1e636c6b1c325ee6cff5f651094d9fd5d40cf5cf229c91688bc75abbb24",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/8297/8297-275154-0027.flac",
+   "sha256": "c4de13249e73b415658a60c4f8dcfced0be7d0f7d3e49b698f2d9b81c5ab3431",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/8297/8297-275154-0004.flac",
+   "sha256": "8c529f4f79b65e41a34fc46c383483bce81c242c9ba4debf4d84cde7ee823844",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/8297/8297-275155-0000.flac",
+   "sha256": "925c737155a5aa3934e19aea1da725a5f0275aaffd1b50ead2f6069629617653",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/8297/8297-275154-0003.flac",
+   "sha256": "96e969332c5b200e76f345cb2731867e4f8cb8a83dbb601e8b600bbdd82927c2",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/8297/8297-275154-0001.flac",
+   "sha256": "99260d4f0642dc9e6b25578712fdfdb068cf7f64ebfceb4abe7f037e00acf0e4",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/8297/8297-275155-0020.flac",
+   "sha256": "a18213bb6c8bfce9673487b3d4ddfdfbf7871e1ca2436c98c101f4cf87c4f0d9",
+   "role": "clone_reference"
+  },
+  {
+   "file": "dev-clean/8842/8842-302201-0012.flac",
+   "sha256": "d147a188401febdb7634ec3e0e34a0d37a4fa492edc0288655759fe2e28ceed5",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/8842/8842-302201-0011.flac",
+   "sha256": "e3367047391042509d31c0d2b5018dbc27302babb4e9456132a09a21569e4c87",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/8842/8842-302196-0004.flac",
+   "sha256": "2ce3543f12ba2033a869fbce7434e74f149722db31ed5e494cad6d1bf9462ae4",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/8842/8842-302196-0002.flac",
+   "sha256": "bb4fb934ab1003e44b0fde2eb579c035df1a5799e8c1a4f8055aae6bbfc3ee11",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/8842/8842-304647-0000.flac",
+   "sha256": "37757af3c90b911c76d143af4521f908839cda4a3b6a8786b5fb3a6d8cf9b2cc",
+   "role": "real"
+  },
+  {
+   "file": "dev-clean/8842/8842-302201-0008.flac",
+   "sha256": "e995a5120376db1d8671c97b797c0b55963714636dc2410f59391ab9b53d6bb0",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/61/61-70968-0015.flac",
+   "sha256": "7ac00acda3b3174ac3cdcea544799a0824ba1310123c5894b28bbd7871aa3ab8",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/61/61-70968-0057.flac",
+   "sha256": "8a8ecfc56260820c8eaf2dfc8ff232d261bfc0a2e4f3de37aaa1b1ff27dc6985",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/61/61-70968-0028.flac",
+   "sha256": "6a22b26098aaedd48f2fe49f03f8cb025d12b35d50f2a9701ba6be1d74fee1b9",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/61/61-70968-0035.flac",
+   "sha256": "2bdaf43f44218652132ad0c072b301271171d370428701b071159ed1d593f65f",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/61/61-70968-0030.flac",
+   "sha256": "6e73d0238ea1be58e2aa0c5bc07db3138d37740259ed046737c9738c05b3c67d",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/61/61-70968-0049.flac",
+   "sha256": "d55ec567f9173dd1479768bafc6eae9a637b235aa472a94e9bd770bf2d2514b9",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/121/121-127105-0023.flac",
+   "sha256": "4b3979253bd95e23eca3dff699c225d223be8895b3db1d3579ac100191aafb5a",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/121/121-127105-0000.flac",
+   "sha256": "f625dfaeca98b9284804d07c9dad69b3651cdd637f844a23391bfaaaaf674a87",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/121/121-127105-0012.flac",
+   "sha256": "caf6692e17d66eb62ca13e4978b4a7e5c2d25e2b054ed98f62ac01e92270e2a4",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/121/121-127105-0002.flac",
+   "sha256": "d952ca94835dfda5013e3898edcbfd87b5f90de37a5c44e27c8448af3d2fb38f",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/121/121-121726-0007.flac",
+   "sha256": "6fd00a59bad373b377f4d28257beffb465bd2a12eb4374f26c4ff80805fd101d",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/121/121-121726-0009.flac",
+   "sha256": "70c3ef24a2119bd5acbb118842dd6c9989a95ab6562fa31f62f36bafde97af7f",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/237/237-134493-0004.flac",
+   "sha256": "9e93d53719f46803eb1b632690199ef2b2b2c44b08fe49de679bec28c43ba7fd",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/237/237-126133-0011.flac",
+   "sha256": "07c97720d63d44231d1635f5355ac231e77184a040a11c23da54e3a8ddbe00e2",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/237/237-134500-0041.flac",
+   "sha256": "df32284d7db1c2898214e0e7d746d9a13a072aec03032d4ebd9b6869ad6b1d44",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/237/237-134493-0018.flac",
+   "sha256": "81bc6e336dab1ee95d037bc16ecb80852918614fb90f838f93d6820aaca09f5b",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/237/237-134493-0001.flac",
+   "sha256": "4f10abc09dd20c7cfe8fe989254fa9e0b7a64fd95bc9ef67b3b7ddf575d79b01",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/237/237-134493-0011.flac",
+   "sha256": "238a380d650add00d3fde9e03752790fd6c7221b120215904f4ac4dce4d57aab",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/260/260-123286-0018.flac",
+   "sha256": "e4a4f07b7a80c567092f4f347d1623b7653deab71b6658c7f162dc09781d3b61",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/260/260-123286-0031.flac",
+   "sha256": "269d142f97190494ae29fae077c9c0c8b1f8752a0065a4140e31526d5b54aee5",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/260/260-123288-0007.flac",
+   "sha256": "f318f0eb1f327535840c5d2765fe961fbb41832726a792458f766dbd38422fd8",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/260/260-123288-0011.flac",
+   "sha256": "0b107fd7ec2243e1c37dadfb7f1ac7922c41d38cfa1a9aed48cf04ae4519dbaf",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/260/260-123440-0011.flac",
+   "sha256": "997314429982ad6e76f5e62f074535fb520187b0d03092c7b94cf0e4f07b6ccb",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/260/260-123288-0001.flac",
+   "sha256": "33c861a44b105c982218ae750143e6ff03e43f5edb64b98ec9f15494c39a35c3",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/672/672-122797-0013.flac",
+   "sha256": "e66b5da619772ade88a929ddc2f56c61048aa236fd9fab9d8f6bd2c001ef9649",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/672/672-122797-0070.flac",
+   "sha256": "5c35cc4be3bebd4477fddd53021c974daaef239d5c0a771e62b83a0c609d441e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/672/672-122797-0004.flac",
+   "sha256": "8dcbb709d46e0630605e5d886e8510b8fab159da5de229f05536d1f8b0fd9a9e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/672/672-122797-0074.flac",
+   "sha256": "265cd493e813658eb45709be6d284b4cc89643c399307aae142abe2d5b93d5af",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/672/672-122797-0036.flac",
+   "sha256": "cfd928e314f6b83f0ff62409ff451c4b9b559c75c1fdacabd403a6ea49cb835a",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/672/672-122797-0020.flac",
+   "sha256": "c89dd9476f950d186f024238caa49b31ba37da972682cc2ff55007603a8ed6fe",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/908/908-31957-0009.flac",
+   "sha256": "31cf3909b3a6638e11d5820a600f98f3aed42bd2df377f9d0986e79c68348cdb",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/908/908-31957-0023.flac",
+   "sha256": "b45b22c5ac68819ff28ffbbd23e33271fbb817505dad43770315e887338d49b1",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/908/908-31957-0002.flac",
+   "sha256": "77ad707e976d262395c265cdfda5b9a3da7439f329aac0f5216a404acefe3fe7",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/908/908-31957-0017.flac",
+   "sha256": "7e7b25bf3e76a483b783833e3c68bd262680c6211ce510f96c0a7b6caa5a2830",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/908/908-31957-0007.flac",
+   "sha256": "f1035ad002a96a31cfabf0c021f9fa65b5678ae394211193e8ee2d10dfe269fc",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/908/908-31957-0020.flac",
+   "sha256": "7eb558a5f4a8f347b6b48a7e50c159fdba6c5d1ff873c4fdefa7437dd98ab484",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/1089/1089-134686-0011.flac",
+   "sha256": "c65e16be3ef92c11a31a9c2c4c570542eb2ed66153150a7c4cca00c01b30a4e2",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1089/1089-134691-0017.flac",
+   "sha256": "d6f15e2895f7e9d1ee6a49c0831f8e08e8b83ad2bd02cc78f89a213319a4e453",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1089/1089-134686-0012.flac",
+   "sha256": "35c698b1e8468fcfa2e726ae69f34a165fd7b4bec9297fc11cfe744cdda413fa",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1089/1089-134691-0016.flac",
+   "sha256": "dfc5585231bc0e2f512980f5d51c303553ecbf3d383b767046ba0c9ee9c1a4d3",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1089/1089-134686-0025.flac",
+   "sha256": "9934498b7116a4615d5f53ca2ea193e90de210ed89c3b472d29c644173544537",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1089/1089-134691-0004.flac",
+   "sha256": "a9038fc57e961736534b754f38a91daf44c0bd88f57a463fb9a9ee74f36f66b4",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/1188/1188-133604-0043.flac",
+   "sha256": "9c55c330517fcd785e205a3a4e9b4612355b703201a002937b43795555ba92d2",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1188/1188-133604-0017.flac",
+   "sha256": "b5fb1ef5484a7a2ea821d229c470f46488f220243b7744918eb483d289a487e2",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1188/1188-133604-0020.flac",
+   "sha256": "d78ad2d56c35d12b9182946617a2969949a93d58bfba8ff12ceaf50e7fabc266",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1188/1188-133604-0005.flac",
+   "sha256": "d94b8c28ac1fa90b2641f97e1e4e02c8b6d4de203b4f8c2fea00240a743afccf",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1188/1188-133604-0039.flac",
+   "sha256": "d73d8f1098edc1d35883cfcbb3c0e4fbb58451021575073ebb8ede2d3e4cf72a",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1188/1188-133604-0033.flac",
+   "sha256": "3b68197c36cfb8bbaebb927cd05a45e32f9766c3430f381baa88159f91771428",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/1221/1221-135767-0009.flac",
+   "sha256": "68ded5201f12f9dede70c60cb0557b05e63b72659c61865e51f5d7f3c0ce12d6",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1221/1221-135766-0006.flac",
+   "sha256": "2d2ce93b5e27db02117c0ca8fa7bb1b6533999bc60512a4a6244ad584e642024",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1221/1221-135766-0009.flac",
+   "sha256": "2b71373e9479f8c30d7ef90f67ce562bf0664ffb9d05e13dd3f840e6852e2ce9",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1221/1221-135767-0012.flac",
+   "sha256": "1554f8aa4d881577292f705d53d37080066d97da026056f495e5f9c65d24d1b6",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1221/1221-135767-0014.flac",
+   "sha256": "9446be1b9b2251206380a1a14a82f3f0a054a82b2ac8bd2ef568eb5a110e3b71",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1221/1221-135767-0005.flac",
+   "sha256": "19c2ccba5fed5693385d787cff71e792514a1d294e54efe6201df6584eda3f45",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/1284/1284-1180-0015.flac",
+   "sha256": "00f0041279295dd1b96b5cc8e6237f38c8d7bca02385b7be423b284039ad9886",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1284/1284-1181-0014.flac",
+   "sha256": "25da81e866d336d7e011fc17d6563594fbefc1d0dfd30b5927c809f933f797e0",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1284/1284-1180-0024.flac",
+   "sha256": "919b3d6546b2cacd06beca3c256520e7b8c0bb2817036aa622576fb62dfbf59d",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1284/1284-134647-0006.flac",
+   "sha256": "0494894d8139b5d29371ab2d8da9ee74697d52c64739929aa57e53a4d8b149e8",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1284/1284-1181-0020.flac",
+   "sha256": "9fa81eb28f1a4a641012eb240367c0b63653a8c6c48dc445184916b7e554c50d",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1284/1284-1180-0005.flac",
+   "sha256": "846bd0e81db640e7ae56acc46b465a97e9820b3e3e2cff3c06a07e297d200a9c",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/1320/1320-122617-0037.flac",
+   "sha256": "b01edc02baff7c94b11b2b6715270a6f25cfb94a468315d66f8b9e30e9885875",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1320/1320-122617-0002.flac",
+   "sha256": "c567f708d614c54f20e4727cdcb3cf81aaf434277bb180e878edc2118f5e4abc",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1320/1320-122617-0004.flac",
+   "sha256": "4eb51f81b50ca75b49624b368cd4d968ecb7f140b7b1a1710295014182d8258a",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1320/1320-122617-0021.flac",
+   "sha256": "15ed7ba614f9ef7efe77e9dcdacf9f97b2237851728e6a7681ae9ae0a2ec4e9e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1320/1320-122617-0023.flac",
+   "sha256": "553fc6594343774831ac876fee34c4ec2b47b53d451f313b10e64eea5cadd8c2",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1320/1320-122617-0026.flac",
+   "sha256": "8e46137d386c181c23a97932fb560a1fffa0b8e635bfe38c81c6f0791dbbe9ed",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/1580/1580-141083-0026.flac",
+   "sha256": "9eb0820d5ea916ed9a1fb1cf37b34c346711eecd9a103ee6eb12ee241e98701e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1580/1580-141083-0033.flac",
+   "sha256": "95efa330a7edd4ce66cba0f48c441cdbd34de73b8e25f24f91f48cd7bfcc2f8d",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1580/1580-141083-0002.flac",
+   "sha256": "0c6462db43bf4400eb14dd29f67b5077013e4705a7ca72a77a8075ff041bd6cb",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1580/1580-141083-0003.flac",
+   "sha256": "cf85e23cde64fbc080a6c713a0a9d5bc047092f2365b59fe11437dacec7e0985",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1580/1580-141084-0041.flac",
+   "sha256": "03c96b0d9632308cc8cb6df43f653209fb857a3eff25cf281ba0649486b35cee",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1580/1580-141084-0049.flac",
+   "sha256": "75590fc1e5c5751832f68eb20b5716cf9950b0146146e7fce2690008d485c77a",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/1995/1995-1836-0006.flac",
+   "sha256": "67901e7a21a73da4fc7b83793d528c07384e58ed381d0f7afed8ca9f15f9c632",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1995/1995-1836-0005.flac",
+   "sha256": "c313336adfb9a4d953ce34de9cc59e0871719418b22a37afca11b4e3f0e9d6dd",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1995/1995-1826-0001.flac",
+   "sha256": "56d8ebeb4138c7cc33c7f468aec078a3d76694b8759b1e860d876288f475e8ee",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1995/1995-1836-0014.flac",
+   "sha256": "c90576861bc6bc0b6837f0b1c340ecc276ac0339ee0a25442a4784f5fc4a4821",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1995/1995-1837-0014.flac",
+   "sha256": "d16de5d8bf89f38d009e17e3041b4d18a9e9c94454d7ed63e5a92f38ff4c3383",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/1995/1995-1837-0019.flac",
+   "sha256": "efbcc1f8df192d7242ef938c6ce501ce645e7d5b392e4cdf8b2197acce6f0d71",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/2094/2094-142345-0057.flac",
+   "sha256": "99a7a5b47607ff377ee0648f92279ad0c333364f89c86820a252870d855e3018",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2094/2094-142345-0001.flac",
+   "sha256": "b4fb8a76b5026b1cff5193cba298dc66156f93e228a221a06d26790c34cc049f",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2094/2094-142345-0024.flac",
+   "sha256": "77e51fec42e4d24b611d8ab0e911d56730c0ef2d7aef59d2c71e43a89a75d212",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2094/2094-142345-0039.flac",
+   "sha256": "21d7d00350a4ca2b0109da67cfad724f36979e7c1b2e098f9327bc8c4f433435",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2094/2094-142345-0021.flac",
+   "sha256": "95f5b00de775804cdcaf84013a64497ef3a1e151533787b82157b1e43cec1ecc",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2094/2094-142345-0043.flac",
+   "sha256": "498500ec62d75c588fba91e71d8d10a36c21352d3f45d9e49ccc8d7320f35a53",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/2300/2300-131720-0010.flac",
+   "sha256": "2d53ef2e326793c1a564326614d9f2b9e3193c0429cbef200ca458918b23f198",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2300/2300-131720-0005.flac",
+   "sha256": "0a754ffc8d86480e82057e7c2e4d9d6cd6d9d35e5a919b1ccd5643d7bf088280",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2300/2300-131720-0032.flac",
+   "sha256": "80ea346ef3e1ca743354ed5b743593741c453e8eec5ad51915d70c31bcfefab4",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2300/2300-131720-0023.flac",
+   "sha256": "6dc954c710d3f1804fcb2fafa08339c966edd439e76670ef2b13329a3930c04b",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2300/2300-131720-0002.flac",
+   "sha256": "2b3dfdfd676c5e0132d83191ced000b5f2e73bb1f9e37bf5a785f922161f67bf",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2300/2300-131720-0038.flac",
+   "sha256": "c5906494d7d45442ea8d1c8fd544097d57df7bf77b8698b474b867f711677772",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/2830/2830-3980-0050.flac",
+   "sha256": "f0017d035289dba19567e381460c29bdae52864d2e179d32a2a8a7a65e42d71f",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2830/2830-3980-0041.flac",
+   "sha256": "45b0067f8425a453861fce416acbdf96d3c92be70e8868b77209228ce14d3ce3",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2830/2830-3980-0030.flac",
+   "sha256": "2cb92900baa1fda24ae4f23d7eb271ca8c16b1a2f28dba8d1b51736a29b78cb6",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2830/2830-3980-0068.flac",
+   "sha256": "307a91b900a8ed660f5366191e3b7c7b7e04978d84161d901cdeaf5af90158c0",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2830/2830-3980-0008.flac",
+   "sha256": "1132c11c952b2ac95624757710e2c5ecff1fe7099dc1a6bb50168553fb9720cb",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2830/2830-3980-0051.flac",
+   "sha256": "9158cf9e1b59dca6fe80bbae44fc17845e1ecc3718c7bc37c3cd4aa495246992",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/2961/2961-961-0020.flac",
+   "sha256": "e49ef8dab9f60e1c7f99b6ab05fb426c88bed6b795e2e48e4adce2969ef89ff5",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2961/2961-960-0005.flac",
+   "sha256": "0d0c423dc55c236b5f55ca2fc4ab87b39b85d5d2a34585573afe6038ebf3a091",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2961/2961-960-0009.flac",
+   "sha256": "d07dbff717206b44944af7fb78ca3b3ef2952be89e939e9f8db21471a0ab22a1",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2961/2961-961-0011.flac",
+   "sha256": "f859855c45fc07e8d561ed7a846fd14ca4ae1515749b60c4e8d4ce825df30180",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2961/2961-961-0010.flac",
+   "sha256": "31141cf49b56d0414cfee91ef363bf652fe677c83fb6bf42bef8072468036631",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/2961/2961-961-0008.flac",
+   "sha256": "abc6dfa4e3fd0ae5ed49626e8e3cefd1feaba720a05256e55d37f8b1d6a244f5",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/3570/3570-5695-0010.flac",
+   "sha256": "1b5637a4108158c889a764ebdf0ec1bf25383f38924777c3b9dcc3143d0176f6",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3570/3570-5695-0006.flac",
+   "sha256": "4011815e61fcf59776d7492ed7824569a2022eea34806439c28c513e1a3d6143",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3570/3570-5695-0008.flac",
+   "sha256": "901f5310de246c3ab39f0e4bb2cdb3d146fce138a04ee415c0286d4a292e1425",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3570/3570-5695-0011.flac",
+   "sha256": "41a2dfd9585fad967a5188825b58911d47334374781ca54b8d96c57dcb4b1f9a",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3570/3570-5696-0005.flac",
+   "sha256": "3f5e04b1ba51e4dfe56179ea7cb150a564678d45aa1d1d400f654296aa1c520c",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3570/3570-5695-0002.flac",
+   "sha256": "89129b79a35cc61499e0101a7f10b4383c28a15cde18f4ddfc2a9cbd7da2be71",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/3575/3575-170457-0045.flac",
+   "sha256": "d82c2f8728d0688addaaad9954c3440308d847515c18cb0949e8904035e6272f",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3575/3575-170457-0010.flac",
+   "sha256": "32df92eb3dce9f3abd925287fdc450db0a0f72c69ad56c39600a62b41cec073f",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3575/3575-170457-0055.flac",
+   "sha256": "dd285fd140d8543a69ed1a2d6a175a52ce7383121357021ef71e832448674c78",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3575/3575-170457-0000.flac",
+   "sha256": "96ab958dda879bdd4bc9fc61c2e5b0d632c569c256b54bcb1c0ecbeadd31448e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3575/3575-170457-0022.flac",
+   "sha256": "b6d2864ec3957d34fd1b6ebce855e1d7bae63044d62244c80be0e08294c2566e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3575/3575-170457-0029.flac",
+   "sha256": "e3ceef0002ae496913d01e2bab9ce1602d317429e6f5805762503098a65b0249",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/3729/3729-6852-0002.flac",
+   "sha256": "7f9f490fb4b7e243ad7ddfb75b4db384aec028df1ad5f71f446bde3b86f2739f",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3729/3729-6852-0022.flac",
+   "sha256": "1dbf841b293584e724cf07f1552c91953ea427faf50a0ae6f175196df421badf",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3729/3729-6852-0026.flac",
+   "sha256": "bcfe665b89d40e3f632c54e18ccd359c9f80c39ebc8aba537b12a2be14707ee2",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3729/3729-6852-0018.flac",
+   "sha256": "be0db0e74649067851fc70953fa653e633f3eab337c51ec6062b013b8bf44c66",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3729/3729-6852-0000.flac",
+   "sha256": "3fa96f8e0276d79ec027bb1595215a8bbeb488cefcc1702ff798e91ec8504403",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/3729/3729-6852-0011.flac",
+   "sha256": "cde0ad00586793002e9aa3291f1974561d1a901a3c6485eccad31c610380f579",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/4077/4077-13751-0001.flac",
+   "sha256": "1f85c5ad8dfb8fcf3c8d86e54afc055f756f147e7b426ff8b7f48780d8d43c0e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4077/4077-13751-0015.flac",
+   "sha256": "9963be8f4b0b287424d3262ee1b4167bb702dde18b3ddb917a47dfa289623a59",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4077/4077-13754-0007.flac",
+   "sha256": "87e0069af74cdb27467ec5ad3f9011b144b3dd74866f996858d4d940d2799003",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4077/4077-13751-0000.flac",
+   "sha256": "d76a732a69cca08d2f249fae5e63b28e417e5569e3233915f22f28c08a67c21a",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4077/4077-13751-0008.flac",
+   "sha256": "402ca6491239be2aa5eefde5a3212164bdc2b8ffa7b0d00f1f94e5bc98136b1c",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4077/4077-13754-0003.flac",
+   "sha256": "313a40d78133893c303d760dc06d4fd421bd7a8207bc291027c3429cc4d8023c",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/4446/4446-2275-0033.flac",
+   "sha256": "5482320df3af5e76a518236e52dd2f0d396249d7d5794df0d615a779639a9762",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4446/4446-2273-0035.flac",
+   "sha256": "f0acd6bdab8f9eed330b36131637c1e3528155e6c2ebb272f77b78ef6926c79e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4446/4446-2271-0014.flac",
+   "sha256": "b14689b795b4f6964f2115beea8f796fa09a7249ca3d4d012a2c4e7030a34c37",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4446/4446-2273-0024.flac",
+   "sha256": "dd8d10756002755f351bf406d4398b2db1abadb27a849e9edd970ab9cbfc55c9",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4446/4446-2275-0001.flac",
+   "sha256": "cf18b3c4f8a445625c91de9d5528462a1110d7636988d0541553792bcf9f68df",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4446/4446-2275-0042.flac",
+   "sha256": "07510ce99341fd551cccc6327cf1d13cd67f86b92a053dc2cd217eafd3ae06fc",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/4507/4507-16021-0003.flac",
+   "sha256": "090444ed0871bdaaa1d25065939bbd756ef74ec3398622591d1073b90c8026ea",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4507/4507-16021-0009.flac",
+   "sha256": "ecd9ee63db5169d40fb45ad8aa5f084ad0f9594860d46ac13b7801086e4d926e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4507/4507-16021-0034.flac",
+   "sha256": "82d1c6989ed82652706793e5449d59106eb0cd0fcc9fc2d0b53fae601834d832",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4507/4507-16021-0025.flac",
+   "sha256": "52ce72362866dbb53ce55528dba5c6c061da39213ba41e4f78c9bdb00cefcf97",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4507/4507-16021-0036.flac",
+   "sha256": "156f4e84e7688c4d529feee6666dea4ed165b603cd3058f50647f6ae12a48d44",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4507/4507-16021-0033.flac",
+   "sha256": "1a95f7d0613cb1b284ce711f82f46383f9f2e3969d63d356906b7e6ea5a15a62",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/4970/4970-29095-0004.flac",
+   "sha256": "b2ac944725d95ac6a1d9ffdd80eb7fabffc5d713c60f511ced874fc7f4dbbd3d",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4970/4970-29095-0033.flac",
+   "sha256": "67f2b207d9608a81860f5525bd0948a13185ca7e223432722f010cb6d0e68312",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4970/4970-29093-0020.flac",
+   "sha256": "26ae5a0db7c4fb5bf4da0cb39ea97e3cfc4e584eee30e7c6e3608edfdf4a708c",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4970/4970-29095-0027.flac",
+   "sha256": "676a103b10d466d8fe04affe832917ec6cf292d02bdb3f7c8b719058820f3c63",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4970/4970-29095-0002.flac",
+   "sha256": "dcfed616c4f4fa1f3b87ea9f77ab57b32769f78d27a7ce61397f029664fff334",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4970/4970-29095-0038.flac",
+   "sha256": "1208d9f92b202bc4f5a8ea1ba54f2d0085cc615028fb67a04683ed97c48fd718",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/4992/4992-23283-0019.flac",
+   "sha256": "d4b02929dd72a3c9f2618e4ac8acad11e69aceeac8cef791b5d6ac07681c4f5e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4992/4992-41806-0003.flac",
+   "sha256": "8309a8c7b924f1e3727dba740d079934222ee8b23ded92f6c12f7108f185b970",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4992/4992-41797-0019.flac",
+   "sha256": "4a137fa583c2a704bb0dc9ea370105c6b3b11b146abc20e83f109ca64ff734f2",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4992/4992-23283-0004.flac",
+   "sha256": "3795dc1cc9dec95afe10291a2dc05d762dc15339562ae03e75747fad620bd0dc",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4992/4992-23283-0005.flac",
+   "sha256": "048a44c9d4a749aeb94236f716501edf782ae97e5190fb2cc0301df4dd5f52cd",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/4992/4992-41797-0015.flac",
+   "sha256": "5dfb7c8734e7b88cf50bad68f3f7426dd784d9638870f99d40ab690eab367093",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/5105/5105-28240-0007.flac",
+   "sha256": "c4a45cddcbcfcbd34a7f35776c68400d24c4ab1a6494693cfadbfa6e7e301663",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5105/5105-28241-0012.flac",
+   "sha256": "3dc11ac81eeeb0259391404d666e3b6359f0595778dbcac88979235f82da4937",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5105/5105-28240-0006.flac",
+   "sha256": "36027021239ff8bf426807027d5f0a9b4dbced958544b57970f9e6dc33f27c1e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5105/5105-28233-0000.flac",
+   "sha256": "d8feecd74fe14ae2f00c1c2f65ba77c07f82dbd76aaa0934f3569f91f2b14d34",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5105/5105-28241-0008.flac",
+   "sha256": "738fd851501210e1b04bdee4fcd43c8753aa14aad072274bfebda122bdae13a9",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5105/5105-28240-0003.flac",
+   "sha256": "bed5db24f0c655c145173d49c6a5ae935361e85fc44cc7f1965eca8c9aff17bf",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/5142/5142-36377-0024.flac",
+   "sha256": "85d1c95748eb0425623e25c30185f5e4f14e0e29a68ad347c1751dfc8dcf7549",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5142/5142-33396-0006.flac",
+   "sha256": "b0b27b755d2d37dff21982b8a1c8a31b3f111106e384bca30f38a0e20968cf49",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5142/5142-33396-0065.flac",
+   "sha256": "67800641844bf8c9d654fc9a6099941ba97ff31b0ac0a579209378598c4ea09b",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5142/5142-33396-0052.flac",
+   "sha256": "9689b69f641487be6d3bf0388e4c9326e55adb4b854016efc9d665ae5b482b9e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5142/5142-33396-0007.flac",
+   "sha256": "eddeb87a8988b490557af3d3f4284e07e83fc09d4de90ec08e2983564bfdae5c",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5142/5142-36377-0007.flac",
+   "sha256": "3d066a0bab96a94061419d3154331ecead6132f5574edcfa2c643cca7e0c306c",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/5639/5639-40744-0002.flac",
+   "sha256": "111c6b8b19d093736570bced344035b48f75c770aacc60103da9d9a20f904fb2",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5639/5639-40744-0029.flac",
+   "sha256": "aa6e59548591c9927ccd622310e84d17e5f0df19d50eb27e540d27d6dbf987d8",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5639/5639-40744-0004.flac",
+   "sha256": "344d90ee2f0dbe3e155fe6914472e21e68dc6dad99d7fb59169553cfb88fad95",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5639/5639-40744-0036.flac",
+   "sha256": "961a517e9571425aa5c23bab46bdc0dc5bfb8ed2db06967a9b355b6ef322e63d",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5639/5639-40744-0001.flac",
+   "sha256": "1ebdee7e694543ec03aaee954ce90a7b27911c24423b1a67f872cd82a426f59d",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5639/5639-40744-0012.flac",
+   "sha256": "01f3182a8109e949e1c4a69835aa63f6d407fc837c4abf22f79211cd5fcd4c43",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/5683/5683-32866-0012.flac",
+   "sha256": "c5eb505469ef1344b69a37f7fa0f0aa0e9e1a751ed7a07f2e9ecbea72ad9308e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5683/5683-32866-0021.flac",
+   "sha256": "fd7c6440072057ca91fc4f2e8bf8a78341c3764b7aa0848d2570d87ed5c510fc",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5683/5683-32866-0030.flac",
+   "sha256": "154cffe72dc31c325e187dc1cc7af55631941f4bea54c46d3737f6f0c0b45d9f",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5683/5683-32866-0024.flac",
+   "sha256": "ff265b3a488b5f4dfcfb273ae996c73f0dce02a202ae47e68e68d89ccbef637c",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5683/5683-32866-0005.flac",
+   "sha256": "c5267fb66971fdfd4c5b6287c6e0f83ab988093d85520ee8034103f825d9b67c",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/5683/5683-32865-0017.flac",
+   "sha256": "d0027b49e5e0c29b3b59d1d782b8d4d9753f90e4343f243a15698e787c8e64ca",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/6829/6829-68769-0005.flac",
+   "sha256": "da11fbd6ef35233d5c73df84efcbeb982f73b04e50c4bcbf09c706fa53ab8a48",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/6829/6829-68771-0000.flac",
+   "sha256": "d6698654fba12e6dccd51aed13cc3848970118cdef794fb1f2ac26ceb6a20481",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/6829/6829-68769-0031.flac",
+   "sha256": "40eaeabff0e794792fa17878ee4fdf9f1b4f2d24ae41766182c3379bf822c11d",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/6829/6829-68771-0027.flac",
+   "sha256": "f2754040268b9dca5bb76001ba15c196a4c567844f0215d14ebf0208599945bd",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/6829/6829-68769-0018.flac",
+   "sha256": "7960f9a89478da29f4451383e244176593be4d5e2e379c0118a6b01b4afc65ef",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/6829/6829-68771-0006.flac",
+   "sha256": "4f59f9864cee493327dd1f5ed7ff6dd8d0f929e657fa1f613e996d3223815960",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/6930/6930-75918-0015.flac",
+   "sha256": "93618408931cd8bcc83f064b61bf2413a0fbbed356f006ccfe80131d9966cf6d",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/6930/6930-75918-0009.flac",
+   "sha256": "def314bf5fa2c02ce5101bda550ee003760e4f4c3aa6f96699c3110c66be2048",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/6930/6930-81414-0020.flac",
+   "sha256": "7fd4cece43d094ce359471db8aec8ddfd0f513c8d5418706282924dc59c32c6e",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/6930/6930-81414-0023.flac",
+   "sha256": "9a1d7000c441f74052d65156e0d73ff799a4838c134aaf50e277e9eed38c2d3a",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/6930/6930-81414-0014.flac",
+   "sha256": "c68acfb6fba7dee5c50d015de2bbffc8db3f08800dbc18279f829d0dee72d12a",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/6930/6930-81414-0008.flac",
+   "sha256": "c751d64b1354ab192de68d476b5a54c06b6c755cec01e0ebf59a7f68a1628375",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/7021/7021-85628-0022.flac",
+   "sha256": "e8821814206e0238a9e69fad5afc2f50b6c4c7568bd94e5183a5433de5b43bc5",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7021/7021-79740-0006.flac",
+   "sha256": "f8a1fabe1162a7d0bdf537ed51b685514adc3bb1ce088b69e1ed0864461f7818",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7021/7021-85628-0001.flac",
+   "sha256": "52a395d95a575697b21c5381d74f68ecf093b89529fb715fff9b506c9fb1045c",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7021/7021-79740-0000.flac",
+   "sha256": "68b1a264d445b05eab1218dae0522e6da5d66ad88e2bcb918c11c39ab27fb621",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7021/7021-79759-0005.flac",
+   "sha256": "b572750ee5d155cf6310c255dfa5ca275bef42f278efab2053e3c7bb6cda1b4b",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7021/7021-79759-0002.flac",
+   "sha256": "c9d265cf048c6e343b49319f5e09c38c21ce8e1ad4de55c6dd6f84b6daba1164",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/7127/7127-75947-0024.flac",
+   "sha256": "fecc1960279c1be210a3eba4f4b8a07279609ed11634df5a3f6852b6b3a69f53",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7127/7127-75946-0022.flac",
+   "sha256": "85163692e8b15a2f3e23a9ad1efcad490219e4e4ed9145f3bba94bbe10cedbdc",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7127/7127-75946-0015.flac",
+   "sha256": "20929b5de5ba7e3cd1a3affa1feaba18773d6d4f1bec4ebc4f79a2a9896da2c4",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7127/7127-75946-0006.flac",
+   "sha256": "84114ed856883c0971a2e0a679a5121d82c60737f8a912b8e07392b40b73064c",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7127/7127-75946-0003.flac",
+   "sha256": "6756e2c73aaf139e4bae151856dace23189a1dcd3a9cbc86ac08d846e4d69efc",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7127/7127-75947-0007.flac",
+   "sha256": "95c87aac24e7ccb9810d8595f9b9d4ec4edbe4825ee0a784ebbc6581907c4fdd",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/7176/7176-92135-0006.flac",
+   "sha256": "6840cd5d07dc7ac3a5c0bccd032d6ff0592e9a5bd80e21cf5e621067ebf7f026",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7176/7176-88083-0019.flac",
+   "sha256": "20e64a915f30952a2e6f34b1ad05898793cbcb79f71d32443271f0ffd7e767c6",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7176/7176-88083-0012.flac",
+   "sha256": "a430f86b6dc5a5f09dddda4cc5aff2364cfb370a58081a5a05bc8735d9ab79ec",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7176/7176-92135-0042.flac",
+   "sha256": "b1c7d947268b3e4cbef60f1f9f5d51ef027dd36565f49d6e21e24f7a4dc8e550",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7176/7176-88083-0025.flac",
+   "sha256": "4ba67bbb9df43dd8e4025f903d1779c2b0a60df9c90c1779c624435a11228400",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7176/7176-92135-0017.flac",
+   "sha256": "dc46d1aa60d3395c47636cc238317a9d470f02e23f647b67f2606592a06eb006",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/7729/7729-102255-0037.flac",
+   "sha256": "e37d97bdaa80e0c2457fa9b3fbe8194cc82b75ee7fdef0a5dbe1c0a8ee88d7da",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7729/7729-102255-0010.flac",
+   "sha256": "1c2e7ef547202828bcf5d3d31e9ed13f33bd390f7604a58ab6275d9ea2169fbd",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7729/7729-102255-0036.flac",
+   "sha256": "5b1e17acb1ebaa4a4440b8b99a415dad32e57f2cca55253075261e28482d80ed",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7729/7729-102255-0038.flac",
+   "sha256": "7bad471a79798adfc54e63acefeaf2a9579bc1f06779fd3aa49cc060df7c47f7",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7729/7729-102255-0028.flac",
+   "sha256": "4654ddc035bcd2a1c3def2c04709f8f93eff6f9d9da968a1f044f65edf3a5b15",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/7729/7729-102255-0019.flac",
+   "sha256": "30e5b7afeb591bb9aba3f023d964857675280c0224013f7e23bffcdf592eead1",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/8224/8224-274384-0006.flac",
+   "sha256": "77986a84561dc3fa86f7e430eb44de3417e8700c2bf75b8503dfd45614ac1cde",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8224/8224-274381-0007.flac",
+   "sha256": "aacc75f2207fbf23a872ac00477c3c6a31fe90136892e41c738ec95ef5b97dec",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8224/8224-274384-0009.flac",
+   "sha256": "638910fdc098236e8399948125f5bc7a8c9411abd8260c5513c4a91c57788018",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8224/8224-274384-0007.flac",
+   "sha256": "1017a853428ffa1fb25e08e3d09405e15ea08ac75363e108aa097ffb81791e7d",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8224/8224-274381-0013.flac",
+   "sha256": "cd0ba8a197cc480b016a6386531b3e1ee14c9ff6ddc85f19abde2abc4f00070a",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8224/8224-274384-0000.flac",
+   "sha256": "4625344176f2d28a1269d43165a38313dcb9b139aa2618e57da5006243a9b959",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/8230/8230-279154-0000.flac",
+   "sha256": "27f288ccebd4a68b77e7721d164bbed2e67c4da24155a4253a14f3abd9cf7d0f",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8230/8230-279154-0035.flac",
+   "sha256": "69ded4510aac9cc34b9d25bb628eeea15aeb4b2e633d73f880b45d149c1210f5",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8230/8230-279154-0015.flac",
+   "sha256": "ca4797c1e6374af1f26c63c4b0842ff58829ab87f4ab8db835c6dff5817691ba",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8230/8230-279154-0018.flac",
+   "sha256": "6fb6d05dd68dfe641a0f58b800e9d2e86662dab952355bc7573505bc35efb2fc",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8230/8230-279154-0016.flac",
+   "sha256": "c6756dfa0db4e0b5e41cb5fa8b19832f73545c812451e2dcd7238b03534a2af4",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8230/8230-279154-0006.flac",
+   "sha256": "b83b04ba59e9f0801225bbb1d895d39a66eea39f80baed788c4590b20ad7d31c",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/8455/8455-210777-0037.flac",
+   "sha256": "885fcf2b3e2be680edfee8290c3a938106dff6b8bcec6172f7c7f17b4d04931c",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8455/8455-210777-0070.flac",
+   "sha256": "c8c4ede85f9771e6fd5f97be7a0bd2cc4ab51c07ad3dc5676ce593f7ec1419e7",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8455/8455-210777-0052.flac",
+   "sha256": "ce36e6417ee495e42b05db2a18b06ab85c24fe823055bd3dcb6efb692f02f790",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8455/8455-210777-0000.flac",
+   "sha256": "7c018f36736c01becb5371dbcf0f41d3394d651a62c4121e60914a5312e04eb0",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8455/8455-210777-0046.flac",
+   "sha256": "a30fe5b56681f46254d04057f8a23ca092e5ddd297a3a78880f0e5dc6a639c47",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8455/8455-210777-0069.flac",
+   "sha256": "fdc9d83bb218d069554e1328312e5a173bd2bfffa9160c408f67c32501d08d7d",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/8463/8463-287645-0004.flac",
+   "sha256": "4bea5c3853d930cc16212d0ecdb9090e7b3d079927fa98b93983ad7d8e545263",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8463/8463-287645-0003.flac",
+   "sha256": "224879b9c8804034671dc7f765e8a301d03be9a407727a82458dc3349a0de6c4",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8463/8463-294825-0010.flac",
+   "sha256": "b68e7265ef340ec204072a9c487b5fc25377b71943c71562f8ca9fad29e793b6",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8463/8463-294828-0036.flac",
+   "sha256": "dde9eef4dd949f242eae31aa98ce822b2afbfff9ded75ea94ca2ad1fbf80395b",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8463/8463-294828-0037.flac",
+   "sha256": "564ff1c538ce5a2d8559a0ff5a77d4ca0d0d1cd4e1c90c581b79b5dbe49de2a8",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8463/8463-294828-0010.flac",
+   "sha256": "6a7d08bf5b2bdd516fe2fe3eb4687909c39470971957af11369ae219d6338980",
+   "role": "clone_reference"
+  },
+  {
+   "file": "test-clean/8555/8555-284447-0007.flac",
+   "sha256": "73d10187e60efe5f030a76fa33d1eab2abae7e38817b356dd61e30b743edf22f",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8555/8555-284447-0024.flac",
+   "sha256": "a209a6dd5155da10ed6f2f510b25c0eb343ea3b4f79e96594852f759c235138a",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8555/8555-284449-0020.flac",
+   "sha256": "5703c01afc67c6eb161bd9fe7fe92f5b373e9331629f60d1c163e5d893c97d7a",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8555/8555-284449-0003.flac",
+   "sha256": "9b5e34c02088b1d17da744cdce8d3cf5d176c6d1de08c810c68a262e14633a43",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8555/8555-284447-0018.flac",
+   "sha256": "118d98dffeaf185f3910e8cacc029e2b16044c42f38cc3b1885c3694eb57e1e4",
+   "role": "real"
+  },
+  {
+   "file": "test-clean/8555/8555-284449-0019.flac",
+   "sha256": "7daadcc3d35598812c19845207bc97fae41e56934829734961e05920f1fa2b6e",
+   "role": "clone_reference"
+  }
+ ]
+}
