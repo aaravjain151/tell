@@ -12,6 +12,8 @@ try{
   var qv = new URLSearchParams(location.search).get("view");
   document.documentElement.dataset.view = qv === "detailed" ? "detailed" : "simple";
   document.documentElement.dataset.live = "empty";
+  var qh = (location.hash.match(/^#\/(\w+)/) || [])[1], qs = new URLSearchParams(location.search);
+  document.documentElement.dataset.page = qh || (qs.get("demo") === "1" || qv === "detailed" ? "live" : "home");
 }catch(e){}
 </script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 512 512%22%3E%3Crect width=%22512%22 height=%22512%22 rx=%22112%22 fill=%22%23FFFFFF%22/%3E%3Cg shape-rendering=%22crispEdges%22 transform=%22translate(91.3 103.9) scale(0.9) translate(-334 -126)%22%3E%3Cpath d=%22M338.0 277.0 L340.0 277.0 L342.0 277.0 L344.0 276.8 L346.0 276.4 L348.0 275.8 L350.0 275.4 L352.0 274.6 L354.0 273.8 L356.0 272.8 L358.0 271.8 L360.0 270.6 L362.0 269.0 L364.0 267.0 L366.0 264.6 L368.0 261.8 L370.0 258.6 L372.0 255.0 L374.0 250.6 L376.0 245.6 L378.0 240.0 L380.0 234.0 L382.0 228.4 L384.0 223.4 L386.0 218.8 L388.0 215.0 L390.0 212.0 L392.0 209.8 L394.0 208.0 L396.0 206.4 L398.0 205.2 L400.0 204.4 L402.0 204.0 L404.0 204.0 L406.0 204.0 L408.0 204.0 L410.0 204.4 L412.0 205.2 L414.0 206.4 L416.0 207.6 L418.0 209.2 L420.0 211.2 L422.0 213.8 L424.0 217.4 L426.0 222.2 L428.0 228.4 L430.0 235.6 L432.0 243.8 L434.0 252.0 L436.0 260.0 L438.0 266.6 L440.0 271.8 L442.0 275.8 L444.0 279.2 L446.0 281.6 L448.0 283.2 L450.0 284.0 L452.0 284.6 L454.0 284.8 L456.0 284.2 L458.0 283.2 L460.0 281.8 L462.0 279.8 L464.0 276.8 L466.0 272.8 L468.0 268.2 L470.0 262.0 L472.0 254.4 L474.0 245.6 L476.0 235.4 L478.0 225.0 L480.0 214.4 L482.0 203.8 L484.0 194.2 L486.0 186.0 L488.0 178.6 L490.0 172.4 L492.0 167.2 L494.0 163.0 L496.0 159.4 L498.0 156.4 L500.0 154.0 L502.0 152.2 L504.0 150.6 L506.0 149.6 L508.0 148.8 L510.0 148.5 L511.0 148.3 L511.0 423.7 L510.0 423.5 L508.0 423.2 L506.0 422.8 L504.0 422.2 L502.0 421.2 L500.0 419.8 L498.0 418.0 L496.0 415.8 L494.0 413.2 L492.0 409.8 L490.0 405.6 L488.0 400.6 L486.0 394.6 L484.0 388.4 L482.0 382.6 L480.0 377.4 L478.0 373.4 L476.0 370.4 L474.0 368.0 L472.0 366.4 L470.0 365.4 L468.0 364.8 L466.0 364.4 L464.0 364.0 L462.0 364.0 L460.0 364.0 L458.0 364.0 L456.0 364.0 L454.0 363.6 L452.0 362.8 L450.0 361.6 L448.0 359.8 L446.0 356.8 L444.0 352.8 L442.0 347.0 L440.0 339.2 L438.0 330.2 L436.0 321.2 L434.0 314.8 L432.0 310.2 L430.0 307.4 L428.0 305.8 L426.0 304.8 L424.0 304.2 L422.0 304.2 L420.0 304.8 L418.0 306.2 L416.0 308.0 L414.0 310.8 L412.0 315.2 L410.0 320.8 L408.0 325.8 L406.0 330.0 L404.0 333.4 L402.0 336.0 L400.0 337.6 L398.0 338.8 L396.0 339.6 L394.0 340.0 L392.0 340.0 L390.0 340.0 L388.0 339.8 L386.0 339.2 L384.0 337.6 L382.0 336.2 L380.0 334.4 L378.0 331.6 L376.0 328.2 L374.0 324.0 L372.0 319.4 L370.0 315.0 L368.0 311.4 L366.0 308.4 L364.0 305.6 L362.0 303.2 L360.0 301.4 L358.0 300.2 L356.0 299.0 L354.0 298.0 L352.0 297.4 L350.0 296.6 L348.0 296.0 L346.0 295.4 L344.0 295.0 L342.0 295.0 L340.0 295.0 L338.0 295.0Z%22 fill=%22%23141D44%22/%3E%3Crect x=%22556.5%22 y=%22164.5%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22181.9%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22573.8%22 y=%22181.9%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22181.9%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22199.2%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22608.6%22 y=%22199.2%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22216.6%22 width=%2252.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22591.2%22 y=%22216.6%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22216.6%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22233.9%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22591.2%22 y=%22233.9%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22233.9%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22251.3%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22573.8%22 y=%22251.3%22 width=%2252.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22251.3%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22643.3%22 y=%22251.3%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22268.6%22 width=%22104.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22268.6%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22643.3%22 y=%22268.6%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22285.9%22 width=%22104.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22285.9%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22643.3%22 y=%22285.9%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22303.3%22 width=%2287.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22625.9%22 y=%22303.3%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22320.7%22 width=%2287.4%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22608.6%22 y=%22320.7%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22338.0%22 width=%2252.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22591.2%22 y=%22338.0%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22608.6%22 y=%22338.0%22 width=%2235.4%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22355.4%22 width=%2252.8%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22591.2%22 y=%22355.4%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22608.6%22 y=%22355.4%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23F73C45%22/%3E%3Crect x=%22521.8%22 y=%22372.7%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22390.0%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22573.8%22 y=%22390.0%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3Crect x=%22521.8%22 y=%22424.8%22 width=%2218.1%22 height=%2218.2%22 fill=%22%23189192%22/%3E%3C/g%3E%3C/svg%3E">
@@ -406,6 +408,132 @@ html[data-live="on"][data-alert="none"] .trustblock{display:none}
 html[data-live="on"][data-warm="1"] #serious,html[data-live="on"][data-warm="1"] #why-h,html[data-live="on"][data-warm="1"] #why,html[data-live="on"][data-warm="1"] .quad{display:none}
 html[data-live="on"] .simple{max-width:760px;padding-bottom:0}
 @media (max-width:640px){.lbar{padding-top:8px;padding-bottom:8px}.lbar-src{flex-basis:100%;order:5}.lbar-stop{min-height:44px}.redbar{padding:16px}.empty{min-height:calc(100svh - 150px)}}
+/* ---------- product shell: pages, tabs, bottom bar ---------- */
+.page{display:none}
+html[data-page="home"] #pg-home,html[data-page="history"] #pg-history,html[data-page="people"] #pg-people,html[data-page="block"] #pg-block,html[data-page="settings"] #pg-settings,html[data-page="live"] #pg-live{display:block}
+.tabs{display:flex;align-items:center;gap:clamp(12px,1.6vw,28px)}
+.tabs a{position:relative;display:inline-flex;align-items:center;gap:8px;min-height:44px;color:var(--muted);text-decoration:none;font-size:15px;border-bottom:2px solid transparent;padding-top:2px}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-current="page"]{color:var(--ink);font-weight:500;border-bottom-color:var(--ink)}
+.tabs .l-short,.tabbar .l-long{display:none}
+.tabs a i,.tabbar a i{display:none;width:8px;height:8px;background:var(--teal)}
+html[data-live="on"] .tabs a[data-page="live"] i,html[data-live="on"] .tabbar a[data-page="live"] i{display:inline-block}
+.tabbar{display:none}
+.nav-l{min-width:0}
+.pg{max-width:1200px;margin:0 auto;padding:clamp(32px,6vh,72px) var(--gut) clamp(64px,10vh,120px)}
+.pg h1{font-weight:200;text-transform:uppercase;font-size:clamp(40px,6.4vw,96px);line-height:1;letter-spacing:-.025em;overflow-wrap:break-word;min-width:0;text-wrap:balance}
+.pg-lede{margin-top:clamp(16px,2.4vh,28px);max-width:52ch;font-size:clamp(17px,1.5vw,20px);font-weight:300;line-height:1.5;color:var(--muted)}
+.pg h2{margin:0;font-size:20px;font-weight:500;letter-spacing:-.005em}
+.pg-sec{margin-top:clamp(40px,7vh,72px);padding-top:24px;border-top:1px solid var(--line)}
+.pg-sec>h2{margin-bottom:8px}
+.pg-sec>p.note{max-width:60ch;color:var(--muted);font-size:15px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--col)}
+@media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
+
+/* home: the armed status is the hero */
+.pg h1.home-state{margin-top:clamp(8px,2vh,24px);font-size:clamp(56px,11vw,168px);font-variant-numeric:tabular-nums}
+.home-px{margin-top:clamp(24px,4vh,40px);max-width:560px;height:10px}
+.home-px i{background:var(--cell-off)}
+.home-hero[data-s="armed"] .home-px i.on{background:var(--teal)}
+.home-hero[data-s="live"] .home-px i.on{background:var(--tier)}
+.home-hero[data-s="off"] .home-px i.on{background:var(--unsure)}
+.home-sub{margin-top:20px;max-width:56ch;font-size:16px;color:var(--muted)}
+.home-act{display:flex;flex-wrap:wrap;align-items:center;gap:8px 28px;margin-top:28px}
+.lastcall{display:grid;gap:6px;margin-top:12px}
+.lastcall b{font-size:clamp(24px,2.6vw,34px);font-weight:300;text-transform:uppercase;letter-spacing:-.015em;line-height:1.1}
+.lastcall span{color:var(--muted);font-size:15px}
+.lastcall[data-tier="scam"] b{color:var(--red-t)}
+.lastcall[data-tier="human"] b{color:var(--teal-t)}
+.facts{display:grid;margin-top:8px;font-size:15px}
+.facts div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;padding:12px 0;border-top:1px solid var(--line);color:var(--muted)}
+.facts div:first-child{border-top:0}
+.facts b{font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+.facts .big{font:200 clamp(56px,7vw,96px)/.9 var(--f);letter-spacing:-.04em;color:var(--teal-t)}
+.nextlist{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:0}
+.nextlist li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 24px;padding:6px 0;border-top:1px solid var(--line);color:var(--muted)}
+.nextlist li:first-child{border-top:0}
+.nextlist li span{max-width:56ch}
+
+/* forms and lists shared by history, block, settings */
+.field{display:grid;gap:6px;font-size:15px;font-weight:500;min-width:0}
+.field input,.field select{width:100%;min-height:48px;padding:0 14px;border:1px solid var(--ink);border-radius:2px;background:var(--bg);color:var(--ink);font-weight:400;font-size:16px}
+.field input::placeholder{color:var(--muted)}
+.field small{font-weight:400;color:var(--muted)}
+.formrow{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,2fr) minmax(0,3fr) auto;gap:12px;align-items:end;margin-top:16px}
+.formrow.two{grid-template-columns:minmax(0,3fr) auto}
+@media (max-width:900px){.formrow,.formrow.two{grid-template-columns:minmax(0,1fr)}}
+.msg{min-height:24px;margin-top:12px;font-size:15px;color:var(--muted)}
+.msg[data-k="ok"]{color:var(--teal-t)}
+.msg[data-k="err"]{color:var(--red-t)}
+.rows{list-style:none;margin:16px 0 0;padding:0}
+.rows li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.rows li:last-child{border-bottom:1px solid var(--line)}
+.rows .main{display:grid;gap:2px;min-width:0}
+.rows .main b{font-weight:500;font-size:17px;overflow-wrap:anywhere}
+.rows .main span{color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.rows .tag{display:inline-flex;align-items:center;gap:8px}
+.rows .tag::before{content:"";width:10px;height:10px;background:var(--c,var(--unsure));flex:none}
+.rows .btn{min-height:44px;padding:0 16px}
+.rows li[data-tier="scam"]{--c:var(--red)}.rows li[data-tier="human"]{--c:var(--teal)}.rows li[data-tier="ai_disclosed"]{--c:var(--blue)}.rows li[data-tier="ai_undisclosed"]{--c:var(--amber)}
+
+/* panel states: loading, empty, offline, error */
+.state{display:grid;gap:12px;justify-items:start;margin-top:24px;padding:28px;background:var(--plane);border-radius:2px;max-width:640px}
+.state h3{margin:0;font-size:20px;font-weight:500}
+.state p{margin:0;color:var(--muted);font-size:15px;max-width:52ch}
+.state code{font:500 15px var(--mono);padding:8px 12px;border:1px solid var(--ink);border-radius:2px;background:var(--bg)}
+.state .px{width:160px;height:8px;margin-bottom:4px}
+.state[data-k="error"] h3{color:var(--red-t)}
+.state[data-k="loading"] .px i{animation:cellblink 1.2s steps(2) infinite;animation-delay:calc(var(--i)*120ms)}
+@keyframes cellblink{50%{background:var(--teal)}}
+
+/* switch and choice controls */
+.choice{display:grid;gap:12px;margin-top:16px;border:0;padding:0;min-width:0}
+.choice legend{padding:0;font-weight:500;font-size:17px}
+.opt{display:grid;grid-template-columns:20px minmax(0,1fr);gap:4px 12px;align-items:start;padding:14px 16px;border:1px solid var(--line);border-radius:2px;cursor:pointer;min-height:44px}
+.opt:has(input:checked){border-color:var(--ink)}
+.opt input{margin:3px 0 0;width:18px;height:18px;accent-color:var(--ink)}
+.opt b{font-weight:500}
+.opt span{grid-column:2;color:var(--muted);font-size:14px}
+.opt:has(input:focus-visible){outline:2px solid var(--ink);outline-offset:3px}
+.danger{border-color:var(--red-t);color:var(--red-t)}
+.danger:hover{background:var(--red-t);color:var(--bg)}
+.confirm{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+.report{margin-top:16px;padding:0;list-style:none;display:grid;gap:4px;font-size:14px;color:var(--muted)}
+
+/* people page hosts the existing trust block */
+html[data-page="people"] #pg-people .trustblock{display:block}
+#pg-people .trustblock .act,#pg-people .trustblock h2{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;margin:0}
+#pg-people .trustblock{max-width:640px;margin-top:32px;font-size:20px;line-height:1.45}
+#pg-people .trust-empty{font-size:17px;color:var(--muted)}
+
+/* after the call */
+.postcall{display:none;margin-top:32px;padding-top:24px;border-top:1px solid var(--line);font-size:16px}
+html[data-ended="1"][data-heard="1"] .postcall{display:block}
+.postcall h2{margin-top:0}
+.postcall p.note{font-size:15px;color:var(--muted);max-width:52ch}
+.postcall .formrow{grid-template-columns:minmax(0,1fr);gap:12px}
+.postact{display:flex;flex-wrap:wrap;gap:12px}
+.postact .btn{min-height:48px}
+
+/* sensitivity: quiet hides the amber line, the red banner always shows */
+html[data-sens="quiet"] #caution{display:none}
+
+/* the verdict changing: the tier rule redraws once */
+.rule.flip{animation:draw .9s steps(28) both}
+
+@media (max-width:1100px){
+  .tabs{display:none}
+  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:25;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+  .tabbar a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:56px;padding:6px 2px;color:var(--muted);text-decoration:none;font-size:12px;position:relative}
+  .tabbar a svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6}
+  .tabbar a[aria-current="page"]{color:var(--ink);font-weight:500;border-top:2px solid var(--ink)}
+  .tabbar a i{position:absolute;top:8px;right:calc(50% - 20px)}
+  .tabbar .l-long{display:none}.tabbar .l-short{display:inline}
+  body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
+  .clock{display:none}
+}
+@media (max-width:640px){.state{padding:20px}.rows li{grid-template-columns:minmax(0,1fr)}.rows .btn{justify-self:start}}
+.muted-n{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.hl>span{transform:none}}
 </style>
 </head>
@@ -415,6 +543,14 @@ html[data-live="on"] .simple{max-width:760px;padding-bottom:0}
 <header class="nav">
   <div class="nav-l">
     <a class="brand" href="#top" aria-label="Doublespeak home"><svg viewBox="334 126 366 338" aria-hidden="true" shape-rendering="crispEdges"><g color="currentColor"><path d="M338.0 277.0 L340.0 277.0 L342.0 277.0 L344.0 276.8 L346.0 276.4 L348.0 275.8 L350.0 275.4 L352.0 274.6 L354.0 273.8 L356.0 272.8 L358.0 271.8 L360.0 270.6 L362.0 269.0 L364.0 267.0 L366.0 264.6 L368.0 261.8 L370.0 258.6 L372.0 255.0 L374.0 250.6 L376.0 245.6 L378.0 240.0 L380.0 234.0 L382.0 228.4 L384.0 223.4 L386.0 218.8 L388.0 215.0 L390.0 212.0 L392.0 209.8 L394.0 208.0 L396.0 206.4 L398.0 205.2 L400.0 204.4 L402.0 204.0 L404.0 204.0 L406.0 204.0 L408.0 204.0 L410.0 204.4 L412.0 205.2 L414.0 206.4 L416.0 207.6 L418.0 209.2 L420.0 211.2 L422.0 213.8 L424.0 217.4 L426.0 222.2 L428.0 228.4 L430.0 235.6 L432.0 243.8 L434.0 252.0 L436.0 260.0 L438.0 266.6 L440.0 271.8 L442.0 275.8 L444.0 279.2 L446.0 281.6 L448.0 283.2 L450.0 284.0 L452.0 284.6 L454.0 284.8 L456.0 284.2 L458.0 283.2 L460.0 281.8 L462.0 279.8 L464.0 276.8 L466.0 272.8 L468.0 268.2 L470.0 262.0 L472.0 254.4 L474.0 245.6 L476.0 235.4 L478.0 225.0 L480.0 214.4 L482.0 203.8 L484.0 194.2 L486.0 186.0 L488.0 178.6 L490.0 172.4 L492.0 167.2 L494.0 163.0 L496.0 159.4 L498.0 156.4 L500.0 154.0 L502.0 152.2 L504.0 150.6 L506.0 149.6 L508.0 148.8 L510.0 148.5 L511.0 148.3 L511.0 423.7 L510.0 423.5 L508.0 423.2 L506.0 422.8 L504.0 422.2 L502.0 421.2 L500.0 419.8 L498.0 418.0 L496.0 415.8 L494.0 413.2 L492.0 409.8 L490.0 405.6 L488.0 400.6 L486.0 394.6 L484.0 388.4 L482.0 382.6 L480.0 377.4 L478.0 373.4 L476.0 370.4 L474.0 368.0 L472.0 366.4 L470.0 365.4 L468.0 364.8 L466.0 364.4 L464.0 364.0 L462.0 364.0 L460.0 364.0 L458.0 364.0 L456.0 364.0 L454.0 363.6 L452.0 362.8 L450.0 361.6 L448.0 359.8 L446.0 356.8 L444.0 352.8 L442.0 347.0 L440.0 339.2 L438.0 330.2 L436.0 321.2 L434.0 314.8 L432.0 310.2 L430.0 307.4 L428.0 305.8 L426.0 304.8 L424.0 304.2 L422.0 304.2 L420.0 304.8 L418.0 306.2 L416.0 308.0 L414.0 310.8 L412.0 315.2 L410.0 320.8 L408.0 325.8 L406.0 330.0 L404.0 333.4 L402.0 336.0 L400.0 337.6 L398.0 338.8 L396.0 339.6 L394.0 340.0 L392.0 340.0 L390.0 340.0 L388.0 339.8 L386.0 339.2 L384.0 337.6 L382.0 336.2 L380.0 334.4 L378.0 331.6 L376.0 328.2 L374.0 324.0 L372.0 319.4 L370.0 315.0 L368.0 311.4 L366.0 308.4 L364.0 305.6 L362.0 303.2 L360.0 301.4 L358.0 300.2 L356.0 299.0 L354.0 298.0 L352.0 297.4 L350.0 296.6 L348.0 296.0 L346.0 295.4 L344.0 295.0 L342.0 295.0 L340.0 295.0 L338.0 295.0Z" fill="currentColor"/><rect x="556.5" y="164.5" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="181.9" width="18.1" height="18.2" fill="#189192"/><rect x="573.8" y="181.9" width="35.4" height="18.2" fill="#189192"/><rect x="625.9" y="181.9" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="199.2" width="18.1" height="18.2" fill="#189192"/><rect x="608.6" y="199.2" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="216.6" width="52.8" height="18.2" fill="#189192"/><rect x="591.2" y="216.6" width="35.4" height="18.2" fill="#189192"/><rect x="625.9" y="216.6" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="233.9" width="35.4" height="18.2" fill="#189192"/><rect x="591.2" y="233.9" width="35.4" height="18.2" fill="#189192"/><rect x="625.9" y="233.9" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="251.3" width="35.4" height="18.2" fill="#189192"/><rect x="573.8" y="251.3" width="52.8" height="18.2" fill="#189192"/><rect x="625.9" y="251.3" width="18.1" height="18.2" fill="#F73C45"/><rect x="643.3" y="251.3" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="268.6" width="104.8" height="18.2" fill="#189192"/><rect x="625.9" y="268.6" width="18.1" height="18.2" fill="#F73C45"/><rect x="643.3" y="268.6" width="35.4" height="18.2" fill="#189192"/><rect x="521.8" y="285.9" width="104.8" height="18.2" fill="#189192"/><rect x="625.9" y="285.9" width="18.1" height="18.2" fill="#F73C45"/><rect x="643.3" y="285.9" width="35.4" height="18.2" fill="#189192"/><rect x="521.8" y="303.3" width="87.4" height="18.2" fill="#189192"/><rect x="625.9" y="303.3" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="320.7" width="87.4" height="18.2" fill="#189192"/><rect x="608.6" y="320.7" width="35.4" height="18.2" fill="#F73C45"/><rect x="521.8" y="338.0" width="52.8" height="18.2" fill="#189192"/><rect x="591.2" y="338.0" width="18.1" height="18.2" fill="#189192"/><rect x="608.6" y="338.0" width="35.4" height="18.2" fill="#F73C45"/><rect x="521.8" y="355.4" width="52.8" height="18.2" fill="#189192"/><rect x="591.2" y="355.4" width="18.1" height="18.2" fill="#189192"/><rect x="608.6" y="355.4" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="372.7" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="390.0" width="18.1" height="18.2" fill="#189192"/><rect x="573.8" y="390.0" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="424.8" width="18.1" height="18.2" fill="#189192"/></g></svg>Doublespeak</a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#/home" data-page="home">Home</a>
+      <a href="#/live" data-page="live">Live call<i aria-hidden="true"></i></a>
+      <a href="#/history" data-page="history">History</a>
+      <a href="#/people" data-page="people">Trusted people</a>
+      <a href="#/block" data-page="block">Block and spam</a>
+      <a href="#/settings" data-page="settings">Settings</a>
+    </nav>
     <span class="clock" id="clock" aria-hidden="true"></span>
   </div>
   <div class="nav-r">
@@ -436,6 +572,7 @@ html[data-live="on"] .simple{max-width:760px;padding-bottom:0}
     <div><b>Possible scam in progress</b><p id="red-advice">Hang up and call back on a number you already have. Do not send money or read out any codes.</p></div>
     <button class="btn" id="red-dismiss" type="button">Dismiss</button>
   </div>
+  <div class="page" id="pg-live">
   <section class="empty" id="empty" aria-labelledby="empty-h">
     <div class="empty-on">
       <h1 id="empty-h">Waiting for a call</h1>
@@ -499,6 +636,19 @@ html[data-live="on"] .simple{max-width:760px;padding-bottom:0}
       <button type="submit">Save contact</button>
     </form>
     </details>
+    </div>
+    <div class="postcall" id="postcall">
+      <h2>After the call</h2>
+      <p class="note">On a Mac, Tell does not see the caller’s number. If you want to block them, type it from your call log.</p>
+      <div class="formrow">
+        <label class="field">Their number<input id="pc-number" type="tel" inputmode="tel" autocomplete="off" maxlength="40" placeholder="+1 555 0100"></label>
+        <div class="postact">
+          <button class="btn primary" type="button" id="pc-block">Block this caller</button>
+          <button class="btn" type="button" id="pc-spam">Report as spam</button>
+          <button class="link" type="button" id="pc-notscam">Not a scam</button>
+        </div>
+      </div>
+      <p class="msg" id="pc-msg" role="status"></p>
     </div>
     <div class="simple-actions">
       <button class="bigbtn" id="simple-rec" type="button" aria-pressed="false"><span class="sq" aria-hidden="true"></span><span id="simple-reclabel">Record</span></button>
@@ -614,6 +764,135 @@ html[data-live="on"] .simple{max-width:760px;padding-bottom:0}
 
     </div>
   </details>
+  </div><!-- /pg-live -->
+
+  <section class="page" id="pg-home" aria-labelledby="home-h">
+    <div class="pg">
+      <div class="home-hero" id="home-hero" data-s="checking">
+        <h1 id="home-h" class="home-state">Checking</h1>
+        <div class="px home-px" id="home-px" aria-hidden="true"></div>
+        <p class="pg-lede" id="home-lede">Tell starts listening when you pick up.</p>
+        <p class="home-sub" id="home-sub">Looking for the Tell engine on this machine.</p>
+        <div class="home-act">
+          <button class="btn primary" type="button" data-go="live" id="home-open">Open live view</button>
+          <button class="link" type="button" data-go="settings">How listening works</button>
+        </div>
+      </div>
+
+      <div class="cols pg-sec">
+        <section aria-labelledby="home-last-h">
+          <h2 id="home-last-h">Last call</h2>
+          <div id="home-last"></div>
+        </section>
+        <section aria-labelledby="home-priv-h">
+          <h2 id="home-priv-h">Privacy, measured</h2>
+          <div class="facts" id="home-facts"></div>
+        </section>
+      </div>
+
+      <section class="pg-sec" aria-labelledby="home-next-h">
+        <h2 id="home-next-h">Set up in a minute</h2>
+        <ul class="nextlist" id="home-next"></ul>
+      </section>
+    </div>
+  </section>
+
+  <section class="page" id="pg-history" aria-labelledby="hist-h">
+    <div class="pg">
+      <h1 id="hist-h">History</h1>
+      <p class="pg-lede">Calls Tell flagged, kept only on this device, encrypted, and only if you turn it on. No audio, no words, no phone numbers.</p>
+      <div id="hist-body" aria-live="polite"></div>
+      <div class="home-act" id="hist-act" hidden>
+        <button class="btn" type="button" id="hist-refresh">Refresh</button>
+        <button class="btn danger" type="button" id="hist-wipe">Delete history</button>
+      </div>
+      <p class="msg" id="hist-msg" role="status"></p>
+    </div>
+  </section>
+
+  <section class="page" id="pg-people" aria-labelledby="people-h">
+    <div class="pg">
+      <h1 id="people-h">Trusted people</h1>
+      <p class="pg-lede">When a call looks like a scam, one tap calls them. Their numbers stay in this browser and are never sent anywhere.</p>
+      <div id="people-slot"></div>
+    </div>
+  </section>
+
+  <section class="page" id="pg-block" aria-labelledby="block-h">
+    <div class="pg">
+      <h1 id="block-h">Block and spam</h1>
+      <p class="pg-lede">Numbers you never want to hear from again. Tell on a Mac does not see the caller’s number, so you add it yourself after the call.</p>
+      <p class="msg" id="block-mode" role="status"></p>
+
+      <section class="pg-sec" aria-labelledby="block-add-h">
+        <h2 id="block-add-h">Block a number</h2>
+        <form class="formrow" id="block-form" novalidate>
+          <label class="field">Number<input id="block-number" name="number" type="tel" inputmode="tel" autocomplete="off" maxlength="40" placeholder="+1 555 0100" required></label>
+          <label class="field">Name, if you know it<input id="block-label" name="label" maxlength="60" placeholder="Bank impostor"></label>
+          <label class="field">Why<input id="block-reason" name="reason" maxlength="120" placeholder="Asked for gift cards"></label>
+          <button class="btn primary" type="submit">Block number</button>
+        </form>
+        <p class="msg" id="block-msg" role="status"></p>
+      </section>
+
+      <section class="pg-sec" aria-labelledby="block-check-h">
+        <h2 id="block-check-h">Check a number</h2>
+        <form class="formrow two" id="check-form" novalidate>
+          <label class="field">Number<input id="check-number" type="tel" inputmode="tel" autocomplete="off" maxlength="40" placeholder="+1 555 0100" required></label>
+          <button class="btn" type="submit">Check</button>
+        </form>
+        <p class="msg" id="check-msg" role="status"></p>
+      </section>
+
+      <section class="pg-sec" aria-labelledby="block-list-h">
+        <h2 id="block-list-h">Your list</h2>
+        <div id="block-body" aria-live="polite"></div>
+        <p class="note msg" id="spam-count"></p>
+      </section>
+    </div>
+  </section>
+
+  <section class="page" id="pg-settings" aria-labelledby="set-h">
+    <div class="pg">
+      <h1 id="set-h">Settings</h1>
+
+      <section class="pg-sec" aria-labelledby="set-auto-h">
+        <h2 id="set-auto-h">Listening starts when you pick up</h2>
+        <p class="pg-lede" style="margin-top:8px">There is no button to press. When a call is answered and plays through this Mac, Tell starts listening to the caller’s side only. It never speaks to the caller. Stop it any time with Stop on the listening bar, or quit the engine.</p>
+        <p class="msg" id="set-auto-state" role="status"></p>
+        <label class="opt" style="margin-top:12px;max-width:640px">
+          <input type="checkbox" id="pref-follow" checked>
+          <b>Switch to the live view when a call starts</b>
+          <span>Only changes this page. The listening itself is done by the engine.</span>
+        </label>
+      </section>
+
+      <section class="pg-sec" aria-labelledby="set-sens-h">
+        <h2 id="set-sens-h">How much to show</h2>
+        <fieldset class="choice" style="margin-top:12px" aria-labelledby="set-sens-h">
+          <label class="opt"><input type="radio" name="sens" value="quiet"><b>Quiet</b><span>Only the red banner for a scam pattern. Hides the amber caution line.</span></label>
+          <label class="opt"><input type="radio" name="sens" value="sensitive" checked><b>Sensitive</b><span>Also shows a caution line when something about a call is off.</span></label>
+        </fieldset>
+        <p class="note msg">This changes what this page shows. The detector is the same in both.</p>
+      </section>
+
+      <section class="pg-sec" aria-labelledby="set-store-h">
+        <h2 id="set-store-h">What is stored</h2>
+        <div class="facts" id="set-facts"></div>
+      </section>
+
+      <section class="pg-sec" aria-labelledby="set-del-h">
+        <h2 id="set-del-h">Delete everything</h2>
+        <p class="note msg">Wipes the engine’s live buffers, the encrypted history, your block list, trusted people, spam reports and preferences.</p>
+        <div class="home-act"><button class="btn danger" type="button" id="del-ask">Delete everything</button></div>
+        <div class="confirm" id="del-confirm" hidden role="group" aria-label="Confirm delete everything">
+          <button class="btn danger" type="button" id="del-yes">Yes, delete everything</button>
+          <button class="btn" type="button" id="del-no">Cancel</button>
+        </div>
+        <ul class="report" id="del-report" aria-live="polite"></ul>
+      </section>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -621,6 +900,14 @@ html[data-live="on"] .simple{max-width:760px;padding-bottom:0}
   <span id="thr">thresholds n/a</span>
   <span>Legitimate AI callers must say so. An AI that doesn’t is a flag on its own.</span>
 </footer>
+<nav class="tabbar" aria-label="Sections">
+  <a href="#/home" data-page="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9H3z"/></svg><span>Home</span></a>
+  <a href="#/live" data-page="live"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg><span>Live</span><i aria-hidden="true"></i></a>
+  <a href="#/history" data-page="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zM12 7v5l3 2"/></svg><span>History</span></a>
+  <a href="#/people" data-page="people"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-4 3-6 6-6s6 2 6 6M17 8a2.5 2.5 0 110 5M18 14c2 .5 3 2.5 3 5"/></svg><span>People</span></a>
+  <a href="#/block" data-page="block"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zM6 6l12 12"/></svg><span>Block</span></a>
+  <a href="#/settings" data-page="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 12h4M12 12h8M4 17h12M14 5v4M8 10v4M16 15v4"/></svg><span>Settings</span></a>
+</nav>
 <div id="tip" role="tooltip"></div>
 
 <script id="samples-data" type="application/json">{"human":{"tier":"human","p_ai":0.267,"p_scam":0.0,"confidence":1.0,"disclosed_ai":false,"headline":"Sounds human","advice":"No synthetic-voice tells found. If money or codes come up, hang up and call back on a number you already have.","tells":[{"name":"pause_regularity","family":"acoustic","score":0.827,"weight":1.0,"evidence":"6 pauses, lengths fairly even (CV 0.28; humans \u22730.55, TTS \u22720.25)","applicable":true},{"name":"breath_proxy","family":"acoustic","score":0.1,"weight":1.2,"evidence":"7 breath-like events before phrases in 8s of speech","applicable":true},{"name":"pitch_stability","family":"acoustic","score":0.1,"weight":0.9,"evidence":"pitch natural wander (F0 \u2248 163 Hz, variability 0.14)","applicable":true},{"name":"noise_floor","family":"acoustic","score":0.125,"weight":0.8,"evidence":"background is very quiet background (-56 dBFS, varies \u00b14.6 dB)","applicable":true},{"name":"band_limited","family":"acoustic","score":0.5,"weight":0.0,"evidence":"phone-band audio (no content above 4 kHz) \u2014 spectral tells disabled, behavioral tells only","applicable":false},{"name":"neural_onnx","family":"acoustic","score":0.5,"weight":1.8,"evidence":"no ONNX anti-spoof model configured (ANTI_SPOOF_MODEL)","applicable":false},{"name":"neural_hf","family":"acoustic","score":0.5,"weight":0.7,"evidence":"no HF anti-spoof model configured (HF_SPOOF_MODEL)","applicable":false},{"name":"neural_pella","family":"acoustic","score":0.5,"weight":4.0,"evidence":"no Pellav2 model configured (PELLA_MODEL)","applicable":false},{"name":"llm_isms","family":"script","score":0.15,"weight":1.2,"evidence":"no assistant-style phrasing","applicable":true},{"name":"disfluency","family":"script","score":0.1,"weight":1.0,"evidence":"4 fillers/restarts in 44 words (9.1/100)","applicable":true},{"name":"sentence_uniformity","family":"script","score":0.386,"weight":0.6,"evidence":"6 sentences, lengths varied (CV 0.46)","applicable":true},{"name":"contraction_rate","family":"script","score":0.1,"weight":0.5,"evidence":"4 contractions in 44 words","applicable":true},{"name":"urgency","family":"intent","score":0.0,"weight":0.8,"evidence":"no urgency cues","applicable":true},{"name":"payment_rails","family":"intent","score":0.0,"weight":1.5,"evidence":"no payment rails cues","applicable":true},{"name":"impersonation","family":"intent","score":0.0,"weight":1.0,"evidence":"no impersonation cues","applicable":true},{"name":"credential_ask","family":"intent","score":0.0,"weight":1.3,"evidence":"no credential ask cues","applicable":true},{"name":"secrecy","family":"intent","score":0.0,"weight":1.0,"evidence":"no secrecy cues","applicable":true},{"name":"emergency","family":"intent","score":0.0,"weight":0.9,"evidence":"no emergency cues","applicable":true},{"name":"authority_threat","family":"intent","score":0.0,"weight":1.0,"evidence":"no authority threat cues","applicable":true}],"thresholds_version":"2026-11-07.3","egress":{"external_requests":0,"bytes_sent_external":0,"caller_audio_bytes_sent":0,"localhost_requests":0,"context":{"original_sample_rate":16000,"duration_s":14.0,"band_limited":true,"high_band_ratio":0.0,"speech_ratio":0.585},"os_check":"ok","os_outbound_count":0,"os_outbound_seen":[],"os_polls":4},"signature":"ds1:a23078d272c63f39:b5ba292075b8414e35da7806739b0b70","cost":{"provider":"stub","input_tokens":0,"output_tokens":0,"usd":0.0,"latency_ms":145},"reasons":["One voice check leaned toward AI, but the others did not agree."],"model_notes":[],"transcript":"Hey, um, it's Priya. So I was gonna swing by later but, uh, the T is a mess. Are you around after six? Okay cool, I'll text you when I'm close. Oh wait, do you still have my charger? Never mind, I'll grab it.","scores":{"scam":0,"ai_voice":27,"confidence":100,"confidence_label":"high","level":"low","level_reason":"No synthetic-voice or scam signs were found in what we heard.","voice_sure":48,"voice_unresolved":false,"confidence_note":""},"quadrant":{"voice":"human","voice_label":"Voice sounds human","intent":"not_scam","intent_label":"No scam pattern heard","combo":"human_ok","combo_label":"Human voice, no scam pattern heard.","voice_note":"Based on how the voice and wording sounded."}},"ai_undisclosed":{"tier":"ai_undisclosed","p_ai":0.851,"p_scam":0.0,"confidence":1.0,"disclosed_ai":false,"headline":"Likely synthetic, didn't say so","advice":"Legitimate AI callers are required to identify themselves. Treat this as untrusted: hang up and call back on a known number.","tells":[{"name":"pause_regularity","family":"acoustic","score":0.9,"weight":1.0,"evidence":"7 pauses, lengths metronomic (CV 0.05; humans \u22730.55, TTS \u22720.25)","applicable":true},{"name":"breath_proxy","family":"acoustic","score":0.9,"weight":1.2,"evidence":"0 breath-like events before phrases in 11s of speech \u2014 none at all","applicable":true},{"name":"pitch_stability","family":"acoustic","score":0.9,"weight":0.9,"evidence":"pitch unusually steady (F0 \u2248 149 Hz, variability 0.00)","applicable":true},{"name":"noise_floor","family":"acoustic","score":0.58,"weight":0.8,"evidence":"background is digital silence (-108 dBFS, varies \u00b18.3 dB)","applicable":true},{"name":"band_limited","family":"acoustic","score":0.5,"weight":0.0,"evidence":"phone-band audio (no content above 4 kHz) \u2014 spectral tells disabled, behavioral tells only","applicable":false},{"name":"neural_onnx","family":"acoustic","score":0.5,"weight":1.8,"evidence":"no ONNX anti-spoof model configured (ANTI_SPOOF_MODEL)","applicable":false},{"name":"neural_hf","family":"acoustic","score":0.5,"weight":0.7,"evidence":"no HF anti-spoof model configured (HF_SPOOF_MODEL)","applicable":false},{"name":"neural_pella","family":"acoustic","score":0.5,"weight":4.0,"evidence":"no Pellav2 model configured (PELLA_MODEL)","applicable":false},{"name":"llm_isms","family":"script","score":0.95,"weight":1.2,"evidence":"assistant-style phrasing \u00d75: \u201cGreat question\u201d; \u201cAbsolutely,\u201d; \u201cIs there anything else I can help\u201d","applicable":true},{"name":"disfluency","family":"script","score":0.9,"weight":1.0,"evidence":"no fillers, restarts or hesitations in 48 words \u2014 unusually clean","applicable":true},{"name":"sentence_uniformity","family":"script","score":0.892,"weight":0.6,"evidence":"6 sentences, lengths very uniform (CV 0.20)","applicable":true},{"name":"contraction_rate","family":"script","score":0.9,"weight":0.5,"evidence":"0 contractions in 48 words \u2014 formal, written-sounding","applicable":true},{"name":"urgency","family":"intent","score":0.0,"weight":0.8,"evidence":"no urgency cues","applicable":true},{"name":"payment_rails","family":"intent","score":0.0,"weight":1.5,"evidence":"no payment rails cues","applicable":true},{"name":"impersonation","family":"intent","score":0.0,"weight":1.0,"evidence":"no impersonation cues","applicable":true},{"name":"credential_ask","family":"intent","score":0.0,"weight":1.3,"evidence":"no credential ask cues","applicable":true},{"name":"secrecy","family":"intent","score":0.0,"weight":1.0,"evidence":"no secrecy cues","applicable":true},{"name":"emergency","family":"intent","score":0.0,"weight":0.9,"evidence":"no emergency cues","applicable":true},{"name":"authority_threat","family":"intent","score":0.0,"weight":1.0,"evidence":"no authority threat cues","applicable":true}],"thresholds_version":"2026-11-07.3","egress":{"external_requests":0,"bytes_sent_external":0,"caller_audio_bytes_sent":0,"localhost_requests":0,"context":{"original_sample_rate":16000,"duration_s":14.0,"band_limited":true,"high_band_ratio":0.0,"speech_ratio":0.801},"os_check":"ok","os_outbound_count":0,"os_outbound_seen":[],"os_polls":2},"signature":"ds1:ad34de16e763398e:cfefb254fc652a1ab415cd620919887e","cost":{"provider":"stub","input_tokens":0,"output_tokens":0,"usd":0.0,"latency_ms":13},"reasons":["The wording sounds scripted.","The voice may be an AI copy, not a real person."],"model_notes":[],"transcript":"Hi, this is Sarah from Bright Horizons Insurance. I hope you are doing well today. I would be glad to walk you through our updated plans. Great question, the premium is very competitive. Absolutely, I can send the details. Is there anything else I can help you with?","scores":{"scam":0,"ai_voice":85,"confidence":100,"confidence_label":"high","level":"high","level_reason":"The voice looks synthetic and the caller did not say so.","voice_sure":100,"voice_unresolved":false,"confidence_note":""},"quadrant":{"voice":"ai","voice_label":"Voice may be AI","intent":"not_scam","intent_label":"No scam pattern heard","combo":"ai_ok","combo_label":"AI voice, no scam pattern heard.","voice_note":"Based on how the voice and wording sounded."}},"ai_disclosed":{"tier":"ai_disclosed","p_ai":0.812,"p_scam":0.0,"confidence":0.924,"disclosed_ai":true,"headline":"AI \u2014 identified itself","advice":"The caller said it's automated. Fine for appointment reminders and sales; never share codes or payment with an automated caller.","tells":[{"name":"pause_regularity","family":"acoustic","score":0.9,"weight":1.0,"evidence":"7 pauses, lengths metronomic (CV 0.05; humans \u22730.55, TTS \u22720.25)","applicable":true},{"name":"breath_proxy","family":"acoustic","score":0.9,"weight":1.2,"evidence":"0 breath-like events before phrases in 11s of speech \u2014 none at all","applicable":true},{"name":"pitch_stability","family":"acoustic","score":0.9,"weight":0.9,"evidence":"pitch unusually steady (F0 \u2248 149 Hz, variability 0.00)","applicable":true},{"name":"noise_floor","family":"acoustic","score":0.58,"weight":0.8,"evidence":"background is digital silence (-108 dBFS, varies \u00b18.3 dB)","applicable":true},{"name":"band_limited","family":"acoustic","score":0.5,"weight":0.0,"evidence":"phone-band audio (no content above 4 kHz) \u2014 spectral tells disabled, behavioral tells only","applicable":false},{"name":"neural_onnx","family":"acoustic","score":0.5,"weight":1.8,"evidence":"no ONNX anti-spoof model configured (ANTI_SPOOF_MODEL)","applicable":false},{"name":"neural_hf","family":"acoustic","score":0.5,"weight":0.7,"evidence":"no HF anti-spoof model configured (HF_SPOOF_MODEL)","applicable":false},{"name":"neural_pella","family":"acoustic","score":0.5,"weight":4.0,"evidence":"no Pellav2 model configured (PELLA_MODEL)","applicable":false},{"name":"llm_isms","family":"script","score":0.79,"weight":1.2,"evidence":"assistant-style phrasing \u00d72: \u201cI am here to help\u201d; \u201cIs there anything else I can help\u201d","applicable":true},{"name":"disfluency","family":"script","score":0.9,"weight":1.0,"evidence":"no fillers, restarts or hesitations in 46 words \u2014 unusually clean","applicable":true},{"name":"sentence_uniformity","family":"script","score":0.621,"weight":0.6,"evidence":"5 sentences, lengths varied (CV 0.34)","applicable":true},{"name":"contraction_rate","family":"script","score":0.32,"weight":0.5,"evidence":"1 contractions in 46 words","applicable":true},{"name":"urgency","family":"intent","score":0.0,"weight":0.8,"evidence":"no urgency cues","applicable":true},{"name":"payment_rails","family":"intent","score":0.0,"weight":1.5,"evidence":"no payment rails cues","applicable":true},{"name":"impersonation","family":"intent","score":0.0,"weight":1.0,"evidence":"no impersonation cues","applicable":true},{"name":"credential_ask","family":"intent","score":0.0,"weight":1.3,"evidence":"no credential ask cues","applicable":true},{"name":"secrecy","family":"intent","score":0.0,"weight":1.0,"evidence":"no secrecy cues","applicable":true},{"name":"emergency","family":"intent","score":0.0,"weight":0.9,"evidence":"no emergency cues","applicable":true},{"name":"authority_threat","family":"intent","score":0.0,"weight":1.0,"evidence":"no authority threat cues","applicable":true},{"name":"ai_disclosure","family":"intent","score":0.0,"weight":0.0,"evidence":"caller identified itself as AI/automated","applicable":false}],"thresholds_version":"2026-11-07.3","egress":{"external_requests":0,"bytes_sent_external":0,"caller_audio_bytes_sent":0,"localhost_requests":0,"context":{"original_sample_rate":16000,"duration_s":14.0,"band_limited":true,"high_band_ratio":0.0,"speech_ratio":0.801},"os_check":"ok","os_outbound_count":0,"os_outbound_seen":[],"os_polls":2},"signature":"ds1:ad34de16e763398e:842f348d7a4451b755f2d7d2e2891847","cost":{"provider":"stub","input_tokens":0,"output_tokens":0,"usd":0.0,"latency_ms":13},"reasons":["The caller said it is an automated assistant."],"model_notes":[],"transcript":"Hello, I'm an AI assistant calling on behalf of Summit Realty. This call is AI generated. I am here to help schedule a showing for the unit you inquired about. Would Wednesday at noon work for you? Is there anything else I can help you with?","scores":{"scam":0,"ai_voice":81,"confidence":92,"confidence_label":"high","level":"low","level_reason":"The caller said it is automated, and no scam wording was found.","voice_sure":91,"voice_unresolved":false,"confidence_note":""},"quadrant":{"voice":"ai","voice_label":"Voice may be AI","intent":"not_scam","intent_label":"No scam pattern heard","combo":"ai_ok","combo_label":"AI voice, no scam pattern heard.","voice_note":"The caller said it is automated."}},"scam":{"tier":"scam","p_ai":0.756,"p_scam":0.98,"confidence":0.99,"disclosed_ai":false,"headline":"Scam pattern","advice":"Hang up. Do not send money, cards, or codes. Call the person or organisation back on a number you already have.","tells":[{"name":"pause_regularity","family":"acoustic","score":0.9,"weight":1.0,"evidence":"7 pauses, lengths metronomic (CV 0.05; humans \u22730.55, TTS \u22720.25)","applicable":true},{"name":"breath_proxy","family":"acoustic","score":0.9,"weight":1.2,"evidence":"0 breath-like events before phrases in 11s of speech \u2014 none at all","applicable":true},{"name":"pitch_stability","family":"acoustic","score":0.9,"weight":0.9,"evidence":"pitch unusually steady (F0 \u2248 149 Hz, variability 0.00)","applicable":true},{"name":"noise_floor","family":"acoustic","score":0.58,"weight":0.8,"evidence":"background is digital silence (-108 dBFS, varies \u00b18.3 dB)","applicable":true},{"name":"band_limited","family":"acoustic","score":0.5,"weight":0.0,"evidence":"phone-band audio (no content above 4 kHz) \u2014 spectral tells disabled, behavioral tells only","applicable":false},{"name":"neural_onnx","family":"acoustic","score":0.5,"weight":1.8,"evidence":"no ONNX anti-spoof model configured (ANTI_SPOOF_MODEL)","applicable":false},{"name":"neural_hf","family":"acoustic","score":0.5,"weight":0.7,"evidence":"no HF anti-spoof model configured (HF_SPOOF_MODEL)","applicable":false},{"name":"neural_pella","family":"acoustic","score":0.5,"weight":4.0,"evidence":"no Pellav2 model configured (PELLA_MODEL)","applicable":false},{"name":"llm_isms","family":"script","score":0.15,"weight":1.2,"evidence":"no assistant-style phrasing","applicable":true},{"name":"disfluency","family":"script","score":0.9,"weight":1.0,"evidence":"no fillers, restarts or hesitations in 48 words \u2014 unusually clean","applicable":true},{"name":"sentence_uniformity","family":"script","score":0.548,"weight":0.6,"evidence":"5 sentences, lengths varied (CV 0.38)","applicable":true},{"name":"contraction_rate","family":"script","score":0.1,"weight":0.5,"evidence":"5 contractions in 48 words","applicable":true},{"name":"urgency","family":"intent","score":0.75,"weight":0.8,"evidence":"urgency: \u201cright now\u201d, \u201cwithin the hour\u201d","applicable":true},{"name":"payment_rails","family":"intent","score":0.75,"weight":1.5,"evidence":"payment rails: \u201cwire the money\u201d, \u201cbail money\u201d","applicable":true},{"name":"impersonation","family":"intent","score":0.75,"weight":1.0,"evidence":"impersonation: \u201cthis is your grandson\u201d, \u201cofficer\u201d","applicable":true},{"name":"credential_ask","family":"intent","score":0.0,"weight":1.3,"evidence":"no credential ask cues","applicable":true},{"name":"secrecy","family":"intent","score":0.55,"weight":1.0,"evidence":"secrecy: \u201cdon't tell mom\u201d","applicable":true},{"name":"emergency","family":"intent","score":0.95,"weight":0.9,"evidence":"emergency: \u201cgot in an accident\u201d, \u201cI'm in trouble\u201d, \u201cneed bail\u201d","applicable":true},{"name":"authority_threat","family":"intent","score":0.0,"weight":1.0,"evidence":"no authority threat cues","applicable":true}],"thresholds_version":"2026-11-07.3","egress":{"external_requests":0,"bytes_sent_external":0,"caller_audio_bytes_sent":0,"localhost_requests":0,"context":{"original_sample_rate":16000,"duration_s":14.0,"band_limited":true,"high_band_ratio":0.0,"speech_ratio":0.801},"os_check":"ok","os_outbound_count":0,"os_outbound_seen":[],"os_polls":2},"signature":"ds1:ad34de16e763398e:ae1f634fcf4f6cf47b5da9d23091018f","cost":{"provider":"stub","input_tokens":0,"output_tokens":0,"usd":0.0,"latency_ms":13},"reasons":["They asked you to pay or send money.","The voice may be an AI copy, not a real person.","The wording sounds scripted.","They described an emergency to scare you."],"model_notes":[],"transcript":"Grandma, it's me, this is your grandson. I'm in trouble, I got in an accident and I'm at the police station. I need bail money right now, please don't tell mom or dad. The officer says you can wire the money within the hour. Please hurry, I'm scared.","scores":{"scam":98,"ai_voice":76,"confidence":99,"confidence_label":"high","level":"high","level_reason":"Scam wording was detected on this call.","voice_sure":77,"voice_unresolved":false,"confidence_note":""},"quadrant":{"voice":"ai","voice_label":"Voice may be AI","intent":"scam","intent_label":"Scam pattern in what was said","combo":"ai_scam","combo_label":"AI voice and scam pattern in what was said.","voice_note":"Based on how the voice and wording sounded."}}}</script>
@@ -677,10 +964,10 @@ async function probe(){
     const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 2500);
     const j = await (await fetch(API + "/health", {cache:"no-store", signal: ctl.signal})).json(); clearTimeout(to);
     try{ const th = await (await fetch(API + "/thresholds", {cache:"no-store"})).json(); if (th && th.P_AI_THRESHOLD > 0 && th.P_AI_THRESHOLD < 1) P_AI_THR = th.P_AI_THRESHOLD; }catch(e){}
-    apiUp = !!j.ok; $("thr").textContent = "thresholds " + String(j.thresholds_version || "");
+    apiUp = !!j.ok; HEALTH = j; probed = true; renderHome(); $("thr").textContent = "thresholds " + String(j.thresholds_version || "");
     setChip("up", `<span>On this machine · </span><b>${Number((j.egress||{}).caller_audio_bytes_sent) || 0} B out</b>`);
   }catch(e){
-    apiUp = false; setChip("demo", "<span>Demo mode · run </span><b>make api</b>");
+    apiUp = false; probed = true; renderHome(); setChip("demo", "<span>Demo mode · run </span><b>make api</b>");
   }
 }
 
@@ -1223,7 +1510,7 @@ function resetSession(){
   emptyEndToken++;
   Object.assign(L, {active:true, ended:false, endReason:"", tick:-1, ticks:[], tier:null, dismissed:false, sigs:{}, lost:false});
   barNote = "";
-  HTML.dataset.ended = "0"; HTML.dataset.alert = "none"; HTML.dataset.warm = "1"; HTML.dataset.tier = "unsure";
+  HTML.dataset.ended = "0"; HTML.dataset.heard = "0"; HTML.dataset.alert = "none"; HTML.dataset.warm = "1"; HTML.dataset.tier = "unsure";
   $("changed").hidden = true; $("caution").hidden = true; $("redbar").hidden = true; HTML.dataset.banner = "0"; $("livetx").innerHTML = ""; $("tl").innerHTML = "";
   swapHeadline("Listening", "Gathering the first few seconds before judging.", true);
   $("tierlabel").textContent = "Listening"; showProvenance("");
@@ -1231,6 +1518,7 @@ function resetSession(){
   setLive("on"); drawBar();
 }
 let fadeTimer = 0;
+function flipRule(){ const r = $("rule"); r.classList.remove("flip"); void r.offsetWidth; if (!REDUCED) r.classList.add("flip"); }
 function swapHeadline(h, a, now){
   const hd = $("headline");
   if (hd.textContent === h && $("advice").textContent === a) return;
@@ -1241,7 +1529,8 @@ function swapHeadline(h, a, now){
 function endSession(reason){
   if (!L.active) return;
   L.elapsed = Math.max(L.elapsed, liveClock()); L.ended = true; L.endReason = reason || "";
-  HTML.dataset.ended = "1"; $("caution").hidden = true; $("redbar").hidden = true; HTML.dataset.banner = "0"; drawBar();
+  HTML.dataset.ended = "1"; HTML.dataset.heard = $("livetx").textContent.trim() ? "1" : "0"; $("caution").hidden = true; $("redbar").hidden = true; HTML.dataset.banner = "0"; drawBar();
+  if ($("livetx").textContent.trim()){ LAST = {tier: L.tier || "unsure", headline: TIER[L.tier || "unsure"], note: L.source || "", when: "Ended " + new Date().toLocaleTimeString([], {timeStyle:"short"}) + ", lasted " + mmss(L.elapsed)}; renderHome(); }
   if (!$("livetx").textContent.trim()) {   // the call ended and no words were ever heard: say so, do not leave "Gathering..." up
     swapHeadline("Nothing was heard", "No speech reached Doublespeak on this call. Check that the call is answered on this Mac and plays through its speakers.", true);
     $("tierlabel").textContent = "Nothing heard";
@@ -1299,7 +1588,7 @@ function onVerdict(e){
   swapHeadline(txt.h, txt.a);
   if (!warm){
     if (prev && prev !== tier){
-      $("changed").hidden = false; $("changed").innerHTML = `Changed to <b>${esc(TIER[tier] || tier)}</b> at ${mmss(e.elapsed_s)}, was ${esc(TIER[prev] || prev)}.`;
+      flipRule(); $("changed").hidden = false; $("changed").innerHTML = `Changed to <b>${esc(TIER[tier] || tier)}</b> at ${mmss(e.elapsed_s)}, was ${esc(TIER[prev] || prev)}.`;
     }
     L.tier = tier;
   }
@@ -1372,6 +1661,243 @@ function liveInit(){
   try{ if (new URLSearchParams(location.search).get("demo") === "1") openMore(); }catch(e){}
   if (typeof EventSource === "undefined") setLive("offline"); else connect();
 }
+
+/* ---------- product shell: pages, home, history, block list, settings ---------- */
+const PAGES = ["home", "live", "history", "people", "block", "settings"];
+let HEALTH = null, HSTAT = null, LAST = null, page = "home", probed = false;
+async function refreshHealth(){ const h = await jget("/health"); if (h.ok && h.j){ HEALTH = h.j; renderHome(); } const s = await jget("/history/status"); if (s.ok){ HSTAT = s.j; renderHome(); } }
+const PREFS = (() => { try{ return Object.assign({follow:true, sens:"sensitive"}, JSON.parse(localStorage.getItem("ds-prefs") || "{}")); }catch(e){ return {follow:true, sens:"sensitive"}; } })();
+const savePrefs = () => { try{ localStorage.setItem("ds-prefs", JSON.stringify(PREFS)); }catch(e){} };
+const lget = (k, d) => { try{ const v = JSON.parse(localStorage.getItem(k) || "null"); return v == null ? d : v; }catch(e){ return d; } };
+const lset = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } };
+async function jget(path, opt){
+  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 4000);
+  try{ const r = await fetch(API + path, Object.assign({cache:"no-store", signal: ctl.signal}, opt || {}));
+    let j = null; try{ j = await r.json(); }catch(e){}
+    return {ok: r.ok, status: r.status, j};
+  }catch(e){ return {ok:false, status:0, j:null}; } finally{ clearTimeout(to); }
+}
+const jsend = (method, path, body) => jget(path, {method, headers:{"content-type":"application/json"}, body: body == null ? undefined : JSON.stringify(body)});
+
+/* panel states: one place for loading, empty, offline and error */
+function panel(el, kind, title, text, extra){
+  const px = kind === "loading" ? '<div class="px" aria-hidden="true">' + Array.from({length:8}, (_, i) => `<i style="--i:${i}"></i>`).join("") + "</div>" : "";
+  el.innerHTML = `<div class="state" data-k="${kind}">${px}<h3>${esc(title)}</h3>${text ? `<p>${esc(text)}</p>` : ""}${extra || ""}</div>`;
+}
+function msg(id, kind, text){ const m = $(id); m.dataset.k = kind || ""; m.textContent = text || ""; }
+
+/* ---------- navigation ---------- */
+function go(p, push){
+  if (!PAGES.includes(p)) p = "home";
+  const was = page; page = p;
+  HTML.dataset.page = p;
+  document.querySelectorAll("[data-page]").forEach(a => { if (a.tagName === "A") { if (a.dataset.page === p) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); } });
+  // the trust block is one element: it lives in the live view during a call and on its own page otherwise
+  const tb = document.querySelector(".trustblock");
+  if (p === "people") $("people-slot").appendChild(tb);
+  else if (tb.parentElement.id === "people-slot") $("simple").insertBefore(tb, document.querySelector(".simple-actions"));
+  if (push !== false && was !== p) { try{ history.replaceState(null, "", location.pathname + location.search + "#/" + p); }catch(e){} }
+  document.title = (p === "home" ? "" : ({live:"Live call", history:"History", people:"Trusted people", block:"Block and spam", settings:"Settings"}[p] + " | ")) + "Tell";
+  if (p === "history") loadHistory();
+  if (p === "block") loadBlock();
+  if (p === "settings") renderSettings();
+  if (p === "home"){ renderHome(); refreshHealth(); }
+  if (was !== p) window.scrollTo(0, 0);
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-go]"); if (b){ e.preventDefault(); go(b.dataset.go); return; }
+  const a = e.target.closest("a[data-page]"); if (a){ e.preventDefault(); go(a.dataset.page); }
+});
+window.addEventListener("hashchange", () => { const p = (location.hash.match(/^#\/(\w+)/) || [])[1]; if (p && p !== page) go(p, false); });
+
+/* ---------- home ---------- */
+const tierWord = t => TIER[t] || t;
+function renderHome(){
+  const hero = $("home-hero"); if (!hero) return;
+  let s, h, sub;
+  if (mode === "on"){ s = "live"; h = "Listening now"; sub = "A call is in progress. Open the live view to see the verdict as it changes."; }
+  else if (conn.ok || apiUp){ s = "armed"; h = "Armed"; sub = "Waiting for a call to play on this Mac. Answer a call on your iPhone through Calls on Other Devices, or on this Mac, and it starts by itself."; }
+  else if (conn.tries > 0 || probed){ s = "off"; h = "Not connected"; sub = "The engine is not running. Start it in a terminal and this page connects by itself."; }
+  else { s = "checking"; h = "Checking"; sub = "Looking for the Tell engine on this machine."; }
+  hero.dataset.s = s; $("home-h").textContent = h; $("home-sub").textContent = sub;
+  $("home-open").textContent = mode === "on" ? "Open the live call" : "Open live view";
+  const px = $("home-px"); if (!px.children.length) makePx(px, 20);
+  [...px.children].forEach((c, i) => c.classList.toggle("on", s === "armed" || s === "live" ? i < 20 : s === "off" ? i < 3 : i < 8));
+  // last call: this page only (memory), then the opt-in history if it is on
+  const lc = $("home-last");
+  const rec = LAST || (HIST && HIST[0] ? {tier: HIST[0].tier, headline: tierWord(HIST[0].tier), at: HIST[0].ts, note: "From your history"} : null);
+  if (rec) lc.innerHTML = `<div class="lastcall" data-tier="${esc(rec.tier || "unsure")}"><b>${esc(rec.headline)}</b><span>${esc(rec.note || "")}</span><span>${esc(rec.when || (rec.at ? new Date(rec.at).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}) : ""))}</span></div><div class="home-act"><button class="link" type="button" data-go="${LAST ? "live" : "history"}">${LAST ? "See that call" : "Open history"}</button></div>`;
+  else lc.innerHTML = `<p class="pg-lede" style="margin-top:12px;font-size:16px">No call yet on this page. Your next call shows up here when it ends. Nothing is kept after you close it, unless you turn on history.</p>`;
+  renderFacts($("home-facts"), true);
+  if (page === "settings") autoState();
+  const next = [];
+  if (!lget("ds-contacts", []).length) next.push(["Add someone you would call if a call felt wrong.", "people", "Add a trusted person"]);
+  if (!(HSTAT && HSTAT.enabled)) next.push(["Keep a private list of flagged calls on this device. Off by default.", "history", "See how"]);
+  next.push(["Block a number you never want to hear from again.", "block", "Open block list"]);
+  $("home-next").innerHTML = next.map(n => `<li><span>${esc(n[0])}</span><button class="link" type="button" data-go="${n[1]}">${esc(n[2])}</button></li>`).join("");
+}
+function renderFacts(el, short){
+  const e = (HEALTH && HEALTH.egress) || null, os = (HEALTH && HEALTH.os_network) || null;
+  const bytes = e ? (Number(e.caller_audio_bytes_sent) || 0) : null;
+  const osTxt = !HEALTH ? "Engine not connected" : !os ? "Not reported" : os.os_check !== "ok" ? "Not measurable here" : String(os.os_outbound_count) + " connections";
+  const rows = [];
+  rows.push(`<div><span>Caller audio sent off this device</span><b class="${short ? "big" : ""}">${bytes == null ? "n/a" : bytes + " B"}</b></div>`);
+  rows.push(`<div><span>Outbound connections seen by the operating system</span><b>${esc(osTxt)}</b></div>`);
+  rows.push(`<div><span>Listens to</span><b>The caller’s side only</b></div>`);
+  rows.push(`<div><span>Stored by default</span><b>Nothing</b></div>`);
+  if (!short){
+    rows.push(`<div><span>History of flagged calls</span><b>${!HSTAT ? "Engine not connected" : HSTAT.enabled ? (HSTAT.available ? "On, encrypted, " + (HSTAT.count || 0) + " saved" : "On, unavailable") : "Off"}</b></div>`);
+    rows.push(`<div><span>Trusted people</span><b>${lget("ds-contacts", []).length} in this browser</b></div>`);
+    rows.push(`<div><span>Block list</span><b>${blockMode === "engine" ? "On the engine" : "In this browser"}</b></div>`);
+    rows.push(`<div><span>Audio and transcripts</span><b>Never saved</b></div>`);
+  }
+  el.innerHTML = rows.join("");
+}
+
+/* ---------- history (existing encrypted opt-in endpoints) ---------- */
+let HIST = null;
+async function loadHistory(){
+  const body = $("hist-body"); $("hist-act").hidden = true; msg("hist-msg", "", "");
+  panel(body, "loading", "Reading your history");
+  const st = await jget("/history/status");
+  if (!st.ok){
+    HSTAT = null; panel(body, "offline", "Engine not connected", "History lives on the engine. Start it and this page connects by itself.", "<code>make api</code>"); return;
+  }
+  HSTAT = st.j; renderHome();
+  if (!HSTAT.enabled){
+    panel(body, "empty", "History is off", "Nothing is being kept. To keep a private, encrypted list of flagged calls on this device, start the engine with the setting below. Each entry holds the time, the verdict and the top reasons, never audio, words or numbers.", "<code>DOUBLESPEAK_HISTORY=1 make api</code>"); return;
+  }
+  if (!HSTAT.available){
+    panel(body, "error", "History is on but cannot run", HSTAT.reason ? "The engine says: " + HSTAT.reason + "." : "The engine could not open its key store.", ""); return;
+  }
+  const r = await jget("/history");
+  if (!r.ok || !r.j){ panel(body, "error", "Could not read history", "The engine answered with an error. Try again in a moment.", '<button class="btn" type="button" id="hist-retry">Try again</button>'); const b = $("hist-retry"); if (b) b.addEventListener("click", loadHistory); return; }
+  if (String(r.j.status).startsWith("unavailable")){ panel(body, "error", "History is locked", String(r.j.status), ""); return; }
+  HIST = r.j.records || []; renderHome();
+  $("hist-act").hidden = false;
+  if (!HIST.length){ panel(body, "empty", "No flagged calls yet", "When Tell flags a call it is added here, on this device only."); return; }
+  body.innerHTML = `<ul class="rows">${HIST.map(x => {
+    const tells = (x.tells || []).map(n => NAMES[n] || n).join(", ");
+    return `<li data-tier="${esc(x.tier)}"><div class="main"><b class="tag">${esc(tierWord(x.tier))}</b><span>${esc(new Date(x.ts).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}))}${tells ? ". Top reasons: " + esc(tells) : ""}</span></div><span class="muted-n">Voice ${esc(x.p_ai)}, wording ${esc(x.p_scam)}</span></li>`;
+  }).join("")}</ul><p class="msg">${HIST.length} saved, newest first${r.j.skipped ? ", " + r.j.skipped + " could not be read" : ""}. Scores, not probabilities.</p>`;
+}
+$("hist-refresh").addEventListener("click", loadHistory);
+$("hist-wipe").addEventListener("click", async () => {
+  if (!confirm("Delete the saved history on this device? This cannot be undone.")) return;
+  const r = await jsend("DELETE", "/history");
+  if (r.ok){ HIST = []; loadHistory(); msg("hist-msg", "ok", "History deleted."); } else msg("hist-msg", "err", "Could not delete history. The engine did not answer.");
+});
+
+/* ---------- block and spam (engine contract, local fallback) ---------- */
+let blockMode = "unknown", BLOCK = [];
+const cleanNumber = s => String(s || "").replace(/[^\d+]/g, "");
+const validNumber = s => { const d = cleanNumber(s); return d.replace(/\D/g, "").length >= 5 && d.length <= 20; };
+const sameNumber = (a, b) => cleanNumber(a).replace(/^\+/, "") === cleanNumber(b).replace(/^\+/, "");
+async function loadBlock(){
+  const body = $("block-body"); panel(body, "loading", "Loading your list");
+  const r = await jget("/blocklist");
+  if (r.ok && r.j && Array.isArray(r.j.items)){ blockMode = "engine"; BLOCK = r.j.items; msg("block-mode", "", "Stored on the engine, on this machine."); }
+  else {
+    blockMode = "local"; BLOCK = lget("ds-blocklist", []);
+    msg("block-mode", "", r.status === 0 ? "The engine is not connected, so your list is kept in this browser only." : "This engine has no block list yet, so your list is kept in this browser only.");
+  }
+  drawBlock(); renderSpamCount();
+}
+function drawBlock(){
+  const body = $("block-body");
+  if (!BLOCK.length){ panel(body, "empty", "Nothing blocked yet", "Add a number above after a call you did not want."); return; }
+  body.innerHTML = `<ul class="rows">${BLOCK.map(b => `<li><div class="main"><b>${esc(b.label || b.number)}</b><span>${b.label ? esc(b.number) + ". " : ""}${b.reason ? esc(b.reason) + ". " : ""}${b.added_at ? "Added " + esc(new Date(b.added_at).toLocaleDateString([], {dateStyle:"medium"})) + "." : ""}${b.reports ? " Reported " + esc(b.reports) + (b.reports === 1 ? " time." : " times.") : ""}</span></div><button class="btn" type="button" data-unblock="${esc(b.id)}" aria-label="Unblock ${esc(b.label || b.number)}">Unblock</button></li>`).join("")}</ul>`;
+}
+async function addBlock(number, label, reason){
+  if (!validNumber(number)) return {err: "Enter a full phone number, with at least 5 digits."};
+  const body = {number: number.trim()}; if (label) body.label = label; if (reason) body.reason = reason;
+  if (blockMode === "unknown"){ const r0 = await jget("/blocklist"); blockMode = r0.ok && r0.j && Array.isArray(r0.j.items) ? "engine" : "local"; }
+  if (blockMode === "engine"){
+    const r = await jsend("POST", "/blocklist", body);
+    if (r.ok && r.j){ BLOCK = BLOCK.filter(x => x.id !== r.j.id); BLOCK.unshift(r.j); return {ok: true}; }
+    blockMode = "local"; BLOCK = lget("ds-blocklist", []);
+  }
+  if (BLOCK.some(x => sameNumber(x.number, number))) return {ok: true, dup: true};
+  BLOCK.unshift({id: "l" + Date.now().toString(36), number: body.number, label: label || "", reason: reason || "", added_at: new Date().toISOString(), reports: 0});
+  return lset("ds-blocklist", BLOCK) ? {ok: true, local: true} : {err: "This browser would not save it. Private mode may block storage."};
+}
+$("block-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const r = await addBlock($("block-number").value, $("block-label").value.trim(), $("block-reason").value.trim());
+  if (r.err) return msg("block-msg", "err", r.err);
+  msg("block-msg", "ok", r.dup ? "That number is already on your list." : "Blocked." + (r.local ? " Saved in this browser only." : ""));
+  $("block-form").reset(); drawBlock();
+});
+$("check-form").addEventListener("submit", async e => {
+  e.preventDefault(); const n = $("check-number").value;
+  if (!validNumber(n)) return msg("check-msg", "err", "Enter a full phone number, with at least 5 digits.");
+  if (blockMode === "engine"){
+    const r = await jsend("POST", "/blocklist/check", {number: n.trim()});
+    if (r.ok && r.j) return msg("check-msg", r.j.blocked ? "err" : "ok", r.j.blocked ? "Blocked" + (r.j.item && r.j.item.label ? ": " + r.j.item.label : "") + "." : "Not on your list.");
+  }
+  const hit = lget("ds-blocklist", []).find(x => sameNumber(x.number, n));
+  msg("check-msg", hit ? "err" : "ok", hit ? "Blocked" + (hit.label ? ": " + hit.label : "") + "." : "Not on your list.");
+});
+$("block-body").addEventListener("click", async e => {
+  const b = e.target.closest("[data-unblock]"); if (!b) return; const id = b.dataset.unblock;
+  if (blockMode === "engine"){ const r = await jsend("DELETE", "/blocklist/" + encodeURIComponent(id)); if (!r.ok){ msg("block-msg", "err", "Could not remove it. The engine did not answer."); return; } BLOCK = BLOCK.filter(x => x.id !== id); }
+  else { BLOCK = BLOCK.filter(x => x.id !== id); lset("ds-blocklist", BLOCK); }
+  msg("block-msg", "ok", "Unblocked."); drawBlock();
+});
+function renderSpamCount(){ const n = lget("ds-spam", []).length; $("spam-count").textContent = n ? `You have reported ${n} ${n === 1 ? "call" : "calls"} as spam. Reports stay on this device.` : ""; }
+
+/* after the call: block, report, correct */
+async function sendFeedback(label){ const r = await jsend("POST", "/feedback", {label, tick: L.tick >= 0 ? L.tick : undefined}); return r.ok; }
+function pcMsg(kind, t){ const m = $("pc-msg"); m.dataset.k = kind; m.textContent = t; }
+$("pc-block").addEventListener("click", async () => {
+  const r = await addBlock($("pc-number").value, "", "Blocked after a call");
+  if (r.err) return pcMsg("err", r.err);
+  pcMsg("ok", (r.dup ? "Already on your list." : "Blocked.") + (r.local ? " Saved in this browser only." : "")); $("pc-number").value = "";
+});
+$("pc-spam").addEventListener("click", async () => {
+  const n = $("pc-number").value.trim();
+  if (n && !validNumber(n)) return pcMsg("err", "Enter a full phone number, or leave it empty.");
+  const list = lget("ds-spam", []); list.push({at: new Date().toISOString(), number: n || ""}); lset("ds-spam", list);
+  await sendFeedback("scam"); pcMsg("ok", "Reported as spam. This stays on this device."); $("pc-number").value = "";
+});
+$("pc-notscam").addEventListener("click", async () => { const ok = await sendFeedback("not_scam"); pcMsg("ok", ok ? "Noted as not a scam." : "Noted here. The engine did not take feedback."); });
+
+/* ---------- settings ---------- */
+function autoState(){
+  const up = conn.ok || apiUp;
+  msg("set-auto-state", up ? "ok" : (probed ? "err" : ""), mode === "on" ? "A call is being listened to right now." : up ? "Ready. The engine is running and will start by itself." : probed ? "The engine is not running, so nothing will start. Run make api." : "Checking for the engine.");
+}
+async function renderSettings(){
+  autoState();
+  $("pref-follow").checked = PREFS.follow;
+  document.querySelectorAll('input[name="sens"]').forEach(r => { r.checked = r.value === PREFS.sens; });
+  if (!HSTAT){ const s = await jget("/history/status"); if (s.ok) HSTAT = s.j; }
+  if (!HEALTH){ const h = await jget("/health"); if (h.ok) HEALTH = h.j; }
+  renderFacts($("set-facts"), false);
+}
+$("pref-follow").addEventListener("change", e => { PREFS.follow = e.target.checked; savePrefs(); });
+document.querySelectorAll('input[name="sens"]').forEach(r => r.addEventListener("change", () => { if (r.checked){ PREFS.sens = r.value; HTML.dataset.sens = r.value; savePrefs(); } }));
+$("del-ask").addEventListener("click", () => { $("del-confirm").hidden = false; $("del-yes").focus(); });
+$("del-no").addEventListener("click", () => { $("del-confirm").hidden = true; $("del-ask").focus(); });
+$("del-yes").addEventListener("click", async () => {
+  $("del-confirm").hidden = true; const out = [];
+  const line = (ok, t) => out.push(`<li>${ok ? "Done" : "Not done"}: ${esc(t)}</li>`);
+  const p = await jsend("POST", "/panic"); line(p.ok, p.ok ? "live buffers on the engine wiped" : "live buffers (the engine did not answer)");
+  const h = await jsend("DELETE", "/history"); line(h.ok, h.ok ? "encrypted history deleted" : "history (the engine did not answer)");
+  if (blockMode === "engine"){ for (const b of BLOCK.slice()) await jsend("DELETE", "/blocklist/" + encodeURIComponent(b.id)); line(true, "engine block list cleared"); }
+  ["ds-contacts", "ds-blocklist", "ds-spam", "ds-prefs"].forEach(k => { try{ localStorage.removeItem(k); }catch(e){} });
+  contacts = []; renderContacts(); BLOCK = []; HIST = []; LAST = null; Object.assign(PREFS, {follow:true, sens:"sensitive"}); HTML.dataset.sens = "sensitive";
+  line(true, "trusted people, local block list, spam reports and preferences cleared from this browser");
+  $("del-report").innerHTML = out.join(""); renderSettings();
+});
+
+/* ---------- wiring into the live code ---------- */
+HTML.dataset.sens = PREFS.sens;
+const _setLive = setLive;
+setLive = function(m){ const prev = mode; _setLive(m); if (m === "on" && prev !== "on" && PREFS.follow && page !== "live") go("live"); if (m === "on" || prev === "on") renderHome(); else if (page === "home") renderHome(); };
+
+{ const m = (location.hash.match(/^#\/(\w+)/) || [])[1]; const q = new URLSearchParams(location.search);
+  go(m || (q.get("demo") === "1" || q.get("view") === "detailed" ? "live" : "home"), false); }
 
 probe().then(loadRedteam).catch(() => {});
 liveInit();

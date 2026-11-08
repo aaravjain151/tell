@@ -79,6 +79,11 @@ def verdict_for(name, k, tier):
     return v
 
 
+BLOCK = [{"id": "b1", "number": "+1 555 0142", "label": "Bank impostor", "reason": "Asked for gift cards", "added_at": "2026-11-05T09:12:00Z", "reports": 2}]
+HIST = [{"ts": "2026-11-06T18:04:11+00:00", "tier": "scam", "p_ai": 0.31, "p_scam": 0.98, "thresholds_version": "mock", "tells": ["payment_rails", "urgency", "impersonation"]},
+        {"ts": "2026-11-04T12:30:02+00:00", "tier": "ai_undisclosed", "p_ai": 0.88, "p_scam": 0.12, "thresholds_version": "mock", "tells": ["pause_regularity", "llm_isms"]}]
+
+
 class State:
     dismissed = threading.Event()
     stop = threading.Event()
@@ -95,7 +100,7 @@ class H(BaseHTTPRequestHandler):
 
     def _cors(self):
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "content-type")
 
     def _json(self, code, obj):
@@ -107,14 +112,41 @@ class H(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(204); self._cors(); self.send_header("Content-Length", "0"); self.end_headers()
 
+    def _body(self):
+        n = int(self.headers.get("Content-Length") or 0)
+        try: return json.loads(self.rfile.read(n) or b"{}")
+        except ValueError: return {}
+
+    def do_DELETE(self):
+        if self.path.startswith("/history"):
+            n = len(HIST); HIST.clear(); return self._json(200, {"deleted": n})
+        if self.path.startswith("/blocklist/") and not ARGS.no_blocklist:
+            bid = self.path.rsplit("/", 1)[1]; BLOCK[:] = [b for b in BLOCK if b["id"] != bid]; return self._json(200, {"ok": True})
+        self._json(404, {"detail": "not found"})
+
     def do_POST(self):
+        if self.path.startswith("/panic"): return self._json(200, {"wiped": 1})
+        if self.path.startswith("/feedback") and not ARGS.no_blocklist: self._body(); return self._json(200, {"ok": True})
+        if self.path.startswith("/blocklist/check") and not ARGS.no_blocklist:
+            num = "".join(c for c in str(self._body().get("number", "")) if c.isdigit())
+            hit = next((b for b in BLOCK if "".join(c for c in b["number"] if c.isdigit()) == num), None)
+            return self._json(200, {"blocked": bool(hit), **({"item": hit} if hit else {})})
+        if self.path.startswith("/blocklist") and not ARGS.no_blocklist:
+            b = self._body(); it = {"id": "b%d" % (len(BLOCK) + 2), "number": b.get("number", ""), "label": b.get("label", ""), "reason": b.get("reason", ""), "added_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "reports": 0}
+            BLOCK.insert(0, it); return self._json(200, it)
         if self.path.startswith("/live/dismiss"): State.dismissed.set(); return self._json(200, {"ok": True})
         if self.path.startswith("/live/stop"): State.stop.set(); return self._json(200, {"ok": True})
         self._json(404, {"detail": "not found"})
 
     def do_GET(self):
         if self.path.startswith("/health"):
-            return self._json(200, {"ok": True, "thresholds_version": "mock", "egress": {"caller_audio_bytes_sent": 0}})
+            return self._json(200, {"ok": True, "thresholds_version": "mock", "egress": {"caller_audio_bytes_sent": 0}, "os_network": {"os_check": "ok", "os_outbound_count": 0, "os_outbound_seen": []}})
+        if self.path.startswith("/history/status"):
+            return self._json(200, {"enabled": ARGS.history != "off", "available": True, "reason": "", "count": len(HIST) if ARGS.history != "empty" else 0})
+        if self.path.startswith("/history"):
+            if ARGS.history == "off": return self._json(200, {"records": [], "skipped": 0, "status": "disabled"})
+            return self._json(200, {"records": HIST if ARGS.history == "on" else [], "skipped": 0, "status": "ok"})
+        if self.path.startswith("/blocklist") and not ARGS.no_blocklist: return self._json(200, {"items": BLOCK})
         if self.path.startswith("/thresholds"): return self._json(200, {"P_AI_THRESHOLD": 0.6})
         if self.path.startswith("/live/events"): return self.events()
         self._json(404, {"detail": "not found"})
@@ -175,6 +207,8 @@ if __name__ == "__main__":
     ap.add_argument("--idle", action="store_true", help="connected, but no call: shows the empty state")
     ap.add_argument("--no-auto-dismiss", action="store_true", help="do not dismiss the red alert by itself near the end")
     ap.add_argument("--no-gap", action="store_true")
+    ap.add_argument("--no-blocklist", action="store_true", help="answer 404 on /blocklist and /feedback (the engine has no block list yet)")
+    ap.add_argument("--history", choices=["on", "off", "empty"], default="on", help="state of the opt-in history endpoints")
     ARGS = ap.parse_args()
     srv = ThreadingHTTPServer(("127.0.0.1", ARGS.port), H); srv.daemon_threads = True
     print(f"mock live feed on http://127.0.0.1:{ARGS.port}  (open index.html?api=http://127.0.0.1:{ARGS.port})", flush=True)

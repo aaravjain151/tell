@@ -208,6 +208,152 @@ def snr_db(x: np.ndarray) -> Feat:
     return v, f"signal-to-floor about {v:.0f} dB"
 
 
+# (h) Qwen3-TTS cues (docs/QWEN-CUES.md) -- paired against one real speaker, same scripts. SHADOW only. ----------------
+def _speech_mask(db: np.ndarray) -> np.ndarray:
+    """Boolean speech mask over 10 ms hops: above max(p10 + 8, p95 - 35) dB, gaps < 120 ms filled, blips < 80 ms dropped."""
+    thr = max(np.percentile(db, 10) + 8.0, np.percentile(db, 95) - 35.0)
+    m = db >= thr
+
+    def runs(b):
+        d = np.diff(np.concatenate(([0], b.astype(np.int8), [0])))
+        return list(zip(np.where(d == 1)[0], np.where(d == -1)[0]))
+    for s, e in runs(~m):
+        if e - s < 12 and s > 0 and e < m.size:
+            m[s:e] = True
+    for s, e in runs(m):
+        if e - s < 8:
+            m[s:e] = False
+    return m
+
+
+def _runs(b: np.ndarray) -> list[tuple[int, int]]:
+    d = np.diff(np.concatenate(([0], b.astype(np.int8), [0])))
+    return list(zip(np.where(d == 1)[0], np.where(d == -1)[0]))
+
+
+def cepstral_peak_prominence_db(x: np.ndarray) -> Feat:
+    """Median cepstral peak prominence (dB) over active 40 ms frames, 100-3400 Hz. High = very regular, noise-free voicing.
+    Qwen3-TTS read ~3 dB higher than the same speaker's real recordings (Praat CPPS; this is a simpler cousin)."""
+    x = np.asarray(x, dtype=np.float64)
+    n_f = 640
+    if x.size < SR * 2:
+        return NAN, "need >= 2 s for cepstral prominence"
+    db = _frame_db(x, FRAME, HOP)
+    thr = np.percentile(db, 95) - 25.0
+    n = 1 + (x.size - n_f) // HOP
+    idx = np.arange(n_f)[None, :] + HOP * np.arange(n)[:, None]
+    keep = np.where(db[:n] >= thr)[0] if db.size >= n else np.where(db >= thr)[0]
+    keep = keep[keep < n][::2]
+    if keep.size < 20:
+        return NAN, "too few active frames"
+    sp = np.abs(np.fft.rfft(x[idx[keep]] * np.hanning(n_f), n=1024, axis=1)) + 1e-9
+    f = np.fft.rfftfreq(1024, 1 / SR)
+    band = (f >= 100) & (f <= 3400)
+    ls = 20 * np.log10(sp[:, band])
+    ceps = 20 * np.log10(np.abs(np.fft.rfft(ls - ls.mean(axis=1, keepdims=True), n=2048, axis=1)) + 1e-9)
+    df_ = f[1] - f[0]
+    q = np.arange(ceps.shape[1]) / (2048 * df_)                     # quefrency, seconds
+    lo, hi = np.searchsorted(q, 1 / 400), np.searchsorted(q, 1 / 70)
+    reg = (q >= 0.001) & (q <= 0.016)
+    out = []
+    for c in ceps:
+        a, b = np.polyfit(q[reg], c[reg], 1)
+        pk = lo + int(np.argmax(c[lo:hi]))
+        out.append(c[pk] - (a * q[pk] + b))
+    v = float(np.median(out))
+    return v, f"median cepstral peak prominence {v:.1f} dB over {keep.size} frames"
+
+
+def onset_sharpness_db(x: np.ndarray) -> Feat:
+    """Median largest 10 ms level rise (dB) at speech onsets that follow a >= 120 ms gap. Real mouths and rooms ramp in; Qwen3-TTS
+    starts words ~2x more abruptly (about 20 vs 9 dB / 10 ms in our pairs)."""
+    db = _frame_db(x, FRAME, HOP)
+    if db.size < 300:
+        return NAN, "window too short"
+    m = _speech_mask(db)
+    rises = []
+    for s, e in _runs(m):
+        if e - s >= 15 and s >= 12:
+            seg = db[max(s - 2, 0):s + 8]
+            rises.append(float(np.max(np.diff(seg))))
+    if len(rises) < 3:
+        return NAN, f"only {len(rises)} onset(s); need >= 3"
+    v = float(np.median(rises))
+    return v, f"median onset rise {v:.1f} dB per 10 ms over {len(rises)} onsets"
+
+
+def _f0_track_st(x: np.ndarray) -> np.ndarray:
+    """Crude numpy autocorrelation F0 (70-400 Hz, 40 ms frames, 10 ms hop) in semitones re 100 Hz; NaN where unvoiced."""
+    x = np.asarray(x, dtype=np.float64)
+    n_f = 640
+    n = 1 + (x.size - n_f) // HOP
+    if n < 20:
+        return np.empty(0)
+    idx = np.arange(n_f)[None, :] + HOP * np.arange(n)[:, None]
+    fr = x[idx] * np.hanning(n_f)
+    fr -= fr.mean(axis=1, keepdims=True)
+    ac = np.fft.irfft(np.abs(np.fft.rfft(fr, n=2048, axis=1)) ** 2, axis=1)
+    ac = ac / (ac[:, :1] + 1e-12)
+    lo, hi = int(SR / 400), int(SR / 70)
+    seg = ac[:, lo:hi]
+    k = np.argmax(seg, axis=1)
+    pk = seg[np.arange(n), k]
+    db = _frame_db(x, FRAME, HOP)[:n]
+    ok = (pk > 0.5) & (db >= np.percentile(db, 95) - 30.0)
+    f0 = SR / (lo + k.astype(float))
+    return np.where(ok, 12 * np.log2(f0 / 100.0), np.nan)
+
+
+def f0_rate_st_per_s(x: np.ndarray) -> Feat:
+    """Mean |F0 change| in semitones per second between adjacent voiced 10 ms frames (jumps > 3 st dropped). Qwen3-TTS pitch moves
+    more slowly (about 25 vs 31 st/s on the same speaker and scripts)."""
+    s = _f0_track_st(x)
+    if s.size < 100 or np.isfinite(s).sum() < 100:
+        return NAN, "too little voiced speech"
+    d = np.diff(s)
+    d = d[np.isfinite(d)]
+    d = d[np.abs(d) < 3.0]
+    if d.size < 50:
+        return NAN, "too few adjacent voiced frames"
+    v = float(np.mean(np.abs(d)) / 0.01)
+    return v, f"mean pitch movement {v:.1f} semitones/s over {d.size} frame pairs"
+
+
+def long_pause_per_min(x: np.ndarray) -> Feat:
+    """Pauses of >= 300 ms inside the speech span, per minute of that span. Same speaker read the same scripts with ~2-3x as many
+    long pauses as Qwen3-TTS. Depends on the noise floor (the speech mask is relative), so a channel property as much as a style one."""
+    db = _frame_db(x, FRAME, HOP)
+    if db.size < 500:
+        return NAN, "need >= 5 s"
+    m = _speech_mask(db)
+    r = _runs(m)
+    if len(r) < 4:
+        return NAN, "too few speech runs"
+    span = (r[-1][1] - r[0][0]) * 0.01
+    gaps = [(r[i + 1][0] - r[i][1]) * 10 for i in range(len(r) - 1)]
+    n = sum(g >= 300 for g in gaps)
+    v = 60.0 * n / span
+    return v, f"{n} pause(s) >= 300 ms in {span:.1f} s of speech span"
+
+
+def lowmid_balance_db(x: np.ndarray) -> Feat:
+    """10*log10 of energy in 500-1000 Hz over 100-500 Hz, active frames. A long-term spectral shape of the voice plus the mic: probably
+    mostly recorder (Qwen sits ~5 dB higher than the real recording of the same voice). Logged to see if it replicates."""
+    x = np.asarray(x, dtype=np.float64)
+    db = _frame_db(x, FRAME, HOP)
+    if db.size < 300:
+        return NAN, "window too short"
+    n = db.size
+    idx = np.arange(FRAME)[None, :] + HOP * np.arange(n)[:, None]
+    act = np.where(db >= np.percentile(db, 95) - 20.0)[0]
+    if act.size < 50:
+        return NAN, "too few active frames"
+    p = np.mean(np.abs(np.fft.rfft(x[idx[act]] * np.hanning(FRAME), n=512, axis=1)) ** 2, axis=0)
+    f = np.fft.rfftfreq(512, 1 / SR)
+    v = float(10 * np.log10(p[(f >= 500) & (f < 1000)].sum() / (p[(f >= 100) & (f < 500)].sum() + 1e-20) + 1e-20))
+    return v, f"500-1000 Hz is {v:+.1f} dB relative to 100-500 Hz"
+
+
 FEATURES = {
     "noise_floor_dbfs": noise_floor_dbfs,
     "noise_floor_std_db": noise_floor_variability_db,
@@ -218,6 +364,11 @@ FEATURES = {
     "loudness_std_db": loudness_consistency_db,
     "bandwidth_hz": bandwidth_hz,
     "snr_db": snr_db,
+    "qwen_cpp_db": cepstral_peak_prominence_db,
+    "qwen_onset_sharpness_db": onset_sharpness_db,
+    "qwen_f0_rate_st_s": f0_rate_st_per_s,
+    "qwen_long_pause_per_min": long_pause_per_min,
+    "qwen_lowmid_balance_db": lowmid_balance_db,
 }
 
 
