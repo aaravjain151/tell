@@ -23,13 +23,13 @@ struct Dock: View {
             Button { c.startTapped() } label: {
                 HStack(spacing: 10) {
                     Image(systemName: "mic").font(.system(size: 20, weight: .regular))
-                    Text(c.mode == .offline ? "Connect to your computer first" : "Start listening")
+                    Text(c.mode == .offline ? "Connect to your computer first" : c.callActive ? "Unavailable during a call" : "Start listening")
                 }
             }
             .buttonStyle(DSButtonStyle(kind: .primary, height: 64))
-            .disabled(c.mode == .offline)
-            .opacity(c.mode == .offline ? 0.45 : 1)
-            Text(c.mode == .offline ? "Run the command above, then this turns on." : "Speaker mode. Put the call on speakerphone first.")
+            .disabled(c.mode == .offline || c.callActive)
+            .opacity(c.mode == .offline || c.callActive ? 0.45 : 1)
+            Text(c.mode == .offline ? "Run the command above, then this turns on." : c.callActive ? "Starts again when the call ends." : "Speaker mode. The call has to play out loud near this phone.")
                 .font(.ds(13, .regular, relativeTo: .footnote)).foregroundStyle(Theme.muted).multilineTextAlignment(.center)
         }
     }
@@ -39,7 +39,7 @@ struct Dock: View {
             HStack(spacing: 14) {
                 RecDot()
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(c.interrupted ? "Microphone interrupted" : "Listening").font(.ds(18, .medium, relativeTo: .headline)).foregroundStyle(Theme.ink)
+                    Text(c.callBanner == .interrupted ? "Microphone interrupted" : "Listening").font(.ds(18, .medium, relativeTo: .headline)).foregroundStyle(Theme.ink)
                     Text("\(clockString(c.elapsed)) · speaker mode").font(.ds(13, .regular, relativeTo: .footnote))
                         .foregroundStyle(Theme.muted).monospacedDigit()
                 }
@@ -57,8 +57,13 @@ struct Dock: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Microphone level")
             .accessibilityValue(c.micFlat ? "No sound" : "Receiving sound")
-            if c.micFlat {
-                Text("No sound is reaching the microphone. Is the call on speakerphone? Some phones silence the mic during calls.")
+            if c.callBanner == .interrupted {
+                Text(CallBanner.interrupted.title + ". " + CallBanner.interrupted.body)
+                    .font(.ds(13, .regular, relativeTo: .footnote)).foregroundStyle(Theme.ink)
+                    .padding(.horizontal, 12).padding(.vertical, 8)
+                    .background(Theme.amber.opacity(0.18), in: RoundedRectangle(cornerRadius: 12))
+            } else if c.micFlat {
+                Text("No sound is reaching the microphone. Is the call playing out loud near this phone?")
                     .font(.ds(13, .regular, relativeTo: .footnote)).foregroundStyle(Theme.ink)
                     .padding(.horizontal, 12).padding(.vertical, 8)
                     .background(Theme.amber.opacity(0.18), in: RoundedRectangle(cornerRadius: 12))

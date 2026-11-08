@@ -22,6 +22,7 @@ final class ListenController: ObservableObject {
     @Published var elapsed: Double = 0
     @Published var micFlat = false
     @Published var interrupted = false
+    @Published var callActive = false
     @Published var sheet: Sheet?
     @Published var listenerFailed: String?
     #if DEBUG
@@ -53,7 +54,12 @@ final class ListenController: ObservableObject {
         set { UserDefaults.standard.set(newValue, forKey: "consentAccepted.v1") }
     }
 
-    init() {
+    private let calls: CallObserving
+
+    var callBanner: CallBanner? { CallBanner.current(callActive: callActive, listening: mode == .listening, interrupted: interrupted) }
+
+    init(callObserver: CallObserving = SystemCallObserver()) {
+        calls = callObserver
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-DSResetConsent") { consentAccepted = false }
         #endif
@@ -66,6 +72,7 @@ final class ListenController: ObservableObject {
     }
 
     func boot() {
+        observeCalls()
         server.start(token: token)
         mic = MicCapture.access
         if !consentAccepted { sheet = .consent }
@@ -133,8 +140,21 @@ final class ListenController: ObservableObject {
 
     // MARK: user actions
 
+    func observeCalls() {
+        calls.onChange = { [weak self] active in Task { @MainActor in self?.callChanged(active: active) } }
+        calls.start()
+        callActive = calls.hasActiveCall
+    }
+
+    /// A call began or ended on this iPhone. During a call iOS keeps the microphone from apps; when it ends we try to resume.
+    func callChanged(active: Bool) {
+        callActive = active
+        if !active && mode == .listening && interrupted { capture.resume() }
+    }
+
     func startTapped() {
         guard mode == .idle || mode == .ended else { return }
+        if callActive { return }
         if !consentAccepted { pendingStartAfterConsent = true; sheet = .consent; return }
         if mic == .denied { notice = nil; return }
         #if DEBUG
@@ -168,7 +188,7 @@ final class ListenController: ObservableObject {
             try capture.start()
             #endif
         } catch {
-            notice = Notice(title: "Could not start the microphone", body: "Another app may be using it. Close it and try again.")
+            notice = callActive ? nil : Notice(title: "Could not start the microphone", body: "Another app may be using it. Close it and try again.")
             server.send(.stopped)
             return
         }

@@ -10,18 +10,24 @@ struct ContentView: View {
         }
         switch c.mode {
         case .offline: return ("Offline", "", "Not connected to your computer", "Doublespeak runs on your computer. The app opens, but the bridge on your computer has not connected yet.")
-        case .idle: return ("Ready", "", "Waiting for a call", "Put the call on speakerphone, then tap Start listening.")
+        case .idle: return ("Ready", "", "Waiting for a call", "Play the call out loud near this phone, then tap Start listening.")
         case .listening: return ("Listening", "Gathering speech", "Listening", "Gathering the first few seconds before judging.")
-        case .ended: return ("Stopped", "", "Listening stopped", "No verdict was reached. Start again when the call is on speakerphone.")
+        case .ended: return ("Stopped", "", "Listening stopped", "No verdict was reached. Start again when the call is playing out loud near this phone.")
         }
     }
+
+    /// The layout does not rely on SwiftUI's own safe-area reporting alone: the content ignores the top safe area and the
+    /// header is padded by the real window's top inset (read by a probe view), so it always sits below the status bar
+    /// and Dynamic Island (a real iPhone 14 Pro Max drew it underneath). Reading UIKit windows inside `body` stalls
+    /// SwiftUI updates, so the value arrives through @State from the probe instead.
+    @State private var topPad: CGFloat = 20
 
     var body: some View {
         ZStack {
             Theme.bg.ignoresSafeArea()
             ScrollView {
                 VStack(spacing: 0) {
-                    Header()
+                    Header().padding(.top, topPad)
                     if let v = c.verdict, v.alert == "amber" {
                         Text(v.reasons.first ?? "Part of this call sounds risky. Do not share money, codes or passwords.")
                             .font(.ds(15, .regular, relativeTo: .subheadline))
@@ -50,6 +56,13 @@ struct ContentView: View {
                         .padding(.top, 10).padding(.horizontal, 6)
 
                     if let n = c.notice { NoticeCard(notice: n).padding(.top, 20) }
+                    if let b = c.callBanner, c.mode != .offline {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(b.title).font(.ds(20, .regular, relativeTo: .title3)).foregroundStyle(Theme.ink)
+                            Text(b.body).font(.ds(15, .regular, relativeTo: .subheadline)).foregroundStyle(Theme.muted)
+                        }
+                        .card(border: Theme.amber).accessibilityElement(children: .combine).padding(.top, 20)
+                    }
                     if c.mic == .denied && (c.mode == .idle || c.mode == .ended) { MicDeniedCard().padding(.top, 20) }
                     if c.mode == .offline { ConnectCard(full: true).padding(.top, 20) }
                     if c.mode == .idle && c.verdict == nil && c.mic != .denied { StepsCard().padding(.top, 20) }
@@ -67,10 +80,12 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity)
             }
             .scrollIndicators(.hidden)
+            .ignoresSafeArea(.container, edges: .top)
             .safeAreaInset(edge: .bottom, spacing: 0) { Dock().frame(maxWidth: 560) }
 
-            if c.showAlert, let v = c.verdict { AlertTakeover(v: v).transition(.opacity).zIndex(10) }
+            if c.showAlert, let v = c.verdict { AlertTakeover(v: v, topPad: topPad).transition(.opacity).zIndex(10) }
         }
+        .background(WindowTopInsetProbe { if $0 != topPad { topPad = $0 } })
         .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: c.showAlert)
         .sheet(item: $c.sheet) { s in
             switch s {
@@ -114,9 +129,9 @@ struct StepsCard: View {
     @EnvironmentObject var c: ListenController
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            step(1, "Put the call on speakerphone.", "iPhone gives apps no call audio. The microphone hears the speaker.")
+            step(1, "Play the call out loud near this phone.", "From another device's speaker, or a recording. iPhone gives apps no call audio, and none during a call on this phone.")
             step(2, "Tap Start listening.", "Audio goes only to your computer, over the USB cable.")
-            step(3, "Keep Doublespeak open.", "It keeps listening with the screen locked, but a call can interrupt the microphone.")
+            step(3, "Keep Doublespeak open.", "It keeps listening with the screen locked. A call on this iPhone takes the microphone away.")
             Button("How speaker mode works") { c.sheet = .speaker }
                 .font(.ds(15, .regular, relativeTo: .subheadline)).foregroundStyle(Theme.muted).underline()
                 .frame(minHeight: 44)
@@ -153,7 +168,7 @@ struct MicDeniedCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("The microphone is off for Doublespeak").font(.ds(20, .regular, relativeTo: .title3)).foregroundStyle(Theme.ink)
-            Text("Doublespeak hears the call through the microphone while it plays on speakerphone. Turn the microphone on in Settings, then come back.")
+            Text("Doublespeak hears the call through the microphone while it plays out loud. Turn the microphone on in Settings, then come back.")
                 .font(.ds(15, .regular, relativeTo: .subheadline)).foregroundStyle(Theme.muted)
             Button("Open Settings") { c.openSettings() }.buttonStyle(DSButtonStyle(kind: .ghost, height: 48)).padding(.top, 4)
         }
@@ -166,5 +181,26 @@ extension View {
         self.padding(20).frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.plane, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
             .overlay { if let b = border { RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(b, lineWidth: 1.5) } }
+    }
+}
+
+
+/// Zero-size UIKit view that reports the window's top safe-area inset (status bar / Dynamic Island).
+struct WindowTopInsetProbe: UIViewRepresentable {
+    var onChange: (CGFloat) -> Void
+
+    func makeUIView(context: Context) -> Probe { let v = Probe(); v.onChange = onChange; return v }
+    func updateUIView(_ v: Probe, context: Context) { v.onChange = onChange }
+
+    final class Probe: UIView {
+        var onChange: ((CGFloat) -> Void)?
+        override func didMoveToWindow() { super.didMoveToWindow(); report() }
+        override func layoutSubviews() { super.layoutSubviews(); report() }
+        override func safeAreaInsetsDidChange() { super.safeAreaInsetsDidChange(); report() }
+        private func report() {
+            guard let w = window else { return }
+            let t = w.safeAreaInsets.top
+            DispatchQueue.main.async { [weak self] in self?.onChange?(t) }
+        }
     }
 }

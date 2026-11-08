@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AlertTakeover: View {
     var v: VerdictView
+    var topPad: CGFloat = 0
     @EnvironmentObject var c: ListenController
     var body: some View {
         ZStack {
@@ -28,9 +29,10 @@ struct AlertTakeover: View {
                         .font(.ds(14, .regular, relativeTo: .footnote)).opacity(0.85).multilineTextAlignment(.center).padding(.top, 14)
                 }
                 .foregroundStyle(Theme.alertFg)
-                .padding(24).frame(maxWidth: 480).frame(maxWidth: .infinity)
+                .padding(24).padding(.top, topPad).frame(maxWidth: 480).frame(maxWidth: .infinity)
                 .frame(minHeight: UIScreen.main.bounds.height * 0.8)
             }
+            .ignoresSafeArea(.container, edges: .top)
         }
         .accessibilityAddTraits(.isModal)
         .accessibilityElement(children: .contain)
@@ -60,7 +62,7 @@ struct ConsentSheet: View {
     var body: some View {
         SheetFrame(title: "Before you listen") {
             Text(ListenController.consentText).font(.ds(17, .regular, relativeTo: .body)).foregroundStyle(Theme.ink).padding(.top, 12)
-            Text("This works in speaker mode only: the call has to be on speakerphone.")
+            Text("This works in speaker mode only: the call has to play out loud near this phone, from another device.")
                 .font(.ds(14, .regular, relativeTo: .subheadline)).foregroundStyle(Theme.muted).padding(.top, 12)
             VStack(spacing: 10) {
                 Button("I understand, continue") { c.consentGiven() }.buttonStyle(DSButtonStyle(kind: .primary, height: 64))
@@ -74,12 +76,12 @@ struct SpeakerSheet: View {
     @EnvironmentObject var c: ListenController
     var body: some View {
         SheetFrame(title: "How speaker mode works") {
-            Text("iPhone does not give apps the audio of a phone call. So Doublespeak listens the way you do: through the microphone, while the call plays out loud on speakerphone.")
+            Text("iPhone does not give apps the audio of a phone call, and it does not let apps use the microphone during one. So Doublespeak listens the way you do: through the microphone, to a call playing out loud near this phone.")
                 .font(.ds(17, .regular, relativeTo: .body)).foregroundStyle(Theme.ink).padding(.top, 12)
             VStack(alignment: .leading, spacing: 12) {
-                fact("It hears", " the caller from the speaker, your own voice, and the room.")
+                fact("It hears", " a call playing from another device's speaker, or a recording played near the phone, plus your voice and the room.")
+                fact("It cannot listen to a call on this iPhone.", " While a call is active iOS keeps the microphone from apps. For calls on this iPhone, use the Mac route (Calls on Other Devices).")
                 fact("It does not hear", " a call held to your ear, on Bluetooth, or on headphones.")
-                fact("A call can interrupt the microphone.", " If the level bars stay flat, this phone is doing that and Doublespeak cannot help on this call.")
                 fact("Accuracy is lower", " than with clean audio, so the engine caps how sure it says it is.")
                 fact("It is not on-device.", " The analysis runs on your computer; the phone only listens and shows the answer.")
             }.padding(.top, 16)

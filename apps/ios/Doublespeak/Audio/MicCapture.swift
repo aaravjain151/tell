@@ -65,6 +65,16 @@ final class MicCapture {
 
     private let lock = NSLock()
 
+    /// Safe resume attempt (the call ended). Stays interrupted if iOS still refuses.
+    func resume() {
+        guard running else { return }
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+            if !engine.isRunning { try engine.start() }
+            onInterruption?(false)
+        } catch { /* still interrupted; the interruption-ended notification will try again */ }
+    }
+
     private func resumeAfterInterruption() {
         guard running else { return }
         try? AVAudioSession.sharedInstance().setActive(true)

@@ -38,7 +38,7 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [audio]
         UIAppFonts: [Outfit-ExtraLight.ttf, Outfit-Light.ttf, Outfit-Regular.ttf, Outfit-Medium.ttf]
-        NSMicrophoneUsageDescription: "Doublespeak listens to a call you put on speakerphone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored."
+        NSMicrophoneUsageDescription: "Doublespeak listens to a call you play out loud near this phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored."
         ITSAppUsesNonExemptEncryption: false
   DoublespeakTests:
     type: bundle.unit-test
