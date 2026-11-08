@@ -7,6 +7,7 @@ import queue as _q
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 
 from tell import live, pipeline, session as sm
 from tell.main import app
@@ -159,7 +160,7 @@ _OPEN = []
 
 @contextlib.contextmanager
 def tc():
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         try:
             yield c
         finally:

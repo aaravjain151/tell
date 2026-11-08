@@ -3,10 +3,11 @@ import wave
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 
 from tell.main import app
 
-client = TestClient(app)
+client = TestClient(app, headers=AUTH)
 
 
 def _wav(path, frames=800):

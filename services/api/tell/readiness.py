@@ -138,9 +138,9 @@ def report() -> dict:
     degraded = [name for name, component in components.items() if component["status"] == "degraded"]
     stt_ready = any(components[name]["status"] == "ready" for name in ("stt", "voicestudio_stt"))
     try:
-        network = net_monitor.snapshot_report()
+        network = net_monitor.cumulative_report()     # since engine start; counts only, never addresses
     except Exception:  # noqa: BLE001
-        network = {"os_check": "unavailable", "os_outbound_count": 0, "os_outbound_seen": []}
+        network = {"os_check": "unavailable", "os_outbound_count": 0}
     try:
         offline = bool(offline_guard.is_enforced())
     except Exception:  # noqa: BLE001

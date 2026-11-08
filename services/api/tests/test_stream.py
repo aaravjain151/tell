@@ -8,6 +8,7 @@ import time
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 from starlette.websockets import WebSocketDisconnect
 
 from tell import pipeline, session as sm
@@ -45,7 +46,7 @@ _OPEN = []
 
 @pytest.fixture
 def client():
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         yield c
         for w in _OPEN:                      # a failing test must not leave a socket that hangs the portal
             try:

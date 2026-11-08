@@ -8,6 +8,7 @@ import types
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 
 from tell import live, personal as pe, secure_store as ss
 from tell.main import app
@@ -304,7 +305,7 @@ def test_hub_event_has_no_personal_field_unless_active():
 # ---------------------------------------------------------------- HTTP contract
 def test_http_contract_toggle_explain_wipe_and_guards(layer, monkeypatch):
     monkeypatch.setattr(pe, "LAYER", layer)
-    c = TestClient(app)
+    c = TestClient(app, headers=AUTH)
     r = c.get("/personal", headers=ORIGIN)
     assert r.status_code == 200 and set(r.json()) >= {"enabled", "n_feedback", "sensitivity", "explain"} and r.json()["enabled"] is False
     r = c.post("/personal", json={"enabled": True}, headers=ORIGIN)
@@ -316,7 +317,7 @@ def test_http_contract_toggle_explain_wipe_and_guards(layer, monkeypatch):
     # guards: foreign Origin, rebinding Host, non-loopback client
     assert c.get("/personal", headers={"Origin": "https://evil.example"}).status_code == 403
     assert c.get("/personal", headers={"Host": "evil.example"}).status_code == 400
-    far = TestClient(app, client=("203.0.113.9", 5000))
+    far = TestClient(app, headers=AUTH, client=("203.0.113.9", 5000))
     for call in (lambda: far.get("/personal", headers=ORIGIN), lambda: far.post("/personal", json={"enabled": True}, headers=ORIGIN),
                  lambda: far.delete("/personal", headers=ORIGIN)):
         assert call().status_code == 403

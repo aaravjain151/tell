@@ -178,6 +178,27 @@ test("consent wording is exact", () => {
   assert.ok(h.includes("Tell listens to this call through your microphone on your phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it."));
 });
 
+test("engine key: only well-formed tokens are kept; the fragment is read; header and feed URL carry it", () => {
+  const tok = "A".repeat(20) + "b_c-" + "9".repeat(19);
+  assert.equal(X.cleanToken("  " + tok + "\n"), tok);
+  for (const bad of ["", "short", tok + " x", "a".repeat(129), null, undefined, "x".repeat(31)]) assert.equal(X.cleanToken(bad), "");
+  assert.equal(X.tokenFromHash("#token=" + tok), tok);
+  assert.equal(X.tokenFromHash("#/home"), "");
+  assert.equal(X.tokenFromHash("#token=nope"), "");
+  assert.deepEqual(X.authHeaders(tok), { "X-Tell-Token": tok });
+  assert.deepEqual(X.authHeaders("", { a: "1" }), { a: "1" });
+  assert.equal(X.feedUrl("http://localhost:8000", tok), "http://localhost:8000/live/events?token=" + tok);
+  assert.equal(X.feedUrl("http://localhost:8000", ""), "http://localhost:8000/live/events");
+});
+
+test("app sends the engine key on every engine call that needs it", () => {
+  const js = readFileSync(join(root, "app.js"), "utf8");
+  assert.match(js, /fetch\(API \+ "\/session", \{ method: "POST", headers: X\.authHeaders\(TOKEN\) \}\)/);
+  assert.match(js, /fetch\(API \+ "\/live\/dismiss", \{ method: "POST", headers: X\.authHeaders\(TOKEN\) \}\)/);
+  assert.match(js, /new EventSource\(X\.feedUrl\(API, TOKEN\)\)/);
+  assert.ok(!/new EventSource\(API \+/.test(js), "the feed must not be opened without the key");
+});
+
 // ---------- Demo mode (stage): a bundled recorded clip -> the REAL engine, honestly labelled ----------
 import vm from "node:vm";
 

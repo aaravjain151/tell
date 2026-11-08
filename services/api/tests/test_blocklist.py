@@ -4,13 +4,14 @@ import logging
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 
 from tell import blocklist as bl, feedback as fb, main, secure_store as ss
 
 KEY = bytes(range(32))
 NUM = "+14155550123"
 RAW_DIGITS = "4155550123"
-client = TestClient(main.app)
+client = TestClient(main.app, headers=AUTH)
 
 
 @pytest.fixture(autouse=True)

@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import render_verdict_audio as rva  # noqa: E402
 
 from tell import privacy, speak  # noqa: E402
+from tests.conftest import AUTH  # noqa: E402
 
 WEB_INDEX = ROOT / "apps" / "web" / "index.html"
 
@@ -120,7 +121,7 @@ def test_api_serves_prerendered_with_zero_egress(audio_dir):
     rva.render(audio_dir, voice_id="demo-voice", runner=fake_runner)
     expected = speak.prerendered_wav("scam")
     from tell.main import app
-    c = TestClient(app)
+    c = TestClient(app, headers=AUTH)
     privacy.reset()
     before = privacy.report()
     r = c.post("/speak", data={"tier": "scam", "mode": "prerendered"})
@@ -135,7 +136,7 @@ def test_api_serves_prerendered_with_zero_egress(audio_dir):
 def test_api_prerendered_by_headline_also_works(audio_dir):
     rva.render(audio_dir, voice_id="", runner=fake_runner)
     from tell.main import app
-    c = TestClient(app)
+    c = TestClient(app, headers=AUTH)
     # the web historically sends the scorer headline; the route maps it to a tier
     r = c.post("/speak", data={"headline": "Scam pattern", "mode": "prerendered"})
     assert r.status_code == 200 and r.headers.get("X-Tell-Speak-Source") == "prerendered"
@@ -145,7 +146,7 @@ def test_api_auto_falls_back_to_live_when_file_missing(audio_dir, monkeypatch):
     # no render -> no cached file. mode=auto should fall through to the live Gradium path.
     monkeypatch.setattr(speak, "verdict_wav", lambda headline, evidence="": b"RIFFlive-bytes")
     from tell.main import app
-    c = TestClient(app)
+    c = TestClient(app, headers=AUTH)
     r = c.post("/speak", data={"tier": "scam", "mode": "auto"})
     assert r.status_code == 200 and r.headers.get("X-Tell-Speak-Source") == "live"
     assert r.content == b"RIFFlive-bytes"
@@ -153,7 +154,7 @@ def test_api_auto_falls_back_to_live_when_file_missing(audio_dir, monkeypatch):
 
 def test_api_prerendered_only_is_503_when_missing(audio_dir):
     from tell.main import app
-    c = TestClient(app)
+    c = TestClient(app, headers=AUTH)
     r = c.post("/speak", data={"tier": "scam", "mode": "prerendered"})
     assert r.status_code == 503
 

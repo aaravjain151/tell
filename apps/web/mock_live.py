@@ -7,6 +7,7 @@
 
 Implements the SSE contract: GET /live/events (state, verdict, ended), POST /live/dismiss, POST /live/stop,
 plus /health and /thresholds so the page's header chip works. Standard library only, loopback only.
+Auth: the real engine needs its API token (make pair-url); this mock accepts any token or none (?token= is ignored).
 Verdicts reuse the real engine output embedded in index.html (#samples-data), so the shape is the real one.
 """
 import argparse, copy, json, re, threading, time
@@ -101,7 +102,7 @@ class H(BaseHTTPRequestHandler):
     def _cors(self):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "content-type")
+        self.send_header("Access-Control-Allow-Headers", "content-type, authorization, x-tell-token")   # any token is accepted
 
     def _json(self, code, obj):
         b = json.dumps(obj).encode()
@@ -140,7 +141,7 @@ class H(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path.startswith("/health"):
-            return self._json(200, {"ok": True, "thresholds_version": "mock", "egress": {"caller_audio_bytes_sent": 0}, "os_network": {"os_check": "ok", "os_outbound_count": 0, "os_outbound_seen": []}})
+            return self._json(200, {"ok": True, "thresholds_version": "mock", "egress": {"caller_audio_bytes_sent": 0}, "os_network": {"os_check": "ok", "scope": "since_engine_start", "os_outbound_count": 0, "os_remote_addresses": 0, "os_first_seen": None}})
         if self.path.startswith("/history/status"):
             return self._json(200, {"enabled": ARGS.history != "off", "available": True, "reason": "", "count": len(HIST) if ARGS.history != "empty" else 0})
         if self.path.startswith("/history"):

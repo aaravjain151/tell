@@ -7,7 +7,7 @@ import os
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
-from . import blocklist, env as _env, feedback, limits, net_monitor, offline_guard, pipeline, privacy, readiness, secure_store, speak, thresholds, uploads
+from . import api_token, blocklist, env as _env, feedback, limits, net_monitor, offline_guard, pipeline, privacy, readiness, secure_store, speak, thresholds, uploads
 from .audio import AudioDecodeError
 from .redteam import router as redteam_router
 from .live import router as live_router
@@ -15,6 +15,7 @@ from .personal import router as personal_router
 from .stream import router as stream_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+api_token.install_log_filter()     # second line of defence: no ?token= value in uvicorn's access log (see api_token.py)
 uploads.keep_uploads_in_memory()   # caller audio never touches disk, even for large uploads
 app = FastAPI(title="Tell", version="0.1.0")
 limits.install(app)  # CORS allow-list, Host/Origin guard, body limit (see limits.py)
@@ -24,6 +25,22 @@ app.include_router(live_router)
 app.include_router(personal_router)
 app.include_router(blocklist.router)
 app.include_router(feedback.router)
+
+
+@app.on_event("startup")
+def security_start() -> None:
+    """Create (or reuse) the per-install API token and start the engine-lifetime OS network watcher.
+    Logs the token's PATH, never its value."""
+    lg = logging.getLogger("tell.main")
+    try:
+        api_token.ensure()
+        lg.info("API token: %s (0600). Pair the web page with: make pair-url",
+                "from TELL_API_TOKEN" if _env.get("TELL_API_TOKEN") else api_token.token_path())
+    except api_token.TokenError as e:
+        lg.error("API token unavailable, every protected route will answer 401: %s", e)
+    if limits.companion_allow():
+        lg.warning("TELL_COMPANION_ALLOW=1: requests with an allowed Origin skip the API token. Turn it off after use.")
+    net_monitor.CUMULATIVE.start()
 
 
 @app.on_event("startup")
@@ -51,8 +68,11 @@ def warm_up() -> None:
 
 @app.get("/health")
 def health() -> dict:
+    """Public (no API token): counters and switches only, never call content, numbers or remote addresses.
+    `egress.caller_audio_bytes_sent` is 0 by construction (privacy.record_egress refuses audio); `os_network` is the
+    OS's own count of engine connections to non-loopback addresses SINCE ENGINE START (net_monitor.Cumulative)."""
     return {"ok": True, "thresholds_version": thresholds.THRESHOLDS_VERSION, "egress": privacy.report(),
-            "os_network": net_monitor.snapshot_report(), "offline_models": offline_guard.is_enforced(),
+            "os_network": net_monitor.cumulative_report(), "offline_models": offline_guard.is_enforced(),
             "llm_provider": os.environ.get("LLM_PROVIDER", "stub")}
 
 

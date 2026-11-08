@@ -53,7 +53,9 @@ Nothing starts until you press "I understand, continue".
   start a second engine or stop yours. It also serves `apps/web` on `127.0.0.1:5173` if nothing is there, so "Open
   Tell" works without `make web`.
 * Restarts a crashed child after 1, 2, 4, 8, 16, 30 s (cap); after 4 quick failures in a row it shows "Engine problem".
-* Subscribes to `GET /live/events` for state, verdict and the stable alert. `/ready` every 3 s for the privacy row.
+* Subscribes to `GET /live/events` for state, verdict and the stable alert, sending the engine's API token from
+  `~/Library/Application Support/Tell/api_token` (`APIToken` in `LocalAPI.swift`). `/ready` (public) every 3 s for the
+  privacy row. "Open Tell" opens the paired page link (`http://localhost:5173/#token=...`, fragment only).
 * Quit stops the listener (SIGINT, so it wipes the RAM ring and closes the tap), the engine and the page server.
 
 ## How auto-arming works

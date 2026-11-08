@@ -10,6 +10,10 @@ anywhere; the API is on loopback and this tool REFUSES any non-loopback --url. I
 caller. Notifications use fixed wording and never contain what was said. It stops on Ctrl-C, when the call ends, or after
 90 s of silence, and the API wipes its buffer when the stream closes.
 
+Auth: the engine requires its per-install API token to create a session. This tool reads it from the engine's 0600
+file (~/Library/Application Support/Tell/api_token, or TELL_API_TOKEN_FILE / TELL_API_TOKEN) and sends it as the
+X-Tell-Token header; the error names the path when the file is missing (start the engine once to create it).
+
 --watch only arms for call apps (default: FaceTime, Phone, callservicesd, avconferenced, zoom.us, WhatsApp,
 Microsoft Teams), matched by exact process name or bundle id. It never arms on music or browsers unless you list them
 with --call-process. OPT-IN labelled capture (OFF by default, for building real evaluation data): with
@@ -32,6 +36,7 @@ import signal
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 import wave
 from pathlib import Path
@@ -249,10 +254,42 @@ def list_producing(tap: str) -> list[tuple[str, str]]:
     return parse_list(r.stdout)
 
 
-def create_session(base: str, origin: str) -> dict:
+class TokenMissing(RuntimeError):
+    pass
+
+
+def api_token_path() -> Path:
+    """Same place the engine writes it (services/api/tell/api_token.py): TELL_API_TOKEN_FILE, else per-user app support."""
+    override = os.environ.get("TELL_API_TOKEN_FILE")
+    if override:
+        return Path(override).expanduser()
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "Tell" / "api_token"
+    return Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "tell" / "api_token"
+
+
+def load_api_token() -> str:
+    """TELL_API_TOKEN, else the engine's 0600 token file. Never printed."""
+    env = (os.environ.get("TELL_API_TOKEN") or "").strip()
+    if env:
+        return env
+    p = api_token_path()
+    try:
+        tok = p.read_text(encoding="ascii").strip()
+    except (OSError, UnicodeDecodeError):
+        tok = ""
+    if not tok:
+        raise TokenMissing(f"no Tell API token at {p}. Start the engine once (make demo or make api) to create it, "
+                           "then run this again.")
+    return tok
+
+
+def create_session(base: str, origin: str, api_token: str | None = None) -> dict:
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))      # a loopback call must never use a proxy
-    req = urllib.request.Request(base.rstrip("/") + "/session", method="POST", data=b"{}",
-                                 headers={"Origin": origin, "Content-Type": "application/json"})
+    headers = {"Origin": origin, "Content-Type": "application/json"}
+    if api_token:
+        headers["X-Tell-Token"] = api_token
+    req = urllib.request.Request(base.rstrip("/") + "/session", method="POST", data=b"{}", headers=headers)
     with opener.open(req, timeout=10) as r:
         return json.loads(r.read())
 
@@ -381,7 +418,8 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
     """Stream `frames` to the API until they end, `stop` is set, or silence lasts too long. Returns the reason."""
     import websockets
 
-    info = await asyncio.get_running_loop().run_in_executor(None, create_session, args.url, args.origin)
+    info = await asyncio.get_running_loop().run_in_executor(None, create_session, args.url, args.origin,
+                                                            getattr(args, "api_token", None))
     u = urlparse(args.url)
     ws_url = f"{'wss' if u.scheme == 'https' else 'ws'}://{u.netloc}{info['ws_path']}"
     reason = "ended"
@@ -504,6 +542,13 @@ async def main_async(args: argparse.Namespace) -> int:
             say(f"stopped: {r}")
             return 0
         return await watch(args, stop)
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            say(f"the engine refused the API token (401). It reads {api_token_path()}; restart the engine or unset a "
+                "stale TELL_API_TOKEN.")
+        else:
+            say(f"the API at {args.url} answered {e.code}")
+        return 1
     except OSError as e:
         say(f"cannot reach the API at {args.url}: {e}")
         return 1
@@ -566,6 +611,11 @@ def main(argv: list[str] | None = None) -> int:
     err = save_error(args)
     if err:
         print(err, file=sys.stderr)
+        return 2
+    try:
+        args.api_token = load_api_token()
+    except TokenMissing as e:
+        print(str(e), file=sys.stderr)
         return 2
     if not consent(args):
         return 1

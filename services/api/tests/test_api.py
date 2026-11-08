@@ -1,9 +1,10 @@
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 
 from tell.main import app
 from tests.synth import make_call, to_wav_bytes
 
-client = TestClient(app)
+client = TestClient(app, headers=AUTH)
 
 
 def test_health():
@@ -34,5 +35,5 @@ def test_verdict_returns_the_analysed_transcript():
     from fastapi.testclient import TestClient
     from tell.main import app
     text = "Grandma it's me, I need bail money right now, please don't tell mom."
-    r = TestClient(app).post("/analyze", data={"transcript": text}).json()
+    r = TestClient(app, headers=AUTH).post("/analyze", data={"transcript": text}).json()
     assert r["transcript"] == text

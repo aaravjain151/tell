@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from tell import live, pipeline, session as sm
 from tell.main import app
 from tests.test_live import drain, vd
+from tests.conftest import AUTH
 
 ORIGIN = {"Origin": "http://localhost:5173"}
 SR = 16_000
@@ -104,7 +105,7 @@ def friendly_part(ws):
 
 
 def test_decisive_tail_is_scored_before_final_and_sse_ended(scorer):
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         sub = live.HUB.subscribe()
         ws, s = open_ws(c)
         friendly_part(ws)
@@ -132,7 +133,7 @@ def test_decisive_tail_is_scored_before_final_and_sse_ended(scorer):
 
 
 def test_clean_close_also_flushes_to_the_live_feed(scorer):
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         sub = live.HUB.subscribe()
         ws, s = open_ws(c)
         friendly_part(ws)
@@ -151,7 +152,7 @@ def test_clean_close_also_flushes_to_the_live_feed(scorer):
 
 @pytest.mark.parametrize("how", ["kill", "panic"])
 def test_no_tail_analysis_on_kill_or_panic(scorer, how):
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         sub = live.HUB.subscribe()
         ws, s = open_ws(c)
         friendly_part(ws)
@@ -171,7 +172,7 @@ def test_no_tail_analysis_on_kill_or_panic(scorer, how):
 
 def test_no_tail_analysis_on_heartbeat_timeout(scorer, monkeypatch):
     monkeypatch.setenv("TELL_STREAM_HEARTBEAT_S", "0.5")
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         ws, s = open_ws(c)
         send(ws, tone(2.5, LOUD))
         seen = until(ws, "error")
@@ -182,7 +183,7 @@ def test_no_tail_analysis_on_heartbeat_timeout(scorer, monkeypatch):
 
 @pytest.mark.parametrize("extra_s, why", [(0, "no_new_audio"), (1.0, "covered")])
 def test_no_duplicate_analysis_when_tail_already_covered(scorer, extra_s, why):
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         ws, s = open_ws(c)
         friendly_part(ws)
         if extra_s:
@@ -195,7 +196,7 @@ def test_no_duplicate_analysis_when_tail_already_covered(scorer, extra_s, why):
 
 
 def test_silent_tail_is_skipped(scorer):
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         ws, s = open_ws(c)
         friendly_part(ws)
         send(ws, tone(2.5, 0))
@@ -209,7 +210,7 @@ def test_silent_tail_is_skipped(scorer):
 def test_flush_respects_the_time_budget(scorer, monkeypatch, env):
     monkeypatch.setenv(env, "0.3")                       # either knob bounds the flush (the budget is their minimum)
     scorer["delay"] = 1.5
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         sub = live.HUB.subscribe()
         ws, s = open_ws(c)
         friendly_part(ws)
@@ -234,7 +235,7 @@ def test_inflight_tick_lands_on_stop_then_tail_is_not_reanalysed(monkeypatch):
         gate.wait(5)
         return _R(vd("human"))
     monkeypatch.setattr(pipeline, "analyze", slow)
-    with TestClient(app) as c:
+    with TestClient(app, headers=AUTH) as c:
         ws, s = open_ws(c)
         send(ws, tone(4, QUIET))                         # tick at 3 s in flight; 1 s after it is "covered"
         deadline = time.time() + 3

@@ -210,6 +210,69 @@ def test_score_saved_loopback_only_and_table(tmp_path, capsys):
     assert "tier=human" in out and "sanity check" in out and "mean p_ai" in out
 
 
+
+# --- per-install API token ----------------------------------------------------------------------------------------
+import http.server  # noqa: E402
+import json  # noqa: E402
+import threading  # noqa: E402
+import urllib.error  # noqa: E402
+
+KEY = "engine-key-0123456789abcdefghijklmnopqrstuv"
+
+
+class _FakeEngine(http.server.BaseHTTPRequestHandler):
+    seen: list = []
+
+    def do_POST(self):
+        type(self).seen.append({"origin": self.headers.get("Origin"), "token": self.headers.get("X-Tell-Token")})
+        ok = self.headers.get("X-Tell-Token") == KEY
+        body = json.dumps({"session_id": "s", "token": "t", "ws_path": "/ws/stream"} if ok else {"detail": "no"}).encode()
+        self.send_response(200 if ok else 401)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *a):
+        pass
+
+
+def test_create_session_sends_the_api_token_and_401_without_it():
+    _FakeEngine.seen = []
+    srv = http.server.HTTPServer(("127.0.0.1", 0), _FakeEngine)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        base = f"http://127.0.0.1:{srv.server_port}"
+        assert L.create_session(base, "http://localhost:5173", KEY)["ws_path"] == "/ws/stream"
+        with pytest.raises(urllib.error.HTTPError) as e:
+            L.create_session(base, "http://localhost:5173")
+        assert e.value.code == 401
+    finally:
+        srv.shutdown()
+    assert _FakeEngine.seen[0] == {"origin": "http://localhost:5173", "token": KEY}
+
+
+def test_token_from_file_env_and_missing_file_names_the_path(monkeypatch, tmp_path):
+    f = tmp_path / "api_token"
+    monkeypatch.delenv("TELL_API_TOKEN", raising=False)
+    monkeypatch.setenv("TELL_API_TOKEN_FILE", str(f))
+    with pytest.raises(L.TokenMissing) as e:
+        L.load_api_token()
+    assert str(f) in str(e.value)
+    f.write_text(KEY + "\n")
+    assert L.load_api_token() == KEY
+    monkeypatch.setenv("TELL_API_TOKEN", "from-env-0123456789abcdefghijklmnopqrstuvw")
+    assert L.load_api_token() == "from-env-0123456789abcdefghijklmnopqrstuvw"
+
+
+def test_main_refuses_without_a_token_and_prints_the_path(monkeypatch, tmp_path, capsys):
+    wav = tmp_path / "a.wav"
+    wav.write_bytes(b"RIFF")
+    monkeypatch.delenv("TELL_API_TOKEN", raising=False)
+    monkeypatch.setenv("TELL_API_TOKEN_FILE", str(tmp_path / "missing"))
+    assert L.main(["--file", str(wav), "--i-understand"]) == 2
+    assert str(tmp_path / "missing") in capsys.readouterr().err
+
+
 def test_speak_flag_defaults_off_and_parses():
     assert L.parse_args(["--file", "x.wav"]).speak is False
     assert L.parse_args(["--file", "x.wav", "--speak"]).speak is True

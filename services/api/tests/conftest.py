@@ -9,3 +9,13 @@ for _k in [k for k in os.environ if k.startswith("DOUBLESPEAK_")]:
 # Tests must never probe a real local engine: default to in-process whisper (absent on a clean checkout).
 # Tests that exercise VoiceStudio set TELL_STT themselves and inject a fake opener.
 os.environ.setdefault("TELL_STT", "whisper")
+
+# Every data/control route needs the per-install API token (tell/api_token.py). Tests use a fixed token from the env
+# and never touch the real ~/Library/Application Support/Tell/api_token: the file override points at a temp dir.
+import tempfile as _tempfile  # noqa: E402
+
+TEST_TOKEN = "test-token-0123456789abcdefghijklmnopqrstuvwxyz"
+AUTH = {"X-Tell-Token": TEST_TOKEN}
+os.environ["TELL_API_TOKEN"] = TEST_TOKEN
+os.environ["TELL_API_TOKEN_FILE"] = os.path.join(_tempfile.mkdtemp(prefix="tell-test-token-"), "api_token")
+os.environ.pop("TELL_COMPANION_ALLOW", None)

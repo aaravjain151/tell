@@ -1,7 +1,8 @@
 """Streaming routes: POST /session, WS /ws/stream, DELETE /session/{id}, POST /panic. Loopback only (see limits.py).
 
 Auth that works from a browser (a WebSocket cannot send custom headers, and the token must never be in a URL):
-  1. POST /session  (Origin must be an allowed UI origin)  ->  {session_id, token, ws_path, params}
+  1. POST /session  (the per-install API token, see api_token.py, AND an allowed UI Origin)
+                                                           ->  {session_id, token, ws_path, params}
   2. open WS /ws/stream; the FIRST message must be JSON
        {"type":"hello","token":...,"sample_rate":16000,"format":"pcm_s16le","side":"far|near|mix"}
      within 5 s. The token is random 256-bit, single-use and expires in 60 s.
