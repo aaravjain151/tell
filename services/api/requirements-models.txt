@@ -4,8 +4,8 @@
 -r requirements.txt
 faster-whisper>=1.0       # local STT (stt.py)
 onnxruntime>=1.17         # ANTI_SPOOF_MODEL (neural.onnx_vote)
-torch>=2.2                # HF_SPOOF_MODEL and PELLA_MODEL
-torchaudio>=2.2           # Pellav2 fbank features
+torch>=2.6                # HF_SPOOF_MODEL and PELLA_MODEL; >= 2.6 for the safe weights loader (CVE-2025-32434), pella.MIN_TORCH
+torchaudio>=2.6           # Pellav2 fbank features
 transformers>=4.40
 huggingface_hub>=0.23
 scipy>=1.11               # Pellav2 preprocessing
