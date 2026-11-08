@@ -9,6 +9,8 @@ Safety and determinism:
   * it scores exactly Pellav2's windows (4 s, 2 s hop, silence skipped, same cap); call score = sigmoid(mean window logit);
   * its logit is re-centred on humans (0 = the 99th percentile of held-in real voices), so a voice it has never seen the
     generator of still reads as "unlike the people we trained on" instead of "unlike the fakes we trained on";
+  * optional call-level "pauses" block (signals/pauses.py): call logit = head_coef * mean(window logit) + pause terms +
+    intercept, fitted and re-centred on humans by training/learned_tells/pauses.py. Absent block = the plain mean, unchanged;
   * TELL_LEARNED_TELLS=0 turns it off (no Tell is added at all, so the verdict is bit-identical to the engine without the
     module); =1 forces it on; unset follows DEFAULT_ON, which is set from the held-out results (see the doc).
 """
@@ -25,6 +27,7 @@ import numpy as np
 from .. import env as _env
 from .. import thresholds as T
 from ..types import Tell
+from . import pauses as PZ
 from . import tell_features as TF
 
 log = logging.getLogger("tell.learned")
@@ -100,7 +103,37 @@ def parse(raw: bytes) -> dict:
         models[key] = out
     if "interp" not in models or "full" not in models or "emb" not in models["full"]:
         raise ValueError("weights must include the interp and the full (embedding) model")
-    return {"models": models, "meaning": doc.get("meaning", {}), "version": str(doc.get("version", ""))}
+    out = {"models": models, "meaning": doc.get("meaning", {}), "version": str(doc.get("version", ""))}
+    if doc.get("pauses") is not None:
+        out["pauses"] = parse_pauses(doc["pauses"])
+    return out
+
+
+def parse_pauses(b: dict) -> dict:
+    """Validate the call-level pause stacker. Raises ValueError on anything unexpected."""
+    feats = [str(f) for f in b["features"]]
+    unknown = [f for f in feats if f not in PZ.PAUSE_FEATURES]
+    if unknown or not feats or len(set(feats)) != len(feats):
+        raise ValueError(f"bad pause features {feats}")
+    nf = len(feats)
+    out = {"features": feats, "med": _arr(b["median"], (nf,)), "mu": _arr(b["mean"], (nf,)), "sd": _arr(b["scale"], (nf,)),
+           "coef": _arr(b["coef"], (nf,)), "clip": float(b.get("clip", 5.0)),
+           "head_coef": float(b["head_coef"]), "intercept": float(b["intercept"])}
+    if np.any(out["sd"] <= 0) or not (0 < out["head_coef"] <= 10) or not math.isfinite(out["intercept"]):
+        raise ValueError("bad pause stacker scale/head_coef/intercept")
+    return out
+
+
+def call_logit(head_mean: float, pz: dict | None, x16k: np.ndarray) -> tuple[float, dict | None]:
+    """Stack the call-level pause terms onto the head's mean window logit. No block = the mean unchanged (bit-identical)."""
+    if pz is None:
+        return head_mean, None
+    f = PZ.call_pause_features(x16k)
+    v = np.array([f[n] for n in pz["features"]], dtype=np.float64)
+    v = np.where(np.isfinite(v), v, pz["med"])
+    z = np.clip((v - pz["mu"]) / pz["sd"], -pz["clip"], pz["clip"])
+    terms = z * pz["coef"]
+    return float(pz["head_coef"] * head_mean + terms.sum() + pz["intercept"]), {"features": f, "terms": terms}
 
 
 def load() -> dict | None:
@@ -175,16 +208,31 @@ def learned_vote(x16k: np.ndarray, pella_extras: dict | None = None) -> Tell | N
     except Exception as e:  # noqa: BLE001
         log.warning("learned tells failed: %s", e)
         return _na(f"learned tells failed ({type(e).__name__})")
-    score = float(1 / (1 + math.exp(-float(np.mean(lg)))))
+    try:
+        logit, pinfo = call_logit(float(np.mean(lg)), w.get("pauses"), x)
+    except Exception as e:  # noqa: BLE001
+        log.warning("learned tells pause stacker failed: %s", e)
+        return _na(f"learned tells failed ({type(e).__name__})")
+    score = float(1 / (1 + math.exp(-logit)))
     n = len(ts)
     evidence = f"learned tells: P(synthetic) = {score:.2f} over {n} window{'s' if n != 1 else ''}"
+    if pinfo is not None:
+        push = float(pinfo["terms"].sum())
+        evidence += f"; {PZ.describe(pinfo['features'])}" + (f" ({'toward AI' if push > 0 else 'toward human'})" if abs(push) >= 0.15 else "")
     up, down = _top_tells(w["models"]["interp"], zi, w["meaning"])
     if up:
         evidence += "; toward AI: " + ", ".join(up)
     if down:
         evidence += "; toward human: " + ", ".join(down)
     return Tell("learned_tells", "acoustic", score, T.ACOUSTIC_WEIGHTS.get("learned_tells", 0.0), evidence,
-                detail={"windows": [{"t": t, "p": round(float(1 / (1 + math.exp(-v))), 4)} for t, v in zip(ts, lg)]})
+                detail=_detail(ts, lg, pinfo))
+
+
+def _detail(ts: list[float], lg: np.ndarray, pinfo: dict | None) -> dict:
+    d = {"windows": [{"t": t, "p": round(float(1 / (1 + math.exp(-v))), 4)} for t, v in zip(ts, lg)]}
+    if pinfo is not None:
+        d["pauses"] = {k: (round(v, 3) if math.isfinite(v) else None) for k, v in pinfo["features"].items()}
+    return d
 
 
 def _top_tells(m: dict, z: np.ndarray, meaning: dict) -> tuple[list[str], list[str]]:
