@@ -42,6 +42,11 @@ final class AppModel: ObservableObject {
     var pausedUntil: Date? { inputs.pausedUntil.flatMap { $0 > Date() ? $0 : nil } }
     var uiURL: URL { URL(string: LocalAPI.uiOrigin)! }
 
+    #if DEBUG
+    /// Test and snapshot hook: show a given state without starting anything.
+    func debugShow(_ i: Inputs, privacy: Bool? = true) { inputs = i; self.privacy = privacy }
+    #endif
+
     // MARK: lifecycle
 
     func launch() {
