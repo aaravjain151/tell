@@ -1,15 +1,15 @@
 # Block and spam (local only)
 
-A personal block list for the caller-ID side of Doublespeak. The list is the user's own, stored encrypted on the device, and never leaves it.
+A personal block list for the caller-ID side of Tell. The list is the user's own, stored encrypted on the device, and never leaves it.
 
 ## What it is, and how it differs from crowd-sourced caller ID
 
-Apps like Hiya or Truecaller identify unknown numbers because millions of users upload their contacts and call logs to a shared reputation database. Doublespeak deliberately has none of that: no crowd upload, no cloud reputation lookup, no number sent anywhere (D-004, D-009).
+Apps like Hiya or Truecaller identify unknown numbers because millions of users upload their contacts and call logs to a shared reputation database. Tell deliberately has none of that: no crowd upload, no cloud reputation lookup, no number sent anywhere (D-004, D-009).
 
 Consequences, stated plainly:
 
 - It blocks numbers the user already decided to block (typed in, or marked after a call). It does not know that a never-seen number is a spam caller. There is no "Suspected spam" label for unknown numbers.
-- What Doublespeak adds that a crowd database cannot: it listens to what the caller says and sounds like (on-device verdict: human, AI, scam), and a one-tap "block this number" follows from that verdict. The decision stays local.
+- What Tell adds that a crowd database cannot: it listens to what the caller says and sounds like (on-device verdict: human, AI, scam), and a one-tap "block this number" follows from that verdict. The decision stays local.
 - A repeat block of the same number only raises a local `reports` counter. Nobody else sees it.
 
 ## Data and privacy
@@ -60,7 +60,7 @@ What it cannot do:
 - No wildcard or prefix rules, no "block unknown callers" (use Settings > Phone > Silence Unknown Callers for that).
 - Entries must be added in ascending order, and the app must call `reloadExtension` after every change; the user must enable it once in Settings > Phone > Call Blocking & Identification.
 - Large lists are slow to reload. The extension has a small memory budget.
-- App Groups: the app and the extension should share the list through an App Group container. A free Personal Team may not be allowed to register an App Group; if so the build or signing fails. See `docs/ios/IOS.md` for what was actually done and the limitation that applies.
+- Sharing the list: the app and the extension must share it. Tried on the owner's free Personal Team: an App Group entitlement is rejected at signing (profile mismatch). Keychain Sharing signs, so the default build mirrors only the sorted numbers into a shared keychain item that the extension reads; the App Group path is kept for a paid team. Built and unit-tested, but not run on a real phone. Details in `docs/ios/IOS.md` (iOS PR).
 
 ## Android plan
 
