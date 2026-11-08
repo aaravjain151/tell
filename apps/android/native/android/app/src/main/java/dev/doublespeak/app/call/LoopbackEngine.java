@@ -116,6 +116,16 @@ public final class LoopbackEngine implements CallSession.Engine {
         return link;
     }
 
+    @Override
+    public boolean reachable() {
+        try {
+            Response r = http("GET", "/health");
+            return r.status == 200 && r.body.contains("\"ok\"");
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     public static String hello(String token) {
         return "{\"type\":\"hello\",\"token\":\"" + token.replace("\\", "").replace("\"", "") +
             "\",\"sample_rate\":16000,\"format\":\"pcm_s16le\",\"side\":\"mix\",\"source\":\"" + SOURCE + "\"}";

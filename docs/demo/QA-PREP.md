@@ -2,13 +2,19 @@
 
 Answer in two or three sentences, then stop. If you don't know, say "we haven't measured that" and offer what you did measure. Never use a percentage, "safe", "legal", "only", "first", "better than", "detects all" or "100% private". When you give a count that was tuned on the same clips, say "in-sample" before the number. The owner of each answer is shown in brackets; anyone can answer if that person is mid-sentence elsewhere. Hidden backup slides in the deck: **Why us**, **Who pays**, **Threat model**, **Later: deepfake calls at work**, **Illustration of the live card**.
 
+## Tracks we are entering
+
+- **Privacy-First (primary).** "What leaves the device" — no caller audio, blocked by code (Q1, Q2). "Who can read it" — loopback-only, plus a per-install token on every data route (401 without it, PR #90; Q5). "Can you prove it" — the OS's own outbound-connection count reads zero, and a judge can block Tell's outbound or run `lsof` and the verdict still comes (Q2). "Would anyone use it" — the live demo and the who-pays answer (Q19).
+- **Most Startup-able (secondary).** Who it is for and who pays (Q19), would they pay (Q19), why this team (Q19b).
+- **Best Use of Gradium (side prize, stacks with Privacy-First).** How we used it, and why the privacy-correct use is the story (Q18).
+
 ## Privacy track
 
 **Q1. What exactly leaves the device? [Aarav]**
 On the laptop route, no caller audio: it goes from the call app to the engine over loopback (127.0.0.1), is analysed in RAM and dropped. Three modules, no more, may open a socket, the one that can carry audio refuses any host that is not loopback, and a test scans the analysis code for network imports. On the phone route the audio does leave the phone: it goes over the USB cable to your own computer, never Wi-Fi or a server, so we say "your own devices", not "never leaves the phone" (decision D-012).
 
 **Q2. The 0 on screen: is that a measurement? Why trust it? [Aarav]**
-The caller-audio 0 is not a measurement; it is an invariant: the code blocks caller audio from leaving, so it is zero by design. The independent check is the operating system's own count of the engine's network connections: the engine asks the OS (psutil) for non-loopback connections of its own process and children, polled every 50 ms during each analysis; the `/health` figure in terminal C is a snapshot at that moment. Its limits: it can miss a connection shorter than 50 ms or unconnected UDP, and it does not cover Ollama, which is a separate local process; run `lsof -i` or Little Snitch yourself during a call to check both.
+The caller-audio 0 is not a measurement; it is an invariant: the code blocks caller audio from leaving, so it is zero by design. The independent check is the operating system's own count of the engine's network connections: the engine asks the OS (psutil) for non-loopback connections of its own process and children, polled every 50 ms during each analysis; the `/health` figure in terminal C is a snapshot at that moment. Its limits: it can miss a connection shorter than 50 ms or unconnected UDP, and it does not cover Ollama, which is a separate local process; run `lsof -i` or Little Snitch yourself during a call to check both. Better still: block all outbound for Tell in Little Snitch, or pull Wi-Fi, and the verdict keeps coming — caller analysis needs nothing off this device. We invite that check on stage and at our table.
 
 **Q3. Do you record calls? Is listening to a call even allowed? [Aarav]**
 No audio or transcript is written to disk; history is off by default and, when on, keeps time, verdict and reasons, encrypted (AES-256-GCM, key in the OS keychain). In the US, federal law allows a party to the call to consent (one-party consent, 18 U.S.C. 2511(2)(d)); some states require all parties' consent, and there our position is that we record nothing and no third party receives the content, but courts differ on whether live analysis counts as interception, so the app tells users to inform the other person where their law requires it. In the EU, personal use falls under GDPR's household exemption; a business using Tell would be a controller with full duties. This is not legal advice; we haven't had a lawyer review it.
@@ -17,7 +23,7 @@ No audio or transcript is written to disk; history is off by default and, when o
 That is why it is built the way it is: no accounts, no cloud, no analytics or third-party SDKs, loopback-only URLs (a test checks that), and it never speaks to the caller. What it hears differs by route: on the Mac, only the caller's side; on Android speaker mode, everything the phone's microphone hears, including you and the room. The Mac app has no option to hide its icon while it is listening.
 
 **Q5. Can another app on the same computer read the engine's verdicts? [Aarav]**
-Not from another machine: the engine listens on loopback, never on the network. A process on the same computer can call it today; the fix, a per-install token required on every data route so a process without it gets 401, is in progress and not merged yet [owner: put the PR number here once it is open, and if it merges before 11:00 say instead: "every data route now requires a per-install token; a process without it gets 401"]. Until then the demo Mac runs nothing untrusted.
+Not from another machine: the engine listens on loopback, never on the network. A process on the same computer can call it today; the fix, a per-install token required on every data route so a process without it gets 401, is PR #90, open and not merged as of this writing. If #90 is on the demo build by 11:00, say instead: "every data route now requires a per-install token; a process without it gets 401 — curl the live feed without the token and try it." Do not invite that curl check unless #90 is actually on the build. Until then the demo Mac runs nothing untrusted.
 
 **Q6. Whose consent covers the voices you trained and tested on? [Sanath, then Aarav]**
 Sanath's own recordings and clones are his, with his consent. The twelve phone memos came from about four of Aarav's friends with consent relayed by Aarav, not signed per speaker; we are collecting per-speaker consent now, and until it is in, every claim about those 12 memos is labelled as relayed consent. The public voices are LibriSpeech (CC BY 4.0). The memos stay on our own machine and are not in the repo.
@@ -64,8 +70,11 @@ Gradium was our sparring partner. I cloned my own voice in Gradium (with my cons
 
 ## Business
 
-**Q19. Who pays? [Aarav]** (backup slide: Who pays)
-Our hypothesis: adult children paying to protect a parent, as a family plan, at around US$5 a month. It is a hypothesis, not validated: tonight we asked people and [N of M people said yes tonight]. Next step is pricing interviews with families.
+**Q19. Who is it for, and who pays? [Aarav]** (backup slide: Who pays)
+First customer: the adult child of a parent aged 60+, the person who worries about the "family emergency" voice-clone call. The buyer is not the user: the child pays, the parent benefits, so we sell a family plan. Price hypothesis: around US$5 a month. Would they pay? It is a hypothesis, not validated: tonight we asked people and [N of M people said yes tonight]. Next step is pricing interviews with families. We reach the first hundred through our own families and campus, plus an r/scams post.
+
+**Q19b. Why is this the team to build it? [Aarav]** (backup slide: Why us)
+We already shipped it this weekend: a live system that listens to a real call on a Mac and an iPhone, a local model pipeline with an open deepfake detector and a scam-wording model, and our own consented voice dataset with paired clones. We also found and published our own blind spot (Qwen3-TTS) instead of hiding it, which is the habit you want in a team handling a privacy product. Two of us are reachable through the exact families we are building for.
 
 **Q20. Why not just use Google, Truecaller or Hiya? [Aarav]** (backup slide: Why us)
 If your phone has a scam feature, use it; they can sit side by side, and we don't rank ourselves against them. Caller ID checks the number; we check the conversation. Tell also covers calls on your computer, reaches iPhone users through their Mac, and its privacy is something you can audit: open code, a counter and the OS's own connection count.

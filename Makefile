@@ -1,4 +1,4 @@
-.PHONY: setup lock test eval api web demo models redteam record wild audit
+.PHONY: setup lock test eval api web demo models redteam record wild audit verdict-audio
 PY=./.venv/bin/python
 VPY=$(CURDIR)/.venv/bin/python
 # uvicorn refuses a missing --env-file, so a fresh clone without .env must not pass one
@@ -60,3 +60,9 @@ wild:
 	bash tools/redteam/degrade.sh data/calls && cd services/api && $(VPY) eval/run_eval.py --wild ../../data/calls $(ARGS)
 audit:
 	python3 scripts/pm.py audit
+
+# Render Tell's fixed spoken verdict lines to local WAVs with Gradium TTS, once, ahead of time (needs GRADIUM_API_KEY +
+# uv). Only our own fixed wording is sent to Gradium, at BUILD time. Output is gitignored; the page then plays it offline.
+# `make verdict-audio ARGS=--check` validates the fixed set + manifest without calling Gradium.
+verdict-audio:
+	@if [ -f .env ]; then set -a; . ./.env; set +a; fi; $(PY) tools/render_verdict_audio.py $(ARGS)

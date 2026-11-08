@@ -18,7 +18,13 @@ public final class Wording {
     public static final String REFUSED_TEXT = "Your computer refused Tell. Start the engine with make api-android.";
     public static final String BUSY_TEXT = "Another listening session is open on your computer.";
     public static final String LOST_TEXT = "Lost contact with your computer. Check the USB cable.";
+    public static final String DROPPED_TEXT = "Listening stopped.";
     public static final String MIC_TEXT = "Tell could not open the microphone.";
+
+    // The OS silenced the microphone during the call (verified on the Galaxy S20 FE / Android 13). Engine and cable are fine.
+    public static final String MIC_BLOCKED_TITLE = "Tell can't hear this call";
+    public static final String MIC_BLOCKED_TEXT = "Your phone is blocking the microphone during the call. On this phone, apps can't hear a call even on speaker.";
+    public static final String MIC_BLOCKED_SUB = "Use Tell on your Mac for live calls (answer the call on your Mac).";
 
     public static final String ACTION_STOP = "Stop";
     public static final String ACTION_LISTEN = "Listen";

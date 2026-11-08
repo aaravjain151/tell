@@ -149,7 +149,7 @@ def test_schema_endpoint_never_loads_models(monkeypatch):
     assert response.status_code == 200
     result = response.json()
     assert set(result) == {"ready", "degraded", "components", "offline_models", "os_network", "privacy_posture", "thresholds_version"}
-    assert set(result["components"]) == {"stt", "anti_spoof_hf", "pellav2", "llm", "voicestudio_stt"}
+    assert set(result["components"]) == {"stt", "anti_spoof_hf", "pellav2", "learned_tells", "llm", "voicestudio_stt"}
     for component in result["components"].values():
         assert set(component) == {"status", "detail"}
         assert component["status"] in ("ready", "degraded", "off")

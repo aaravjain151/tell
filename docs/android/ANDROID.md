@@ -5,10 +5,28 @@ A thin client. The phone listens through its microphone and sends the audio to t
 ## What it can and cannot do (read this first)
 
 * **Speaker mode only.** Android gives ordinary apps no call audio. The call has to be on speakerphone; the app hears the caller from the speaker, plus your own voice and the room. It does not hear a call held to the ear, on Bluetooth or on headphones.
-* Some phones silence the microphone for other apps during a call. If the level bars stay flat for 8 seconds the app says so. Whether the S20 FE does this is exactly what the call test below finds out. Not yet verified on a real call.
+* **Confirmed on the Samsung Galaxy S20 FE / Android 13: the OS silences the microphone for third-party apps during an active cellular call, even on speakerphone.** On a real call `AudioRecord` returns no data (`EVENT_MORE_DATA ... returned -1 bytes`) and `Telecom:SamsungAudioRecordingChecker: isAudioRecording false`, while the engine stays reachable over USB the whole time. Real-call capture on this phone is therefore not possible; use the Mac route for live calls (answer the call on your Mac). The phone app still works for a call on **another device's** speaker held near the phone, or a recording played near it.
 * The models (Pellav2 600M, Whisper, the LLM) do not run on the phone. The laptop engine must be running and the cable plugged in. Not "fully on-device".
 * Speakerphone audio is a blend of both voices, so the app sends it as `side=mix` and the engine caps how sure it says it is (0.6).
 * Phone-band audio is the weakest case for the voice checks; the wording (scam pattern) side still works.
+
+## Demo mode (stage)
+
+**What it is.** A recorded clip played into the **real** engine, honestly labelled. A real cellular call cannot be captured on the owner's S20 FE — Android silences the microphone to other apps while a call is active (confirmed) — so a live on-stage call is not reliable. Demo mode instead streams a **bundled, consented, recorded** PCM16 16 kHz mono clip to the engine over the USB tunnel on the **same** `POST /session` + WS `/ws/stream` path the microphone uses, at real-time pace (100 ms frames on a timer). The orb, verdict, 2×2 and scores are the engine's **genuine output for a known input**, rendered exactly as a real call. Nothing is faked: there are no hardcoded tiers or scores in the UI, and a persistent **"RECORDED DEMO — not a live call"** banner is shown the whole time. It is never presented as a live call.
+
+**Why we use it.** On stage it must not break: demo mode needs only the USB tunnel + engine — no microphone permission, no live call, no Wi-Fi. If the engine is unreachable it shows the normal "not connected to your computer" state.
+
+**The clips.** `apps/android/demo/scam.pcm` (an escalating tech-support scam) and `apps/android/demo/human.pcm` (a human check-in), converted from the repo's consented data (`data/calls/qwen3tts/long_tech_scam.wav`, `data/calls/human/sanath/long_checkin.wav`; consent `data/consents/`) with `ffmpeg -ar 16000 -ac 1 -f s16le -acodec pcm_s16le`. Each is under 2 MB and is bundled into the APK by `native/build-www.mjs` (the `demo` folder). The streamer is `lib/demo.js` (`frameClip`, `createStreamer`, `levelOf`); the page wiring is the demo block in `app.js`.
+
+**How to start it (hidden, OFF by default).** Demo mode never appears in the normal flow. Enter it either by **long-pressing the Tell logo** (top left, ~1.2 s) or by opening the app with **`?demo=1`**. You then get **Scam call** / **Human call** buttons and a big **Stop**; **Exit demo** leaves it.
+
+**Exact stage steps.**
+1. On the Mac: engine up at `http://127.0.0.1:8000` (`make api-android`), phone plugged in, `adb reverse tcp:8000 tcp:8000`. The pill top-right must say "Your computer".
+2. Long-press the logo (or launch `?demo=1`). The amber **RECORDED DEMO — not a live call** banner appears.
+3. Tap **Scam call**. It warms up for a few seconds, then the orb and verdict escalate from the engine's own events (warming → human → scam, amber). Tap **Human call** to show a clean human verdict.
+4. Tap **Stop** to end early, pick the other clip, or **Exit demo** to return to the normal app.
+
+**Validating the clips without a phone.** Stream a clip straight into the running engine and watch the real verdicts (the repo venv has `websockets`): `POST /session` with an allowed `Origin`, open the WS, send the `hello`, then 3200-byte frames every 100 ms. The scam clip escalates warming→human→scam/amber; the human clip stays human. That is genuine engine output on a known input.
 
 ## Two ways to run it
 
@@ -83,8 +101,10 @@ Installed app only (the browser cannot see calls). Opt-in, **off by default**. T
 * Call rings: nothing yet. A missed or rejected call does nothing.
 * Call answered (incoming call: RINGING then OFFHOOK): auto-listen starts, either by itself or after one tap, depending on the Android version and whether Tell is on screen (table below). An outgoing call does not start it; a call waiting that you answer during an outgoing call does. Call waiting during a listened call keeps the same session.
 * While listening: an ongoing notification **"Tell is listening to this call"** with **Stop** and **Turn on speaker**, plus Android's green microphone dot. If Tell is on screen, it switches to the live view by itself and shows the verdicts.
-* No sound for 8 s: the notification and the live view say "No sound is reaching the microphone. Is the call on speaker? Android may be silencing the microphone during calls."
-* Computer not reachable (cable out, `adb reverse` missing, engine stopped): a notification "Tell could not reach your computer; plug in the USB cable." and listening stops; it does not fail silently. A 403 (engine started without the app's origin) says to use `make api-android`; a 429 says another session is open; a cable pulled mid-call says "Lost contact with your computer".
+* **Microphone silenced vs computer unreachable are two separate states, in the UI and in code.** These were conflated in the first build (an SSE drop during a call wrongly said "check the USB cable"); they are now distinct:
+  * **Mic blocked** (the WebSocket/session is up but `AudioRecord` returns no data, or the level stays at digital silence, for ~4 s while a call is active): the honest state "Your phone is blocking the microphone during the call. On this phone, apps can't hear a call even on speaker." + "Use Tell on your Mac for live calls (answer the call on your Mac)." Listening stops cleanly; the cable is never blamed.
+  * **Computer unreachable** (cable out, `adb reverse` missing, engine stopped): "Tell could not reach your computer; plug in the USB cable." A 403 (engine started without the app's origin) says to use `make api-android`; a 429 says another session is open. A mid-call drop probes `/health` first: if the engine still answers, it is a clean stop (or a blocked mic), never "check the USB cable"; only a genuinely unreachable engine says "Lost contact with your computer".
+* The non-call ambient path keeps the gentler "No sound is reaching the microphone. Is the call on speakerphone? Some phones silence the mic during calls." note (it clears once real sound arrives), so the recorded-clip-near-the-phone demo is unaffected.
 * Call ended (Android reports IDLE only when every call has ended), Stop tapped, the setting turned off, or Tell swiped away from Recents: the microphone is released, the stream is closed with `stop`, the engine session is deleted (`DELETE /session/{id}`), the frame buffer is zeroed. Nothing is written to storage at any point. After Stop, auto-listen does not restart for the rest of that call.
 * Setting off: the call-state receiver is disabled in the package manager, so a call does not even wake Tell.
 
@@ -109,7 +129,7 @@ Tell cannot switch a cellular call to speaker on Android 12+ (and does not try).
 
 ### Honest limits
 
-* **The microphone may be silenced during a call.** AOSP's audio policy (Android 10+) gives ordinary apps silence from the microphone while a phone call is active unless they are privileged, the assistant or an accessibility service; manufacturers can differ. If the S20 FE does this, auto-listen starts correctly but hears nothing and says "No sound is reaching the microphone" within 8 s. This is the first thing the real-call test below finds out. Not verified on a real call yet.
+* **The microphone is silenced during a call (confirmed on the S20 FE / Android 13).** AOSP's audio policy (Android 10+) gives ordinary apps silence from the microphone while a phone call is active unless they are privileged, the assistant or an accessibility service; manufacturers can differ, but Samsung's build does silence it. Auto-listen starts correctly, the WebSocket to the engine opens, then `AudioRecord` returns no data within ~4 s. Tell detects this and shows the honest state **"Your phone is blocking the microphone during the call. On this phone, apps can't hear a call even on speaker."** with **"Use Tell on your Mac for live calls (answer the call on your Mac)."** — it does **not** blame the USB cable (the engine is reachable; a `/health` probe confirms it before any cable message is shown).
 * Speaker mode only; a call on the earpiece, Bluetooth or headphones is not heard.
 * One tap on Android 11+ when Tell is not on screen (see the table). No full-screen intent, overlay or wake-up trick is used to avoid it: those are restricted to phone/alarm apps or against Play policy.
 * If Tell was force-stopped (Settings > Apps > Force stop), Android does not deliver the call broadcast until Tell is opened once.
@@ -119,6 +139,8 @@ Tell cannot switch a cellular call to speaker on Android 12+ (and does not try).
 ### Implementation map
 
 `apps/android/native/android/app/src/main/java/dev/doublespeak/app/`: `call/CallStateMachine` (RINGING/OFFHOOK/IDLE rules), `call/StartPolicy` (per-version path), `call/PermissionGate`, `call/AutoListenCore` (glue, never starts with the setting off), `call/CallSession` + `call/LoopbackEngine` (AudioRecord frames to `POST /session` + `WS /ws/stream` on 127.0.0.1:8000, plain Java sockets, `Origin: http://localhost`, 100 ms PCM16 frames, ping every 10 s), `CallStateReceiver` (manifest `PHONE_STATE`, disabled until opted in), `CallMonitor` (TelephonyCallback.CallStateListener on 12+, PhoneStateListener below), `CallListenService` (microphone foreground service, native capture), `Notices`, `SpeakerActivity`, `ListenServicePlugin` (`getAutoListen`, `setAutoListen`, `stopAutoListen`, `openAppSettings`, event `autoListen`). Page side: `lib/autolisten.js` (wording, status line) and the auto-listen block in `app.js`.
+
+A silenced mic (`AudioRecord` returns -1 after a good start, or ~4 s of digital silence) ends the session with `Outcome.MIC_SILENCED` and the honest message; the engine-reachability probe (`LoopbackEngine.reachable()` → `GET /health`) separates a genuinely gone cable (`LOST`) from a reachable engine (`DROPPED`, a clean stop). On the page, `reachable()` gates every "check the USB cable" message, a distinct `.err.blocked` card shows the honest state, and an SSE drop alone no longer blames the cable.
 
 Tests: `cd apps/android/native/android && ./gradlew testDebugUnitTest` (call-state machine incl. missed calls, call waiting, two calls, user stop, setting changes, process restart; per-version start path; permission-denied paths; the not-connected, refused, busy, lost and mic-failed session paths; WebSocket framing and a full session against a fake engine). `TELL_ENGINE_PORT=8077 ./gradlew testDebugUnitTest --tests '*RealEngineIT*'` streams to a real engine (verified: session, verdicts, clean stop). `node --test apps/android/tests/android.test.mjs` checks the wording, the status line and the Play-policy guard.
 
@@ -138,7 +160,7 @@ Before: cable in, `make api-android` running, `adb reverse tcp:8000 tcp:8000`, T
 2. **0:15 Answer.** Call again and answer. Expect within about 2 s: a "Call answered" notification (heads-up) with **Listen** and **Turn on speaker**.
 3. **0:25 Speaker.** Tap Speaker on the in-call screen (or **Turn on speaker**, which brings the in-call screen back).
 4. **0:30 Listen.** Pull down the shade, tap **Listen**. Expect: "Tell is listening to this call" with **Stop**, and the green microphone dot.
-5. **0:40 Does it hear?** Caller reads: "This is your bank, read me the code you just received, don't tell anyone." Open Tell: the live view should be showing, with level bars moving. Write down whether "No sound is reaching the microphone" appeared (= Android silences the mic during calls on this phone).
+5. **0:40 Does it hear?** Caller reads: "This is your bank, read me the code you just received, don't tell anyone." Open Tell. On the S20 FE the mic is silenced, so within ~4 s expect the honest state "Your phone is blocking the microphone during the call..." and NOT "check the USB cable". (On a phone that does not silence the mic, the level bars would move instead.)
 6. **1:10 Stop.** Tap **Stop** in the notification. Expect: the notification and the mic dot disappear; Tell shows "Listening stopped".
 7. **1:20 Call end stops it.** Hang up. Call again, answer, tap Listen, then let the caller hang up. Expect: the listening notification disappears by itself within a second or two.
 8. **1:40 Not connected.** Run `adb reverse --remove-all` (or stop the engine). Call, answer, tap Listen. Expect: "Tell could not reach your computer; plug in the USB cable." Restore the tunnel afterwards.
