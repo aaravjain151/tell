@@ -1,0 +1,882 @@
+[
+ {
+  "id": "qwen__address_send",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "address_send",
+  "sha256": "03efaa1fb26e6d4fd6f1d8e2cbecd688f3414279011dcc36de891e55ae19b215"
+ },
+ {
+  "id": "qwen__casual_clone",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "casual_clone",
+  "sha256": "d1665367db07da013a6d98c8fb011b96473b53a289c2100d7885c37927f42b8a"
+ },
+ {
+  "id": "qwen__coffee_7",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "coffee_7",
+  "sha256": "035b3c2b2eb6a07cc1f6d0a0d953216f6611580b7f340ae29d19caabeb25d68b"
+ },
+ {
+  "id": "qwen__dinner_plans",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "dinner_plans",
+  "sha256": "09d251bd663180e04e55dfa5bdcf00cd84bad45e023f781dfa7431c5bd76fe1b"
+ },
+ {
+  "id": "qwen__long_agent_undisclosed",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "long_agent_undisclosed",
+  "sha256": "186ee2021694bb3a93adf32a8d5e9bd5c02e62b4a49c4467cd4d81b45bd1940f"
+ },
+ {
+  "id": "qwen__long_appointment",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "long_appointment",
+  "sha256": "945bf8c03cc665b6124a43102dd572f6b07530bf3b5cc4d858696e5a8cb99ea2"
+ },
+ {
+  "id": "qwen__long_checkin",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "long_checkin",
+  "sha256": "fac9e3ece6d676ca23f0ff831bade6d1db9eda8c93d3a3ed575f227fc150a4c9"
+ },
+ {
+  "id": "qwen__long_tech_scam",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "long_tech_scam",
+  "sha256": "9b23e4d457f16669f4ad33a4b88570f0cde1c2e43062a645cdd16cd5b1040dfc"
+ },
+ {
+  "id": "qwen__morning_routine",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "morning_routine",
+  "sha256": "eaeec00cb282c19536f09eb0bee1b3d0757e4109f553a4be4606d143f10a824a"
+ },
+ {
+  "id": "qwen__new_internship",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "new_internship",
+  "sha256": "1c8cc33d66ca5a00eb39dfb61c179fd688f9fd74b80359b8c818e354e55f1354"
+ },
+ {
+  "id": "qwen__number_appointment",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "number_appointment",
+  "sha256": "a60e9e0b62b402d8ea267caaffc5a530cd3ffd54519ccd9217cd5b94421fe6c9"
+ },
+ {
+  "id": "qwen__room_booking",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "room_booking",
+  "sha256": "642f63fb1740af7dd0827b021603f8def0b54a2657b17b9205b4f59ad4061922"
+ },
+ {
+  "id": "qwen__rough_morning",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "rough_morning",
+  "sha256": "fdcee4d6ed16430e52749eb308cbc5675cf4d8242cd2925bd1cbb6849f3ed250"
+ },
+ {
+  "id": "qwen__sales_disclosed",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "sales_disclosed",
+  "sha256": "a821c9b40e71f962659be17520d5c57ca490045ed2f95fdeab9a21703b31d278"
+ },
+ {
+  "id": "qwen__sales_undisclosed",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "sales_undisclosed",
+  "sha256": "b09f33999c4b400b0ef3813d62c7df7846536e3dede4f67379bbb47f18c6153d"
+ },
+ {
+  "id": "qwen__scam_bank_otp",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "scam_bank_otp",
+  "sha256": "1a8f6132007e82f54a6e789760d6b61597415ffdedbd801571b82f0e314fcf7a"
+ },
+ {
+  "id": "qwen__scam_grandparent",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "scam_grandparent",
+  "sha256": "1cf3f410dbde88c274e173c4cd998889e70defa194938a37e432da026d2309de"
+ },
+ {
+  "id": "qwen__scam_irs",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "scam_irs",
+  "sha256": "c0f79e3efbe6273554db8ea52b26e4befa7ed137289ed79e0261b06008f4eaa7"
+ },
+ {
+  "id": "qwen__stolen_package",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "stolen_package",
+  "sha256": "36c1044b4ff0c9ea3fc6b1002b53869665f58f0d755e9e15ab87c0c9ae30d3f4"
+ },
+ {
+  "id": "qwen__urgent_recording",
+  "label": 1,
+  "source": "qwen_sanath",
+  "group": "sanath",
+  "script": "urgent_recording",
+  "sha256": "3cc5d15cdc1fc2201c21112de9d04daba9e9f19a4e58e813ca75128e6c6ddc73"
+ },
+ {
+  "id": "human_sanath__address_send",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "address_send",
+  "sha256": "24348c543ef3fe1b823f7eead73e8488618af69e4c36b583d7b63d9e25633ea1"
+ },
+ {
+  "id": "human_sanath__casual_clone",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "casual_clone",
+  "sha256": "3e484f4dcb97e3c2b91b42baecabf09f349b131db578c1b6fdc346e9f3e30725"
+ },
+ {
+  "id": "human_sanath__coffee_7",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "coffee_7",
+  "sha256": "4c3412f22ed0efb939b4348753922f320e3eefb8adf941df6f56cdf1013a35cc"
+ },
+ {
+  "id": "human_sanath__dinner_plans",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "dinner_plans",
+  "sha256": "0ec6466db35985b8e93d45f9bbc46b1d78011ee159158e694ca444fef68c0fb9"
+ },
+ {
+  "id": "human_sanath__free_call",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "free_call",
+  "sha256": "f71fc57deebe8c5a931530eb72f0bd5cddfa4471cd635a9d66dbf6acb89b2cdd"
+ },
+ {
+  "id": "human_sanath__free_directions",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "free_directions",
+  "sha256": "79f5fe126e82f9656447d940659933bc1a275404e51cdb3aa600b5f14ad62e4a"
+ },
+ {
+  "id": "human_sanath__long_appointment",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "long_appointment",
+  "sha256": "ee7f925d1b716282063ef19111098a39761f3fa3e3518016458c06acf365f3f9"
+ },
+ {
+  "id": "human_sanath__long_checkin",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "long_checkin",
+  "sha256": "6085e0a744e0fac9d1495dd2de894c6d04bb2a496bd28d2e735f34d7d1705a89"
+ },
+ {
+  "id": "human_sanath__morning_routine",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "morning_routine",
+  "sha256": "b0381388d053d2bdd91c8b4fa3f9df024d00baf72d56ecbb7dcd2a15ef751694"
+ },
+ {
+  "id": "human_sanath__new_internship",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "new_internship",
+  "sha256": "c5560d5bdeab8f7f96747cd4fa725d8eddfc611cf94802a49850c516edc2b9c4"
+ },
+ {
+  "id": "human_sanath__number_appointment",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "number_appointment",
+  "sha256": "3a3f0fba6836c8ae31b00f4a1b8f9ab83bde0ba0bf2bd5b4993b57c017c004bc"
+ },
+ {
+  "id": "human_sanath__room_booking",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "room_booking",
+  "sha256": "52d8b34a841129f21e571fae5ca661865e71d83f71f19a9081b0a7b54d0760e2"
+ },
+ {
+  "id": "human_sanath__rough_morning",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "rough_morning",
+  "sha256": "2267cdd98c9f6e482365e89877c61f60ad60887b78d7d6ac77c13e2c89ddec59"
+ },
+ {
+  "id": "human_sanath__sales_disclosed",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "sales_disclosed",
+  "sha256": "1fdd80a493d9a2eaaae53f73bdd867d54d4ef299ed1480968438a113385567d1"
+ },
+ {
+  "id": "human_sanath__sales_undisclosed",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "sales_undisclosed",
+  "sha256": "1a725e5e424d4f9888360b08bc8ff49060fdee739d028c37107523983b064a76"
+ },
+ {
+  "id": "human_sanath__scam_bank_otp",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "scam_bank_otp",
+  "sha256": "2dcb20bece5efdac8f71b589a81cd131f29e7d3d080fbe156052bacf15b33f35"
+ },
+ {
+  "id": "human_sanath__scam_grandparent",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "scam_grandparent",
+  "sha256": "5788f40c71d474e16ae470e397f10b1cb99b7588ea379efc6ccfd3698dc9caf4"
+ },
+ {
+  "id": "human_sanath__scam_irs",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "scam_irs",
+  "sha256": "a30b550b4bb27aefaa5bcb4c48d64a5b6b050370308b5ad6128eca250051394b"
+ },
+ {
+  "id": "human_sanath__stolen_package",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "stolen_package",
+  "sha256": "f9976a7c920b9a4020f1d5bf4dae1e0b713fe72073b77211c89a98ddff08d583"
+ },
+ {
+  "id": "human_sanath__urgent_recording",
+  "label": 0,
+  "source": "sanath",
+  "group": "sanath",
+  "script": "urgent_recording",
+  "sha256": "394e6b7ae324e15420dd3611001411126047f5d1e8ef13533010d6b93a577658"
+ },
+ {
+  "id": "gradium__casual_clone",
+  "label": 1,
+  "source": "gradium",
+  "group": "gradium_voice",
+  "script": "casual_clone",
+  "sha256": "6140433c97fbd0cf69e6b50ef3cff38497879966e02d9c75b382425de5b54f83"
+ },
+ {
+  "id": "gradium__long_agent_undisclosed",
+  "label": 1,
+  "source": "gradium",
+  "group": "gradium_voice",
+  "script": "long_agent_undisclosed",
+  "sha256": "553562091ee156eee4863c6cc897365836fc735abd6ded3ae24b90770bfa0839"
+ },
+ {
+  "id": "gradium__long_appointment",
+  "label": 1,
+  "source": "gradium",
+  "group": "gradium_voice",
+  "script": "long_appointment",
+  "sha256": "aa91dcf102ad6da17f324a57c2b257e8699a4bebfb413fcc77243031461058ff"
+ },
+ {
+  "id": "gradium__long_checkin",
+  "label": 1,
+  "source": "gradium",
+  "group": "gradium_voice",
+  "script": "long_checkin",
+  "sha256": "c913dff154a95ac9b2030422cfe61ea22124b1841ca211c8db8092e5485f5473"
+ },
+ {
+  "id": "gradium__long_tech_scam",
+  "label": 1,
+  "source": "gradium",
+  "group": "gradium_voice",
+  "script": "long_tech_scam",
+  "sha256": "3ba89a57889c1038924fe4bf273b44b79112717d0d0424c12905d508e489f410"
+ },
+ {
+  "id": "gradium__sales_disclosed",
+  "label": 1,
+  "source": "gradium",
+  "group": "gradium_voice",
+  "script": "sales_disclosed",
+  "sha256": "cf6c81ec50b2e7ae3cd12fcedc9073832d29b9c7549e4bcf923fc786496e6631"
+ },
+ {
+  "id": "gradium__sales_undisclosed",
+  "label": 1,
+  "source": "gradium",
+  "group": "gradium_voice",
+  "script": "sales_undisclosed",
+  "sha256": "ebbb9ad6b928f71d105fe66df8655e0e2cf1762aa4d14de4c6a17d68ad78584b"
+ },
+ {
+  "id": "gradium__scam_bank_otp",
+  "label": 1,
+  "source": "gradium",
+  "group": "gradium_voice",
+  "script": "scam_bank_otp",
+  "sha256": "9c2812bc35309f41ea582f9c8b16ec4f2a9b623d1ebadc67ba4a3901fdc7adf2"
+ },
+ {
+  "id": "gradium__scam_grandparent",
+  "label": 1,
+  "source": "gradium",
+  "group": "gradium_voice",
+  "script": "scam_grandparent",
+  "sha256": "8ef4da993554019772c0e82c6db25bd3dbdb769b376fc996dbdc622bb47a7f48"
+ },
+ {
+  "id": "gradium__scam_irs",
+  "label": 1,
+  "source": "gradium",
+  "group": "gradium_voice",
+  "script": "scam_irs",
+  "sha256": "85fbf1095c3c77571703868d716b32c6fbd513e54085ed919b31fa7760331f06"
+ },
+ {
+  "id": "gradium_stock__casual_clone",
+  "label": 1,
+  "source": "gradium_stock",
+  "group": "gradium_stock_voice",
+  "script": "casual_clone",
+  "sha256": "fbf91fe8864c609b0bf5e42136fc18ffa54e91b3a7a9bb218983b4e30f709085"
+ },
+ {
+  "id": "gradium_stock__long_appointment",
+  "label": 1,
+  "source": "gradium_stock",
+  "group": "gradium_stock_voice",
+  "script": "long_appointment",
+  "sha256": "74e9593a768b76e70d25482c23fa9a8de2bfd6e3911944c61838d3a2fe694ea1"
+ },
+ {
+  "id": "gradium_stock__long_checkin",
+  "label": 1,
+  "source": "gradium_stock",
+  "group": "gradium_stock_voice",
+  "script": "long_checkin",
+  "sha256": "e9157c7359b1675b6253724e62fadcbd0ae6770a4c92f00138261cf5b48ad4a9"
+ },
+ {
+  "id": "gradium_stock__sales_disclosed",
+  "label": 1,
+  "source": "gradium_stock",
+  "group": "gradium_stock_voice",
+  "script": "sales_disclosed",
+  "sha256": "3f4d994d06bcca683d8aff861aaba35d411dab6e7a10681dd6041520d674671c"
+ },
+ {
+  "id": "gradium_stock__sales_undisclosed",
+  "label": 1,
+  "source": "gradium_stock",
+  "group": "gradium_stock_voice",
+  "script": "sales_undisclosed",
+  "sha256": "5b87b902c83cdd082c5be966589fad484b275a32107b0d67dff508e93f49e550"
+ },
+ {
+  "id": "gradium_stock__scam_bank_otp",
+  "label": 1,
+  "source": "gradium_stock",
+  "group": "gradium_stock_voice",
+  "script": "scam_bank_otp",
+  "sha256": "94a1feec8693e7b3a5722f50c0abc410340e3cdda923463b7175ff1225d8971a"
+ },
+ {
+  "id": "gradium_stock__scam_grandparent",
+  "label": 1,
+  "source": "gradium_stock",
+  "group": "gradium_stock_voice",
+  "script": "scam_grandparent",
+  "sha256": "214e37a7e3498c944ef9b324a9e620cb298193e2b20fc63cfda1b2dc8a470b1c"
+ },
+ {
+  "id": "gradium_stock__scam_irs",
+  "label": 1,
+  "source": "gradium_stock",
+  "group": "gradium_stock_voice",
+  "script": "scam_irs",
+  "sha256": "f721e51b68893742114349ef3cb15c25aad4d99e686da7d235ac12f2f9793175"
+ },
+ {
+  "id": "friends__hunt_2",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c4",
+  "script": "friends_hunt_2",
+  "sha256": "cb53031a4c505d7fef21a6546a39d1d0c232d432924c894dbae33e082b72d282"
+ },
+ {
+  "id": "friends__hunt_3",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c4",
+  "script": "friends_hunt_3",
+  "sha256": "c080d9bdf43896d29fb9f04d90d9e224dd0c043cd5022ee4a83cc35b88175396"
+ },
+ {
+  "id": "friends__hunt_4",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c1",
+  "script": "friends_hunt_4",
+  "sha256": "ddc62cbf3a7f38f98ca983a7f6a5939218fc43858f4120a5f477979da30429a1"
+ },
+ {
+  "id": "friends__hunt_5",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c1",
+  "script": "friends_hunt_5",
+  "sha256": "4b3cd35edfc98f004a0ca636760d3f0d2d24c3b26590cf63351e419ff8e8f26f"
+ },
+ {
+  "id": "friends__neu_2",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c3",
+  "script": "friends_neu_2",
+  "sha256": "411770650f80f2db594805467bd3836ac6709a8ac8b359c400c4eded282345b2"
+ },
+ {
+  "id": "friends__neu_3",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c3",
+  "script": "friends_neu_3",
+  "sha256": "c573026a9de16296d6293179484b900100683e2d02f1d7d8927d92d5566d4c15"
+ },
+ {
+  "id": "friends__neu_4",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c2",
+  "script": "friends_neu_4",
+  "sha256": "7f615fcd9a4da3cfc7596cf7dfea4e9e9804638b77b8b7dfe9a70f9d1f5642dc"
+ },
+ {
+  "id": "friends__neu_5",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c2",
+  "script": "friends_neu_5",
+  "sha256": "f422964dbc8fc73d019fc27d72cb0e195d7842bccfc97d989ba5a8f0efc719c5"
+ },
+ {
+  "id": "friends__neu_6",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c2",
+  "script": "friends_neu_6",
+  "sha256": "7210972168fa5a40850ee4ad95d1f504886bb3af624070b23464d637dd1b3341"
+ },
+ {
+  "id": "friends__neu_7",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c4",
+  "script": "friends_neu_7",
+  "sha256": "708bc12205f4182715eb7bdd9d04550069a5fe35f563872d57468eec9d87feda"
+ },
+ {
+  "id": "friends__neu_8",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c1",
+  "script": "friends_neu_8",
+  "sha256": "1ea78e37a801bd9f8adb29aae61100f4030332697e426ed7c20c75b3d725f141"
+ },
+ {
+  "id": "friends__neu_1",
+  "label": 0,
+  "source": "friends",
+  "group": "friend_c3",
+  "script": "friends_neu_1",
+  "sha256": "3a842180894c31b118bb28a8f6f24d3ec2337fbe2ae8f55cceb74c51db1fcc1a"
+ },
+ {
+  "id": "libri__1089-134686-0011",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls1089",
+  "script": "libri_1089-134686-0011",
+  "sha256": "4711317cada93a7b23561f1a33ac52603344464c1799b63d34c2ea17616186ff"
+ },
+ {
+  "id": "libri__121-127105-0023",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls121",
+  "script": "libri_121-127105-0023",
+  "sha256": "1868209d0cfdfac4a752dc9123a3887e66da0972ef6bc9ac625d1c758f0f014f"
+ },
+ {
+  "id": "libri__1272-135031-0020",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls1272",
+  "script": "libri_1272-135031-0020",
+  "sha256": "3260aabba2c1a3d11a56ff6e1228ec41e03df2565087b084c5433e025cb75997"
+ },
+ {
+  "id": "libri__1320-122617-0037",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls1320",
+  "script": "libri_1320-122617-0037",
+  "sha256": "90c5e48823faf57bf016bdd058f7086875c9c7d26516259a3544e7380de6b02b"
+ },
+ {
+  "id": "libri__1580-141083-0026",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls1580",
+  "script": "libri_1580-141083-0026",
+  "sha256": "5e2195674f4fa80b589a0a1f5ee27c4cad2528396720ddeb7eed8c45459a0713"
+ },
+ {
+  "id": "libri__174-50561-0016",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls174",
+  "script": "libri_174-50561-0016",
+  "sha256": "fade387a46039e5285c87a135450eb25c1bf646e2f616e82e80ffdffd201de82"
+ },
+ {
+  "id": "libri__1988-24833-0015",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls1988",
+  "script": "libri_1988-24833-0015",
+  "sha256": "b8a20b9387166f01306b1e574e89848be328d1f22c287dcb0097933c8f9ec268"
+ },
+ {
+  "id": "libri__1995-1836-0006",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls1995",
+  "script": "libri_1995-1836-0006",
+  "sha256": "a4ccb3444e2e77ce29311cc79a946aafe4e08425ef42628a9f7f424215362bcd"
+ },
+ {
+  "id": "libri__2078-142845-0017",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls2078",
+  "script": "libri_2078-142845-0017",
+  "sha256": "1b67738b2100f4daff7d10fee3eb062d53db31d15c31c1956728e0da158aef08"
+ },
+ {
+  "id": "libri__2094-142345-0057",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls2094",
+  "script": "libri_2094-142345-0057",
+  "sha256": "eb1ca8c8d341037d3d4db86f00f32b7a46baae83df14d0874cc2cd50a7131566"
+ },
+ {
+  "id": "libri__2300-131720-0010",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls2300",
+  "script": "libri_2300-131720-0010",
+  "sha256": "b9408f9db8b91c378d6547c0bc282c7d6017efa99615169d3371b3df2e4e49af"
+ },
+ {
+  "id": "libri__2412-153947-0015",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls2412",
+  "script": "libri_2412-153947-0015",
+  "sha256": "3199f3c9be7367276cb12d89dd39f0f48ce408f77e34066926af6be424ead256"
+ },
+ {
+  "id": "libri__251-118436-0020",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls251",
+  "script": "libri_251-118436-0020",
+  "sha256": "349628874759dbd9d91fc8ec5a6937a12d989bfaaf6f095213d41d9558a13966"
+ },
+ {
+  "id": "libri__2803-154328-0000",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls2803",
+  "script": "libri_2803-154328-0000",
+  "sha256": "8c07e81563f3f719b45f6479a79cb4df6855864b2983809b16d1c13cddfcd590"
+ },
+ {
+  "id": "libri__2902-9008-0005",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls2902",
+  "script": "libri_2902-9008-0005",
+  "sha256": "192f6a3003b5cc12fd393afd13bfd916930a660802d3d1f1e46bafda9c842e62"
+ },
+ {
+  "id": "libri__3000-15664-0018",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls3000",
+  "script": "libri_3000-15664-0018",
+  "sha256": "6f25c5a891ddf6e4fbdbe1fc6e5e2fdcebc775339da8dc2b79b24b1d2e494be0"
+ },
+ {
+  "id": "libri__3170-137482-0020",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls3170",
+  "script": "libri_3170-137482-0020",
+  "sha256": "916441d155a2d7d26049e96c08e10c130a226d8cfc0ad76efcf52f0e7180329f"
+ },
+ {
+  "id": "libri__3570-5695-0010",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls3570",
+  "script": "libri_3570-5695-0010",
+  "sha256": "8721f25647b1bfb3368f46d5d60386878b76ce5df9542db08a5204414f535f11"
+ },
+ {
+  "id": "libri__3576-138058-0013",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls3576",
+  "script": "libri_3576-138058-0013",
+  "sha256": "89021c7b96cc93b78e12935ea2ac41ffbcce8e53980dd168f65f8d6cae6e5878"
+ },
+ {
+  "id": "libri__3752-4943-0013",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls3752",
+  "script": "libri_3752-4943-0013",
+  "sha256": "0ae05842343bf7381f6795ea83aaef6e66e758a297a87ad13b9dcda327d340aa"
+ },
+ {
+  "id": "libri__4077-13751-0001",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls4077",
+  "script": "libri_4077-13751-0001",
+  "sha256": "0b95894eef4641af5d3ea33c63d226eeb8a106dae00e92cc3fbaa877b7b1c618"
+ },
+ {
+  "id": "libri__4446-2275-0033",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls4446",
+  "script": "libri_4446-2275-0033",
+  "sha256": "3244a1da0c6b1ebe10c9b928d0ca40110d282b93339e4b1aafa55bf93f5ba0bb"
+ },
+ {
+  "id": "libri__4970-29095-0004",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls4970",
+  "script": "libri_4970-29095-0004",
+  "sha256": "83eae4c5e295320c76f276b1adad005884986ae118afeed725d28168add8ae66"
+ },
+ {
+  "id": "libri__5105-28240-0007",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls5105",
+  "script": "libri_5105-28240-0007",
+  "sha256": "69a9ccea6cacee5492d68d9628f46e2eb3ac3827adcf52eec8d58236feb0697e"
+ },
+ {
+  "id": "libri__5338-284437-0004",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls5338",
+  "script": "libri_5338-284437-0004",
+  "sha256": "60cdf36b00ddb9ccee1cc1c3e841818d7ae9862ea75df8dff88ceed611aaf780"
+ },
+ {
+  "id": "libri__5639-40744-0002",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls5639",
+  "script": "libri_5639-40744-0002",
+  "sha256": "f9938a016d0598f25c1401d5f6e31808af61e0700266344c2ee47ccd0cd0bc55"
+ },
+ {
+  "id": "libri__5694-64025-0023",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls5694",
+  "script": "libri_5694-64025-0023",
+  "sha256": "1f246757428339d0350bb7abae05d7aa1595c8016ae449082402aff17227bcdd"
+ },
+ {
+  "id": "libri__61-70968-0015",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls61",
+  "script": "libri_61-70968-0015",
+  "sha256": "22b30b45a99b1178ab90b23a4bac71671b99df1b85c3123534f2eb65b154f394"
+ },
+ {
+  "id": "libri__6295-244435-0009",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls6295",
+  "script": "libri_6295-244435-0009",
+  "sha256": "ec7c1294cf2ec581d7b8b54c29866095228cc1629263e6d7aba1615c383a5d30"
+ },
+ {
+  "id": "libri__6319-275224-0014",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls6319",
+  "script": "libri_6319-275224-0014",
+  "sha256": "9b837df31a4bd04e1203e4b042f1300446b24176d06483f904f05fe815fbb9c4"
+ },
+ {
+  "id": "libri__652-130726-0031",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls652",
+  "script": "libri_652-130726-0031",
+  "sha256": "210c0ac71e4e0aef6c8ded3cb317a99878792ed75821d442cb7b161c469f79a8"
+ },
+ {
+  "id": "libri__6829-68769-0005",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls6829",
+  "script": "libri_6829-68769-0005",
+  "sha256": "b4dbd74eb1f9b152b651fa9631998401a47f440e9d59a8d456cc1f8a4206fd88"
+ },
+ {
+  "id": "libri__7021-85628-0022",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls7021",
+  "script": "libri_7021-85628-0022",
+  "sha256": "4bb870f65224dcb16d2c69e546eb964335e6bcce5b0b439d3367a96c0949afe6"
+ },
+ {
+  "id": "libri__7176-92135-0006",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls7176",
+  "script": "libri_7176-92135-0006",
+  "sha256": "33e23a8c2e07a27da11ffe056031c9cebce39e9a749d3db143910d44fa8b9391"
+ },
+ {
+  "id": "libri__777-126732-0019",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls777",
+  "script": "libri_777-126732-0019",
+  "sha256": "f6ce6fac724b098ad6bbbfeb8b8453fe1ea37cbd1f6550ed95e7ca6cfd18b18c"
+ },
+ {
+  "id": "libri__7976-110523-0010",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls7976",
+  "script": "libri_7976-110523-0010",
+  "sha256": "0337e8d9fc4cf789d36ce7be010773de1f742a9bcf49229e7710ba026d7a6931"
+ },
+ {
+  "id": "libri__8230-279154-0000",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls8230",
+  "script": "libri_8230-279154-0000",
+  "sha256": "6351f1ef8b83584a432013a42158f08661b1c2179e75bf5cfec5e9408301d74c"
+ },
+ {
+  "id": "libri__84-121550-0000",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls84",
+  "script": "libri_84-121550-0000",
+  "sha256": "820c31cbbf1e36e4666c9142151e232ab11d865ba98571e39e0fc6e831e75eef"
+ },
+ {
+  "id": "libri__8463-287645-0004",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls8463",
+  "script": "libri_8463-287645-0004",
+  "sha256": "b060b3deb152be7e85166042f11ff8c98f912d5c5b71aba3466635e5023a0142"
+ },
+ {
+  "id": "libri__8842-302201-0012",
+  "label": 0,
+  "source": "librispeech",
+  "group": "libri_ls8842",
+  "script": "libri_8842-302201-0012",
+  "sha256": "291f3f6f7cc07390cc874a290f1ad50221e96b58d06185055bddb0c255c5c603"
+ }
+]

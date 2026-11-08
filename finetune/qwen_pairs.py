@@ -386,6 +386,48 @@ def fusion_rows() -> None:
     print(len(out), "rows")
 
 
+def head_report() -> None:
+    """Markdown summary of results_pairs_*.json (head_train_eval.py --sanath-pairs) next to the 2026-11-07 hum_cluster run."""
+    runs = {"script split, clones in train": "results_pairs_script_hum_cluster_pella_mlp.json",
+            "script split, NO clones in train": "results_pairs_script_nofakes_hum_cluster_pella_mlp.json",
+            "Sanath held out entirely": "results_pairs_speaker_hum_cluster_pella_mlp.json",
+            "2026-11-07 hum_cluster (old Sanath set)": "results_hum_cluster_pella_mlp.json"}
+    R = {k: json.loads((FT / v).read_text()) for k, v in runs.items() if (FT / v).exists()}
+    cell = lambda d: "n/a" if not d or "auc" not in d else (
+        f"{d['auc']:.2f}" + (f" [{d['auc_ci95'][0]:.2f}, {d['auc_ci95'][1]:.2f}]" if d.get("auc_ci95") else "") +
+        f" / {d['tpr_at_0.5']:.2f} / {d['fpr_at_0.5']:.2f}")
+    L = ["Cells: window AUC [95% CI, clip bootstrap; clean and chain_replay only] / TPR@0.5 / FPR@0.5; n real / fake windows in brackets.", ""]
+    conds = ["clean", "opus8k", "g711_mulaw8k", "chain_replay_call"]
+    L += ["### Sanath real vs his Qwen clone (windows of the 18+2 Sanath clips)", "", "| run | block | " + " | ".join(conds) + " |",
+          "|---|---|" + "---|" * len(conds)]
+    for rn, r in R.items():
+        for blk in ("sanath_pairs/current", "sanath_pairs_seen_gen/head", "sanath_pairs_loo_qwen/head",
+                    "sanath_pairs_new/current", "sanath_pairs_new_seen_gen/head", "sanath_pairs_new_loo_qwen/head"):
+            t = r["table"].get(blk)
+            if t:
+                n = t["clean"]
+                L.append(f"| {rn} | {blk} ({n.get('n_real')}/{n.get('n_fake')}) | " + " | ".join(cell(t.get(c)) for c in conds) + " |")
+    L += ["", "### Held-out generators, all reals (LibriSpeech + Sanath + friends)", "", "| run | block | " + " | ".join(conds) + " |",
+          "|---|---|" + "---|" * len(conds)]
+    for rn, r in R.items():
+        for blk in ("loo_qwen/head", "loo_gradium/head", "loo_say/head", "seen_gen/head", "loo_qwen/current"):
+            t = r["table"].get(blk)
+            if t:
+                n = t["clean"]
+                L.append(f"| {rn} | {blk} ({n.get('n_real')}/{n.get('n_fake')}) | " + " | ".join(cell(t.get(c)) for c in conds) + " |")
+    L += ["", "### Human false alarms at 0.5 by source (share of windows; each scored by a model that never saw its speaker group / script)", "",
+          "| run | model | source | " + " | ".join(conds + ["g711_alaw8k", "chain_pstn_voip"]) + " |", "|---|---|---|" + "---|" * 6]
+    for rn, r in R.items():
+        fa = r.get("human_false_alarms_by_source", {})
+        for model, d in fa.items():
+            for src in ("libri", "sanath", "friends"):
+                vals = [d.get(c, {}).get(src) for c in conds + ["g711_alaw8k", "chain_pstn_voip"]]
+                if any(vals):
+                    L.append(f"| {rn} | {model} | {src} (n={vals[0]['n']}) | " + " | ".join(f"{v['fpr_0.5']:.2f}" if v else "n/a" for v in vals) + " |")
+    (PAIRS / "head_report.md").write_text("\n".join(L) + "\n")
+    print("\n".join(L))
+
+
 if __name__ == "__main__":
     {"manifest": manifest, "pipeline": pipeline, "windows": windows, "features": features, "report": report,
-     "fusion-rows": fusion_rows}[sys.argv[1]]()
+     "fusion-rows": fusion_rows, "head-report": head_report}[sys.argv[1]]()
