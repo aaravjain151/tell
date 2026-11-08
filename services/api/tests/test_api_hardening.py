@@ -7,8 +7,8 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from doublespeak import limits, pipeline
-from doublespeak.main import app
+from tell import limits, pipeline
+from tell.main import app
 from tests.synth import make_call, to_wav_bytes
 
 client = TestClient(app)
@@ -21,8 +21,8 @@ class _V:
 
 @pytest.fixture(autouse=True)
 def _env(monkeypatch):
-    for k in ("DOUBLESPEAK_CORS_ORIGINS", "DOUBLESPEAK_ALLOWED_HOSTS", "DOUBLESPEAK_MAX_UPLOAD_MB",
-              "DOUBLESPEAK_MAX_AUDIO_S", "DOUBLESPEAK_ANALYZE_TIMEOUT_S"):
+    for k in ("TELL_CORS_ORIGINS", "TELL_ALLOWED_HOSTS", "TELL_MAX_UPLOAD_MB",
+              "TELL_MAX_AUDIO_S", "TELL_ANALYZE_TIMEOUT_S"):
         monkeypatch.delenv(k, raising=False)
 
 
@@ -48,7 +48,7 @@ def test_evil_origin_is_rejected_and_never_runs(monkeypatch):
 
 def test_null_origin_only_if_listed(monkeypatch):
     # CORSMiddleware is built at import with the env of that moment; the guard reads env per request.
-    monkeypatch.setenv("DOUBLESPEAK_CORS_ORIGINS", "http://localhost:5173,null")
+    monkeypatch.setenv("TELL_CORS_ORIGINS", "http://localhost:5173,null")
     assert client.get("/health", headers={"Origin": "null"}).status_code == 200
 
 
@@ -57,7 +57,7 @@ def test_bad_host_rejected_good_hosts_ok(monkeypatch):
     assert client.get("/health", headers={"Host": "rebind.evil.example:8000"}).status_code == 400
     for h in ("localhost:8000", "127.0.0.1", "[::1]:8000"):
         assert client.get("/health", headers={"Host": h}).status_code == 200
-    monkeypatch.setenv("DOUBLESPEAK_ALLOWED_HOSTS", "mybox.local")
+    monkeypatch.setenv("TELL_ALLOWED_HOSTS", "mybox.local")
     assert client.get("/health", headers={"Host": "mybox.local:8000"}).status_code == 200
 
 
@@ -82,14 +82,14 @@ def _run_asgi(path, chunk):
 
 
 def test_oversize_audio_413_before_full_read(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_MAX_UPLOAD_MB", "1")
+    monkeypatch.setenv("TELL_MAX_UPLOAD_MB", "1")
     status, n = _run_asgi("/analyze", 256 * 1024)   # endless 256 KiB chunks, no Content-Length
     assert status == 413
     assert n <= 12   # limit is 1 MiB + 1 MiB slack = 8 chunks; it stopped instead of reading forever
 
 
 def test_oversize_content_length_413_immediately(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_MAX_UPLOAD_MB", "1")
+    monkeypatch.setenv("TELL_MAX_UPLOAD_MB", "1")
     r = client.post("/analyze", content=b"", headers={"Content-Length": str(50 * 1024 * 1024),
                                                       "Content-Type": "multipart/form-data; boundary=b"})
     assert r.status_code == 413 and "limit is 1 MB" in r.json()["detail"]
@@ -108,7 +108,7 @@ def test_empty_input_still_400():
 
 def test_duration_cap(monkeypatch):
     fake_ok(monkeypatch)
-    monkeypatch.setenv("DOUBLESPEAK_MAX_AUDIO_S", "2")
+    monkeypatch.setenv("TELL_MAX_AUDIO_S", "2")
     wav = to_wav_bytes(make_call("tts", seed=3))
     r = client.post("/analyze", files={"audio": ("c.wav", wav, "audio/wav")})
     assert r.status_code == 413 and "2 s" in r.json()["detail"]
@@ -176,7 +176,7 @@ def test_health_responsive_during_slow_analysis(monkeypatch):
 def test_timeout_504_and_gate_held_until_thread_ends(monkeypatch):
     release = threading.Event()
     monkeypatch.setattr(pipeline, "analyze", lambda a, t: release.wait(10))
-    monkeypatch.setenv("DOUBLESPEAK_ANALYZE_TIMEOUT_S", "0.3")
+    monkeypatch.setenv("TELL_ANALYZE_TIMEOUT_S", "0.3")
     monkeypatch.setattr(limits, "QUEUE_WAIT_S", 0.2)
 
     async def go():

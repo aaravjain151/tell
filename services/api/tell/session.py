@@ -10,15 +10,14 @@ The tick clock is the AUDIO clock (samples received), not wall time, so replay a
 and tests need no sleeps. Heartbeat/hello timeouts are wall-clock and live in stream.py.
 
 Privacy: audio exists only in `Ring` (zeroed on close) and in the one window copy handed to the worker, which lives
-until that analysis returns (bounded by DOUBLESPEAK_ANALYZE_TIMEOUT_S plus thread end). Pipeline runs with
-ephemeral=True so DOUBLESPEAK_DEBUG_SAVE and the opt-in history file are bypassed for streams.
+until that analysis returns (bounded by TELL_ANALYZE_TIMEOUT_S plus thread end). Pipeline runs with
+ephemeral=True so TELL_DEBUG_SAVE and the opt-in history file are bypassed for streams.
 """
 from __future__ import annotations
 
 import asyncio
 import hashlib
 import io
-import os
 import secrets
 import threading
 import time
@@ -28,6 +27,7 @@ from typing import Any, Awaitable, Callable
 
 import numpy as np
 
+from . import env as _env
 from . import limits, live, pipeline
 from .ring import SR, Ring
 
@@ -53,7 +53,7 @@ Emit = Callable[[dict], Awaitable[None]]
 
 def _env_f(name: str, default: float, lo: float, hi: float) -> float:
     try:
-        v = float(os.environ.get(name, ""))
+        v = float(_env.get(name, ""))
     except ValueError:
         return default
     return min(max(v, lo), hi) if v > 0 else default
@@ -61,14 +61,14 @@ def _env_f(name: str, default: float, lo: float, hi: float) -> float:
 
 def params() -> dict:
     """Effective stream parameters, read from env at call time (tests and the UI both see the same numbers)."""
-    window = _env_f("DOUBLESPEAK_STREAM_WINDOW_S", WINDOW_S, 0.05, 60)
-    hop = min(_env_f("DOUBLESPEAK_STREAM_HOP_S", HOP_S, 0.05, 60), window)   # hop > window would skip audio by design
-    ring = max(_env_f("DOUBLESPEAK_STREAM_RING_S", RING_DEFAULT_S, 0.05, RING_CAP_S), window)
+    window = _env_f("TELL_STREAM_WINDOW_S", WINDOW_S, 0.05, 60)
+    hop = min(_env_f("TELL_STREAM_HOP_S", HOP_S, 0.05, 60), window)   # hop > window would skip audio by design
+    ring = max(_env_f("TELL_STREAM_RING_S", RING_DEFAULT_S, 0.05, RING_CAP_S), window)
     return {"sample_rate": SR, "format": "pcm_s16le", "hop_s": hop, "window_s": window, "ring_s": ring,
-            "heartbeat_s": _env_f("DOUBLESPEAK_STREAM_HEARTBEAT_S", HEARTBEAT_S, 0.05, 120),
-            "hello_timeout_s": _env_f("DOUBLESPEAK_STREAM_HELLO_TIMEOUT_S", HELLO_TIMEOUT_S, 0.05, 30),
-            "token_ttl_s": _env_f("DOUBLESPEAK_STREAM_TOKEN_TTL_S", TOKEN_TTL_S, 0.05, 600),
-            "max_session_s": _env_f("DOUBLESPEAK_STREAM_MAX_SESSION_S", MAX_SESSION_S, 0.05, MAX_SESSION_S),
+            "heartbeat_s": _env_f("TELL_STREAM_HEARTBEAT_S", HEARTBEAT_S, 0.05, 120),
+            "hello_timeout_s": _env_f("TELL_STREAM_HELLO_TIMEOUT_S", HELLO_TIMEOUT_S, 0.05, 30),
+            "token_ttl_s": _env_f("TELL_STREAM_TOKEN_TTL_S", TOKEN_TTL_S, 0.05, 600),
+            "max_session_s": _env_f("TELL_STREAM_MAX_SESSION_S", MAX_SESSION_S, 0.05, MAX_SESSION_S),
             "max_frame_bytes": MAX_FRAME_BYTES, "max_sessions": MAX_SESSIONS, "sides": list(SIDES)}
 
 

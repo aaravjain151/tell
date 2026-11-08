@@ -5,12 +5,13 @@ Local files only; nothing here touches the network or the analysis path. Absolut
 """
 from __future__ import annotations
 
-import os
 import re
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse
+
+from . import env as _env
 
 ROOT = Path(__file__).resolve().parents[3]
 NAME_RE = re.compile(r"^[A-Za-z0-9_.-]{1,64}$")
@@ -19,7 +20,7 @@ router = APIRouter(prefix="/redteam", tags=["redteam"])
 
 
 def calls_dir() -> Path:
-    p = Path(os.environ.get("DOUBLESPEAK_CALLS_DIR") or "data/calls")
+    p = Path(_env.get("TELL_CALLS_DIR") or "data/calls")
     return (p if p.is_absolute() else ROOT / p).resolve()
 
 

@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def main():
     sys.path.insert(0, str(ROOT / "services" / "api"))
     from huggingface_hub import hf_hub_download
-    from doublespeak.signals import pella
+    from tell.signals import pella
     p = hf_hub_download(pella.REPO, pella.FILENAME, revision=pella.REVISION)
     if not pella.verify(Path(p)):
         raise RuntimeError(f"{p} does not match the pinned SHA-256; delete it and retry")

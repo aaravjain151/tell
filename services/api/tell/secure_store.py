@@ -1,10 +1,12 @@
 """Opt-in, encrypted, local-only alert history (T-016).
 
-Off unless DOUBLESPEAK_HISTORY=1. Each record is one JSON object, encrypted with AES-256-GCM
+Off unless TELL_HISTORY=1. Each record is one JSON object, encrypted with AES-256-GCM
 (fresh 96-bit nonce) and stored as one base64 line: ``b64(nonce):b64(ciphertext+tag)``. Append-only.
 
-The 256-bit key lives in the OS keychain (``keyring``, service "doublespeak") and is NEVER written
-to disk; there is deliberately no file fallback. If ``cryptography``/``keyring`` is missing or the
+The 256-bit key lives in the OS keychain (``keyring``, service "tell") and is NEVER written
+to disk. A key stored by an older checkout under the legacy service "doublespeak" is read and copied to "tell" on
+first use (the legacy item is left in place), so existing encrypted files stay readable after the rename (D-013).
+There is deliberately no file fallback. If ``cryptography``/``keyring`` is missing or the
 keychain is unavailable or locked, history is simply off and callers get a status string.
 
 A record holds ONLY: timestamp, tier, p_ai, p_scam, thresholds_version and the names of the top 3
@@ -22,9 +24,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
-log = logging.getLogger("doublespeak.secure_store")
+from . import env as _env
 
-KEYRING_SERVICE = "doublespeak"
+log = logging.getLogger("tell.secure_store")
+
+KEYRING_SERVICE = "tell"
+LEGACY_KEYRING_SERVICE = "doublespeak"   # pre-D-013 name: read-only fallback so existing encrypted data stays readable
 KEYRING_USER = "history-key"
 HISTORY_FILE = "alert_history.enc"
 READ_CAP = 200
@@ -39,11 +44,11 @@ class HistoryUnavailable(Exception):
 
 
 def enabled() -> bool:
-    return os.environ.get("DOUBLESPEAK_HISTORY") == "1"
+    return _env.get("TELL_HISTORY") == "1"
 
 
 def data_dir() -> Path:
-    env = os.environ.get("DOUBLESPEAK_DATA_DIR")
+    env = _env.get("TELL_DATA_DIR")
     return Path(env) if env else Path(__file__).resolve().parents[3] / "data" / "history"
 
 
@@ -59,19 +64,36 @@ def _aesgcm():
     return AESGCM
 
 
+def _stored_key(keyring, service: str) -> bytes | None:
+    stored = keyring.get_password(service, KEYRING_USER)
+    if stored:
+        key = base64.b64decode(stored)
+        if len(key) == _KEY_BYTES:
+            return key
+    return None
+
+
 def keyring_key_provider() -> bytes:
-    """Fetch (or create on first use) the AES key in the OS keychain. Raises HistoryUnavailable."""
+    """Fetch (or create on first use) the AES key in the OS keychain. Raises HistoryUnavailable.
+
+    Order: service "tell"; else the legacy "doublespeak" key, copied to "tell" (never a fresh key while an old one
+    exists, or every existing encrypted file would become unreadable); else a new key under "tell"."""
     AESGCM = _aesgcm()
     try:
         import keyring
     except ImportError as e:
         raise HistoryUnavailable("keyring not installed") from e
     try:
-        stored = keyring.get_password(KEYRING_SERVICE, KEYRING_USER)
-        if stored:
-            key = base64.b64decode(stored)
-            if len(key) == _KEY_BYTES:
-                return key
+        key = _stored_key(keyring, KEYRING_SERVICE)
+        if key:
+            return key
+        key = _stored_key(keyring, LEGACY_KEYRING_SERVICE)
+        if key:
+            try:
+                keyring.set_password(KEYRING_SERVICE, KEYRING_USER, base64.b64encode(key).decode("ascii"))
+            except Exception as e:  # noqa: BLE001 — the copy is best effort; the legacy key still works next time
+                log.warning("could not copy the history key to the new keychain name: %s", type(e).__name__)
+            return key
         key = AESGCM.generate_key(bit_length=256)
         keyring.set_password(KEYRING_SERVICE, KEYRING_USER, base64.b64encode(key).decode("ascii"))
         return key

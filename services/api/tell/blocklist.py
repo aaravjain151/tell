@@ -1,4 +1,4 @@
-"""Local-only block list for the caller-ID side of Doublespeak.
+"""Local-only block list for the caller-ID side of Tell.
 
 The list is the user's own. It lives in ONE AES-256-GCM encrypted file (same key and helpers as secure_store.py, key in
 the OS keychain only) and never leaves the device: no crowd upload, no cloud reputation lookup, no number is ever sent
@@ -27,9 +27,10 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response
 
+from . import env as _env
 from . import secure_store
 
-log = logging.getLogger("doublespeak.blocklist")
+log = logging.getLogger("tell.blocklist")
 
 BLOCKLIST_FILE = "blocklist.enc"
 MAX_ITEMS = 5000
@@ -47,7 +48,7 @@ MIN_DIGITS, MAX_DIGITS = 7, 15          # E.164 allows 15 digits including the c
 #   1. Input must be a str of at most 32 chars containing only digits, space . - ( ) / and an optional leading "+".
 #      Letters (vanity numbers, "ext"), "#", "*", and anything else are refused.
 #   2. "+" or a leading "00" means an explicit country code: keep it, 7..15 digits, first digit not 0.
-#   3. Otherwise the number is national and DOUBLESPEAK_DEFAULT_REGION (default "US") decides:
+#   3. Otherwise the number is national and TELL_DEFAULT_REGION (default "US") decides:
 #        US/CA (NANP): 10 digits, or 11 digits starting with 1, area code and exchange start 2-9 -> +1...
 #        GB: leading 0 trunk prefix + 10 digits -> +44...      IN: 10 digits starting 6-9, or 0 + 10 -> +91...
 #        AU: leading 0 + 9 digits -> +61...
@@ -58,7 +59,7 @@ _ALLOWED = re.compile(r"^\+?[0-9 ().\-/]+$")
 
 
 def default_region() -> str:
-    return os.environ.get("DOUBLESPEAK_DEFAULT_REGION", "US").strip().upper()
+    return _env.get("TELL_DEFAULT_REGION", "US").strip().upper()
 
 
 def normalise(raw: Any, region: str | None = None) -> str | None:

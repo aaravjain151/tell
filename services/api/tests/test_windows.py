@@ -1,6 +1,6 @@
 import numpy as np
 
-from doublespeak.signals.windows import SR, windows
+from tell.signals.windows import SR, windows
 
 
 def tone(seconds, amp=0.1):

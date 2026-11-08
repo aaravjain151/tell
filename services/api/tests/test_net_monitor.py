@@ -3,7 +3,7 @@ import types
 
 import pytest
 
-from doublespeak import net_monitor
+from tell import net_monitor
 
 psutil = pytest.importorskip("psutil")
 
@@ -88,6 +88,6 @@ def test_real_non_loopback_connection_is_counted():
 
 
 def test_analysis_reports_the_os_check():
-    from doublespeak import pipeline
+    from tell import pipeline
     v = pipeline.analyze(None, "hello there, this is a short test call about lunch plans for tomorrow afternoon")
     assert v.egress["os_check"] in ("ok", "unavailable") and v.egress["os_outbound_count"] == 0

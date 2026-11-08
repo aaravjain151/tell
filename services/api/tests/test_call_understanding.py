@@ -4,8 +4,8 @@ import types
 
 import numpy as np
 
-from doublespeak import llm, localhost, pipeline, reasons, stt
-from doublespeak.types import Tell
+from tell import llm, localhost, pipeline, reasons, stt
+from tell.types import Tell
 
 
 def intent_tell(name, score=0.75, weight=1.0, ev="x"):
@@ -46,7 +46,7 @@ def test_at_most_four_ordered_by_weight_times_score():
 def test_empty_case_is_honest_and_never_says_safe():
     for tells in ([], [intent_tell("urgency", 0.0)], [Tell("pitch_stability", "acoustic", 0.2, 1.0, "e")]):
         out = reasons.build(tells)
-        assert out == ["No warning signs found. Doublespeak can be wrong."]
+        assert out == ["No warning signs found. Tell can be wrong."]
         assert "safe" not in out[0].lower()
 
 
@@ -141,5 +141,5 @@ def test_valueerror_during_iteration_also_returns_empty(monkeypatch):
             return gen(), None
     _fake_whisper(monkeypatch, Lazy())
     assert stt.transcribe(np.zeros(16000, dtype=np.float32)) == ""
-    monkeypatch.setenv("DOUBLESPEAK_STT", "whisper")
+    monkeypatch.setenv("TELL_STT", "whisper")
     assert stt.transcribe_with_source(np.zeros(16000, dtype=np.float32)) == (None, None)

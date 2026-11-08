@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from doublespeak import pipeline, thresholds as T
-from doublespeak.audio import decode
-from doublespeak.signals import acoustic, intent, script
+from tell import pipeline, thresholds as T
+from tell.audio import decode
+from tell.signals import acoustic, intent, script
 from tests.synth import make_call, to_wav_bytes
 
 HUMAN_TXT = ("Hey, um, it's me. So, yeah, I was gonna call you earlier but I, I got stuck at the store. "

@@ -4,9 +4,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from doublespeak import scorer, thresholds as T  # noqa: E402
-from doublespeak.signals import neural, pella  # noqa: E402
-from doublespeak.types import Tell  # noqa: E402
+from tell import scorer, thresholds as T  # noqa: E402
+from tell.signals import neural, pella  # noqa: E402
+from tell.types import Tell  # noqa: E402
 
 
 def test_weights_come_from_the_documented_places():

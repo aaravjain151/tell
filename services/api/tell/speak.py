@@ -24,10 +24,10 @@ def known_headlines() -> set[str]:
 
 
 def verdict_text(headline: str, evidence: str = "") -> str:
-    """Only Doublespeak's own fixed verdict wording may be spoken. `evidence` is accepted for client compatibility
+    """Only Tell's own fixed verdict wording may be spoken. `evidence` is accepted for client compatibility
     and deliberately ignored: evidence strings quote the caller's words, which must never reach a third-party TTS."""
     if headline not in known_headlines():
-        raise ValueError("only Doublespeak's own verdict wording can be spoken")
+        raise ValueError("only Tell's own verdict wording can be spoken")
     return f"Heads up. {headline}."
 
 

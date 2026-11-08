@@ -6,8 +6,8 @@ import math
 
 import numpy as np
 
-from doublespeak import pipeline
-from doublespeak.signals import shadow
+from tell import pipeline
+from tell.signals import shadow
 from tests.synth import make_call, to_wav_bytes
 
 SR = 16_000
@@ -122,7 +122,7 @@ def test_verdict_bit_identical_with_shadow_on_or_off(monkeypatch):
 
 
 def test_live_tick_gets_call_persistence_and_stable_is_unchanged(monkeypatch):
-    from doublespeak import live
+    from tell import live
 
     def tick(i):
         return {"tier": "human", "p_ai": 0.3, "p_scam": 0.0, "confidence": 0.5, "disclosed_ai": False, "tells": [],

@@ -17,9 +17,9 @@ from dataclasses import replace
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from doublespeak import thresholds as T  # noqa: E402
-from doublespeak.scorer import _wmean  # noqa: E402
-from doublespeak.types import Tell  # noqa: E402
+from tell import thresholds as T  # noqa: E402
+from tell.scorer import _wmean  # noqa: E402
+from tell.types import Tell  # noqa: E402
 from eval.metrics import auc  # noqa: E402
 
 

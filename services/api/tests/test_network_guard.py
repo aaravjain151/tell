@@ -16,7 +16,7 @@ import urllib.request
 import pytest
 from fastapi.testclient import TestClient
 
-from doublespeak import localhost, pipeline, privacy
+from tell import localhost, pipeline, privacy
 from tests.synth import make_call, to_wav_bytes
 
 TRANSCRIPT = ("Hello, this is the IRS. You owe back taxes and a warrant will be issued today. "
@@ -110,10 +110,10 @@ def guard(monkeypatch):
 
     for var in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "http_proxy", "https_proxy", "all_proxy"):
         monkeypatch.delenv(var, raising=False)
-    monkeypatch.setenv("DOUBLESPEAK_OFFLINE", "1")
+    monkeypatch.setenv("TELL_OFFLINE", "1")
     monkeypatch.setenv("HF_HUB_OFFLINE", "1")
     monkeypatch.setenv("TRANSFORMERS_OFFLINE", "1")
-    monkeypatch.setenv("DOUBLESPEAK_WARMUP", "0")
+    monkeypatch.setenv("TELL_WARMUP", "0")
     return g
 
 
@@ -219,7 +219,7 @@ def test_leaky_llm_stage_is_caught(guard, monkeypatch):
 
 # ---------------- the real pipeline stays on loopback ----------------
 def test_full_pipeline_makes_no_non_loopback_attempt(guard, engines, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STT", "voicestudio")
+    monkeypatch.setenv("TELL_STT", "voicestudio")
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     privacy.reset()
     v = pipeline.analyze(wav("tts", 3), None)    # no transcript: STT (VoiceStudio) then Ollama, both fake over loopback
@@ -241,7 +241,7 @@ def test_stub_pipeline_with_transcript(guard, kind, seed, monkeypatch):
 
 
 def test_pipeline_whisper_mode_makes_no_attempt(guard, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STT", "whisper")
+    monkeypatch.setenv("TELL_STT", "whisper")
     pipeline.analyze(wav(), None)
     guard.assert_clean()
 
@@ -257,10 +257,10 @@ def test_non_loopback_ollama_url_is_refused_before_any_socket(guard, engines, mo
 # ---------------- the API ----------------
 @pytest.fixture
 def client(guard, engines, monkeypatch, tmp_path):
-    monkeypatch.setenv("DOUBLESPEAK_STT", "voicestudio")
+    monkeypatch.setenv("TELL_STT", "voicestudio")
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
-    monkeypatch.setenv("DOUBLESPEAK_CALLS_DIR", str(tmp_path / "calls"))
-    from doublespeak.main import app
+    monkeypatch.setenv("TELL_CALLS_DIR", str(tmp_path / "calls"))
+    from tell.main import app
     with TestClient(app) as c:
         yield c
 
@@ -279,10 +279,10 @@ def test_api_endpoints_stay_on_loopback(client, guard):
 
 
 def test_api_startup_warmup_stays_on_loopback(guard, engines, monkeypatch, tmp_path):
-    monkeypatch.setenv("DOUBLESPEAK_WARMUP", "1")
-    monkeypatch.setenv("DOUBLESPEAK_STT", "voicestudio")
+    monkeypatch.setenv("TELL_WARMUP", "1")
+    monkeypatch.setenv("TELL_STT", "voicestudio")
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
-    from doublespeak.main import app
+    from tell.main import app
     with TestClient(app) as c:
         c.get("/health")
     guard.assert_clean()

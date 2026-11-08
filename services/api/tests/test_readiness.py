@@ -8,21 +8,21 @@ from unittest.mock import Mock
 import pytest
 from fastapi.testclient import TestClient
 
-from doublespeak import localhost, net_monitor, offline_guard, privacy, readiness, stt
-from doublespeak.main import app
-from doublespeak.signals import neural
+from tell import localhost, net_monitor, offline_guard, privacy, readiness, stt
+from tell.main import app
+from tell.signals import neural
 
 
 @pytest.fixture(autouse=True)
 def isolated(monkeypatch):
-    for name in ("DOUBLESPEAK_STT", "DOUBLESPEAK_WHISPER_MODEL", "HF_SPOOF_MODEL", "LLM_PROVIDER",
+    for name in ("TELL_STT", "TELL_WHISPER_MODEL", "HF_SPOOF_MODEL", "LLM_PROVIDER",
                  "OLLAMA_URL", "OLLAMA_MODEL", "VOICESTUDIO_URL"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(stt, "_model", None)
     monkeypatch.setattr(neural, "_hf", None)
     monkeypatch.setattr(net_monitor, "snapshot_report", lambda: {"os_check": "ok"})
     monkeypatch.setattr(localhost._OPENER, "open", Mock(side_effect=OSError("down")))
-    monkeypatch.setenv("DOUBLESPEAK_WARMUP", "0")
+    monkeypatch.setenv("TELL_WARMUP", "0")
 
 
 def engine(monkeypatch, responses):
@@ -44,7 +44,7 @@ def test_unset_off_and_no_stt_not_ready():
 
 
 @pytest.mark.parametrize("env,component", [("HF_SPOOF_MODEL", "anti_spoof_hf"),
-                                            ("DOUBLESPEAK_WHISPER_MODEL", "stt")])
+                                            ("TELL_WHISPER_MODEL", "stt")])
 @pytest.mark.parametrize("cached", [False, True])
 def test_configured_model_cache(monkeypatch, env, component, cached):
     monkeypatch.setenv(env, "test/model")
@@ -60,7 +60,7 @@ def test_configured_model_cache(monkeypatch, env, component, cached):
 
 def test_local_directory_cache(monkeypatch, tmp_path):
     (tmp_path / "model.bin").touch()
-    monkeypatch.setenv("DOUBLESPEAK_WHISPER_MODEL", str(tmp_path))
+    monkeypatch.setenv("TELL_WHISPER_MODEL", str(tmp_path))
     assert readiness.report()["components"]["stt"]["detail"] == "cached but not loaded yet"
 
 
@@ -93,7 +93,7 @@ def test_ollama_status_without_inference(monkeypatch, resident, cached, expected
 
 @pytest.mark.parametrize("mode", ["auto", "voicestudio"])
 def test_voicestudio(monkeypatch, mode):
-    monkeypatch.setenv("DOUBLESPEAK_STT", mode)
+    monkeypatch.setenv("TELL_STT", mode)
     monkeypatch.setattr(stt, "_model", object())
     engine(monkeypatch, {"models": {"data": [{"id": "whisper-1", "loaded": True}]}})
     result = readiness.report()
@@ -102,7 +102,7 @@ def test_voicestudio(monkeypatch, mode):
 
 
 def test_broken_configured_component_blocks_ready(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STT", "auto")
+    monkeypatch.setenv("TELL_STT", "auto")
     monkeypatch.setattr(stt, "_model", object())
     result = readiness.report()
     assert result["components"]["stt"]["status"] == "ready"
@@ -112,7 +112,7 @@ def test_broken_configured_component_blocks_ready(monkeypatch):
 
 @pytest.mark.parametrize("models", [[], [{"id": "whisper-1"}], [{"id": "whisper-1", "loaded": False}]])
 def test_voicestudio_advertisement_does_not_prove_loaded(monkeypatch, models):
-    monkeypatch.setenv("DOUBLESPEAK_STT", "voicestudio")
+    monkeypatch.setenv("TELL_STT", "voicestudio")
     engine(monkeypatch, {"models": {"data": models}})
     result = readiness.report()
     assert result["components"]["voicestudio_stt"]["status"] == "degraded"
@@ -127,7 +127,7 @@ def test_voicestudio_advertisement_does_not_prove_loaded(monkeypatch, models):
     ("distil-large-v3.5", "distil-whisper/distil-large-v3.5-ct2"),
 ])
 def test_whisper_cache_aliases(monkeypatch, alias, repo):
-    monkeypatch.setenv("DOUBLESPEAK_WHISPER_MODEL", alias)
+    monkeypatch.setenv("TELL_WHISPER_MODEL", alias)
     cache = Mock(return_value=False)
     monkeypatch.setattr(readiness, "_cached", cache)
     readiness.report()
@@ -142,7 +142,7 @@ def test_schema_endpoint_never_loads_models(monkeypatch):
         AutoModelForAudioClassification=SimpleNamespace(from_pretrained=load)))
     monkeypatch.setitem(sys.modules, "huggingface_hub",
                         SimpleNamespace(try_to_load_from_cache=lambda *args: None))
-    monkeypatch.setenv("DOUBLESPEAK_STT", "whisper")
+    monkeypatch.setenv("TELL_STT", "whisper")
     monkeypatch.setenv("HF_SPOOF_MODEL", "test/model")
     with TestClient(app) as client:
         response = client.get("/ready")
@@ -160,7 +160,7 @@ def test_schema_endpoint_never_loads_models(monkeypatch):
 
 
 def test_loaded_models_ready_without_cache_access(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STT", "whisper")
+    monkeypatch.setenv("TELL_STT", "whisper")
     monkeypatch.setenv("HF_SPOOF_MODEL", "test/model")
     monkeypatch.setattr(stt, "_model", object())
     monkeypatch.setattr(neural, "_hf", (object(), object()))
@@ -173,7 +173,7 @@ def test_loaded_models_ready_without_cache_access(monkeypatch):
 def test_failures_are_isolated(monkeypatch):
     def broken(*args):
         raise RuntimeError("broken")
-    monkeypatch.setenv("DOUBLESPEAK_STT", "whisper")
+    monkeypatch.setenv("TELL_STT", "whisper")
     monkeypatch.setenv("HF_SPOOF_MODEL", "test/model")
     monkeypatch.setattr(readiness, "_cached", broken)
     monkeypatch.setattr(net_monitor, "snapshot_report", broken)
@@ -194,17 +194,17 @@ def test_external_engine_url_refused_before_opener(monkeypatch):
 
 
 def test_report_includes_pellav2_and_the_privacy_posture(monkeypatch):
-    from doublespeak import readiness
+    from tell import readiness
     monkeypatch.delenv("PELLA_MODEL", raising=False)
-    monkeypatch.setenv("DOUBLESPEAK_DEBUG_SAVE", "1")
+    monkeypatch.setenv("TELL_DEBUG_SAVE", "1")
     r = readiness.report()
     assert r["components"]["pellav2"]["status"] == "off"
     assert r["privacy_posture"]["debug_save"] is True and set(r["privacy_posture"]) >= {"debug_save", "llm_provider_anthropic", "gradium_key_set"}
 
 
 def test_pellav2_never_loads_a_model_while_reporting(monkeypatch):
-    from doublespeak import readiness
-    from doublespeak.signals import pella
+    from tell import readiness
+    from tell.signals import pella
     monkeypatch.setenv("PELLA_MODEL", pella.REPO)
     monkeypatch.setattr(pella, "_model", None); monkeypatch.setattr(pella, "_error", "")
     monkeypatch.setattr(pella, "weights_path", lambda: None)

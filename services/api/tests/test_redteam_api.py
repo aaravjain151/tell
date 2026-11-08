@@ -4,7 +4,7 @@ import wave
 import pytest
 from fastapi.testclient import TestClient
 
-from doublespeak.main import app
+from tell.main import app
 
 client = TestClient(app)
 
@@ -28,7 +28,7 @@ def calls(tmp_path, monkeypatch):
     _wav(c / "gradium" / "casual.wav")
     _wav(c / "elevenlabs" / "scam_irs.wav")
     _wav(c / "human" / "alex" / "scam_irs.wav")
-    monkeypatch.setenv("DOUBLESPEAK_CALLS_DIR", str(c))
+    monkeypatch.setenv("TELL_CALLS_DIR", str(c))
     (tmp_path / "secret.wav").write_bytes(b"RIFFsecret")
     (tmp_path / "secret.txt").write_text("top secret")
     return c
@@ -61,23 +61,23 @@ def test_clip_text_and_variant(calls):
 
 
 def test_missing_or_empty_dir(tmp_path, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_CALLS_DIR", str(tmp_path / "nope"))
+    monkeypatch.setenv("TELL_CALLS_DIR", str(tmp_path / "nope"))
     assert client.get("/redteam/samples").json() == []
     assert client.get("/redteam/clip/gradium/x").status_code == 404
     (tmp_path / "empty").mkdir()
-    monkeypatch.setenv("DOUBLESPEAK_CALLS_DIR", str(tmp_path / "empty"))
+    monkeypatch.setenv("TELL_CALLS_DIR", str(tmp_path / "empty"))
     assert client.get("/redteam/samples").json() == []
 
 
 def test_relative_env_is_repo_relative(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_CALLS_DIR", "does/not/exist")
+    monkeypatch.setenv("TELL_CALLS_DIR", "does/not/exist")
     assert client.get("/redteam/samples").json() == []
 
 
 def test_cap_200(tmp_path, monkeypatch):
     for i in range(205):
         _wav(tmp_path / "gradium" / f"s{i:03}.wav", 10)
-    monkeypatch.setenv("DOUBLESPEAK_CALLS_DIR", str(tmp_path))
+    monkeypatch.setenv("TELL_CALLS_DIR", str(tmp_path))
     assert len(client.get("/redteam/samples").json()) == 200
 
 
@@ -108,7 +108,7 @@ def test_traversal_rejected(calls, path):
 def test_dotdot_names_rejected_directly(calls):
     from fastapi import HTTPException
 
-    from doublespeak import redteam
+    from tell import redteam
     for e, s in [("..", "secret"), ("gradium", ".."), ("gradium", "a..b"), ("/etc", "passwd"), ("gradium", "/etc/passwd"), ("", "x")]:
         with pytest.raises(HTTPException) as ei:
             redteam._lookup(e, s)

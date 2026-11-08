@@ -5,7 +5,7 @@ import logging
 import pytest
 from fastapi.testclient import TestClient
 
-from doublespeak import blocklist as bl, feedback as fb, main, secure_store as ss
+from tell import blocklist as bl, feedback as fb, main, secure_store as ss
 
 KEY = bytes(range(32))
 NUM = "+14155550123"
@@ -15,8 +15,8 @@ client = TestClient(main.app)
 
 @pytest.fixture(autouse=True)
 def store(tmp_path, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_DATA_DIR", str(tmp_path / "d"))
-    monkeypatch.delenv("DOUBLESPEAK_DEFAULT_REGION", raising=False)
+    monkeypatch.setenv("TELL_DATA_DIR", str(tmp_path / "d"))
+    monkeypatch.delenv("TELL_DEFAULT_REGION", raising=False)
     monkeypatch.setattr(ss, "keyring_key_provider", lambda: KEY)
     bl.reset_rate_limits()
     yield tmp_path / "d"
@@ -45,7 +45,7 @@ def test_normalise_regions():
 
 
 def test_default_region_env(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_DEFAULT_REGION", "GB")
+    monkeypatch.setenv("TELL_DEFAULT_REGION", "GB")
     assert bl.normalise("020 7946 0958") == "+442079460958"
     assert bl.normalise("4155550123") is None
 
@@ -194,7 +194,7 @@ def test_numbers_not_in_logs_on_corrupt_file(store, caplog):
 
 
 def test_numbers_never_in_verdict_or_egress():
-    from doublespeak import privacy
+    from tell import privacy
     client.post("/blocklist", json={"number": NUM})
     v = client.post("/analyze", data={"transcript": "hello this is a call from 415 555 0123 about your car warranty"})
     assert v.status_code == 200

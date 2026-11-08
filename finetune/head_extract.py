@@ -49,7 +49,7 @@ def _degrade_one(args):
 
 
 def build_windows() -> None:
-    from doublespeak.signals import windows as win
+    from tell.signals import windows as win
     rows = list(csv.DictReader(open(FT / "sources.csv")))
     items = []   # (meta dict, window)
     for r in rows:
@@ -99,7 +99,7 @@ def extract(which: str) -> None:
     dev = os.environ.get("HEAD_DEVICE", "mps" if torch.backends.mps.is_available() else "cpu")
     bs = int(os.environ.get("HEAD_BATCH", "8"))
     if which == "pella":
-        from doublespeak.signals import pella
+        from tell.signals import pella
         os.environ.setdefault("PELLA_MODEL", str(pella.weights_path() or ""))
         os.environ["PELLA_DEVICE"] = dev
         pella._load()
@@ -119,7 +119,7 @@ def extract(which: str) -> None:
         name = "garystafford/wav2vec2-deepfake-voice-detector"
         fe = AutoFeatureExtractor.from_pretrained(name, local_files_only=True)
         m = AutoModelForAudioClassification.from_pretrained(name, local_files_only=True).eval().to(dev)
-        from doublespeak.signals.neural import fake_label_index
+        from tell.signals.neural import fake_label_index
         fi = fake_label_index(m.config.id2label)
 
         def run(x):

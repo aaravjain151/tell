@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from doublespeak.stabiliser import (
+from tell.stabiliser import (
     POLICY_VERSION, RawTick, Stabiliser, StabiliserConfig, from_verdict,
 )
-from doublespeak.types import Tell, Verdict
+from tell.types import Tell, Verdict
 
 
 def tick(t=0, tier="human", **kwargs):
@@ -214,7 +214,7 @@ def test_from_verdict_maps_intent_tells():
 
 
 def test_module_is_pure():
-    source = Path(__file__).resolve().parents[1] / "doublespeak" / "stabiliser.py"
+    source = Path(__file__).resolve().parents[1] / "tell" / "stabiliser.py"
     tree = ast.parse(source.read_text())
     banned = {"socket", "urllib", "http", "time", "os", "subprocess", "datetime"}
     for node in ast.walk(tree):

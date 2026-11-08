@@ -2,8 +2,8 @@
 import numpy as np
 import pytest
 
-from doublespeak import stt
-from doublespeak.signals import neural
+from tell import stt
+from tell.signals import neural
 
 
 def test_hf_voter_degrades_when_the_model_cannot_load(monkeypatch):

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from starlette.formparsers import MultiPartParser
 
-from .limits import max_upload_bytes   # one tolerant parser for DOUBLESPEAK_MAX_UPLOAD_MB
+from .limits import max_upload_bytes   # one tolerant parser for TELL_MAX_UPLOAD_MB
 
 
 def keep_uploads_in_memory() -> int:

@@ -6,8 +6,8 @@ import stat
 import pytest
 from fastapi.testclient import TestClient
 
-from doublespeak import main, pipeline, secure_store as ss
-from doublespeak.types import Tell, Verdict
+from tell import main, pipeline, secure_store as ss
+from tell.types import Tell, Verdict
 
 SENTINEL = "ZXQ-SENTINEL-7731-wire-the-gift-cards"
 KEY = bytes(range(32))
@@ -16,8 +16,8 @@ client = TestClient(main.app)
 
 @pytest.fixture(autouse=True)
 def hist(tmp_path, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_DATA_DIR", str(tmp_path / "h"))
-    monkeypatch.setenv("DOUBLESPEAK_HISTORY", "1")
+    monkeypatch.setenv("TELL_DATA_DIR", str(tmp_path / "h"))
+    monkeypatch.setenv("TELL_HISTORY", "1")
     monkeypatch.setattr(ss, "keyring_key_provider", lambda: KEY)
     return tmp_path / "h"
 
@@ -90,7 +90,7 @@ def test_permissions(hist):
 
 
 def test_disabled_by_default(monkeypatch, hist):
-    monkeypatch.delenv("DOUBLESPEAK_HISTORY")
+    monkeypatch.delenv("TELL_HISTORY")
     assert ss.record_verdict(verdict()) == "disabled"
     assert not hist.exists()
     assert client.get("/history").json()["status"] == "disabled"
@@ -100,8 +100,8 @@ def test_disabled_by_default(monkeypatch, hist):
 @pytest.mark.parametrize("missing", ["cryptography", "keyring"])
 def test_missing_dependency_degrades(monkeypatch, missing, hist):
     monkeypatch.undo()  # drop the fake provider so the real one runs
-    monkeypatch.setenv("DOUBLESPEAK_DATA_DIR", str(hist))
-    monkeypatch.setenv("DOUBLESPEAK_HISTORY", "1")
+    monkeypatch.setenv("TELL_DATA_DIR", str(hist))
+    monkeypatch.setenv("TELL_HISTORY", "1")
     real = builtins.__import__
 
     def fake(name, *a, **k):
@@ -156,3 +156,75 @@ def test_read_cap():
         ss.append(ss.record_from_verdict(verdict()), lambda: KEY)
     assert len(ss.read_all()[0]) == 200
     assert len(client.get("/history").json()["records"]) == 200
+
+
+# --- D-013 rename: the keychain service moved from "doublespeak" to "tell"; existing encrypted data must stay readable
+
+
+class FakeKeyring:
+    def __init__(self, items=None, fail_set=False):
+        self.items = dict(items or {})
+        self.fail_set = fail_set
+
+    def get_password(self, service, user):
+        return self.items.get((service, user))
+
+    def set_password(self, service, user, value):
+        if self.fail_set:
+            raise RuntimeError("locked")
+        self.items[(service, user)] = value
+
+
+def _b64(k):
+    import base64
+    return base64.b64encode(k).decode("ascii")
+
+
+@pytest.fixture
+def real_provider(monkeypatch):
+    """The autouse fixture swaps in a fake provider; these tests drive the real one against a fake keyring module."""
+    import sys
+    def use(fake):
+        monkeypatch.setitem(sys.modules, "keyring", fake)
+        return _REAL_PROVIDER
+    return use
+
+
+_REAL_PROVIDER = ss.keyring_key_provider
+OLD = bytes(range(100, 132))
+NEW = bytes(range(200, 232))
+
+
+def test_keychain_names():
+    assert ss.KEYRING_SERVICE == "tell" and ss.LEGACY_KEYRING_SERVICE == "doublespeak"
+
+
+def test_legacy_key_is_reused_and_copied(real_provider):
+    kr = FakeKeyring({("doublespeak", ss.KEYRING_USER): _b64(OLD)})
+    assert real_provider(kr)() == OLD
+    assert kr.items[("tell", ss.KEYRING_USER)] == _b64(OLD)          # migrated
+    assert kr.items[("doublespeak", ss.KEYRING_USER)] == _b64(OLD)   # legacy left in place for older checkouts
+
+
+def test_new_key_wins_over_legacy(real_provider):
+    kr = FakeKeyring({("tell", ss.KEYRING_USER): _b64(NEW), ("doublespeak", ss.KEYRING_USER): _b64(OLD)})
+    assert real_provider(kr)() == NEW
+
+
+def test_fresh_install_creates_key_under_new_name_only(real_provider):
+    kr = FakeKeyring()
+    k = real_provider(kr)()
+    assert len(k) == 32 and kr.items == {("tell", ss.KEYRING_USER): _b64(k)}
+
+
+def test_legacy_key_still_used_when_copy_fails(real_provider):
+    kr = FakeKeyring({("doublespeak", ss.KEYRING_USER): _b64(OLD)}, fail_set=True)
+    assert real_provider(kr)() == OLD
+
+
+def test_history_written_before_rename_reads_after(real_provider, monkeypatch):
+    """End to end: a file encrypted with the old keychain key decrypts through the renamed provider."""
+    ss.append(ss.record_from_verdict(verdict()), lambda: OLD)            # what an old checkout left on disk
+    kr = FakeKeyring({("doublespeak", ss.KEYRING_USER): _b64(OLD)})
+    recs, skipped = ss.read_all(real_provider(kr))
+    assert skipped == 0 and len(recs) == 1 and recs[0]["tier"] == "scam"

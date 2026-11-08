@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Doublespeak iPhone bridge: carries the phone's microphone audio over the USB cable to the LOCAL engine and the
+"""Tell iPhone bridge: carries the phone's microphone audio over the USB cable to the LOCAL engine and the
 engine's answers back to the phone.
 
     python3 tools/ios/bridge.py --token K7QM-4TXD            # token is shown on the phone's connection screen
@@ -39,7 +39,7 @@ from urllib.parse import urlparse
 
 LOOPBACK = {"127.0.0.1", "localhost", "::1"}
 PHONE_PORT = 8765
-CONSENT = ("Doublespeak will listen to this call through your iPhone's microphone (speaker mode). The audio travels "
+CONSENT = ("Tell will listen to this call through your iPhone's microphone (speaker mode). The audio travels "
            "over the USB cable to THIS computer only and is analysed in memory: nothing is recorded, stored or sent "
            "anywhere else. It never speaks to the caller. Tell the other person if your state requires it.")
 PHONE_MAX_TEXT = 4096                     # the phone only sends tiny control messages
@@ -93,7 +93,7 @@ class NotLoopback(RuntimeError):
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    """Same rule as services/api/doublespeak/localhost.py: a loopback request is never bounced anywhere else."""
+    """Same rule as services/api/tell/localhost.py: a loopback request is never bounced anywhere else."""
 
     def redirect_request(self, *args, **kwargs):
         return None
@@ -274,7 +274,7 @@ class Bridge:
                 reason = await self._session(stop)
             except (OSError, asyncio.TimeoutError):
                 if not warned:
-                    say("Waiting for the Doublespeak app on the phone: open it, keep it unlocked, check the cable.")
+                    say("Waiting for the Tell app on the phone: open it, keep it unlocked, check the cable.")
                     warned = True
                 reason = "waiting"
             except Exception as e:  # noqa: BLE001 — websockets closed/handshake errors
@@ -406,10 +406,10 @@ def start_iproxy(port: int, udid: str) -> subprocess.Popen:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    ap = argparse.ArgumentParser(description="Doublespeak iPhone bridge (USB only).")
+    ap = argparse.ArgumentParser(description="Tell iPhone bridge (USB only).")
     ap.add_argument("--token", required=True, help="pairing code shown on the phone (XXXX-XXXX)")
     ap.add_argument("--url", default="http://127.0.0.1:8000", help="engine base URL (loopback only)")
-    ap.add_argument("--origin", default="http://localhost:5173", help="an allowed UI origin (DOUBLESPEAK_CORS_ORIGINS)")
+    ap.add_argument("--origin", default="http://localhost:5173", help="an allowed UI origin (TELL_CORS_ORIGINS)")
     ap.add_argument("--port", type=int, default=PHONE_PORT, help="local port for the phone (iproxy listens here)")
     ap.add_argument("--udid", help="which iPhone, when several are plugged in")
     ap.add_argument("--direct", action="store_true",

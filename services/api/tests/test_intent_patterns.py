@@ -1,8 +1,8 @@
 """Per-pattern tests for the intent families, including negatives that matter for older callers."""
 import pytest
 
-from doublespeak import pipeline
-from doublespeak.signals import intent
+from tell import pipeline
+from tell.signals import intent
 
 
 def fired(text):

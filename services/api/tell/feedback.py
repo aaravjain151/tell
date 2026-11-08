@@ -20,7 +20,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from . import blocklist, secure_store
 
-log = logging.getLogger("doublespeak.feedback")
+log = logging.getLogger("tell.feedback")
 
 FEEDBACK_FILE = "feedback.enc"
 LABELS = ("scam", "not_scam", "ai", "human")

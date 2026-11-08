@@ -21,7 +21,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 os.environ["LLM_PROVIDER"] = "ollama"
 
-from doublespeak import pipeline  # noqa: E402
+from tell import pipeline  # noqa: E402
 
 
 def bench(model: str, cases: list[dict]) -> dict:

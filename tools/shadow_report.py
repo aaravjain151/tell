@@ -30,10 +30,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "services" / "api"))
 sys.path.insert(0, str(ROOT / "tools" / "redteam"))
 os.environ.setdefault("LLM_PROVIDER", "stub")
-os.environ.setdefault("DOUBLESPEAK_STT", "whisper")
+os.environ.setdefault("TELL_STT", "whisper")
 
-from doublespeak import audio as audio_mod  # noqa: E402
-from doublespeak.signals import shadow  # noqa: E402
+from tell import audio as audio_mod  # noqa: E402
+from tell.signals import shadow  # noqa: E402
 
 WARNING = ("**WARNING: one human speaker and tiny n. Any separation below may be speaker identity (that person's mic and room), "
            "not human-vs-AI. Sanity check only; no claim of generalisation; none of this is used by the scorer.**")
@@ -68,7 +68,7 @@ def _fmt(x: float, nd: int = 2) -> str:
 def features_for(path: Path, use_pipeline: bool) -> dict[str, float | None]:
     data = path.read_bytes()
     if use_pipeline:
-        from doublespeak import pipeline
+        from tell import pipeline
         v = pipeline.analyze(data, None)
         sh = (v.egress.get("context") or {}).get("shadow") or {}
     else:

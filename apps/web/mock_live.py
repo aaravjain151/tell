@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tiny local mock of the Doublespeak live feed, so apps/web/index.html can be tested without the engine.
+"""Tiny local mock of the Tell live feed, so apps/web/index.html can be tested without the engine.
 
     python3 apps/web/mock_live.py                       # both scripts in a loop, one tick every 2 s
     python3 apps/web/mock_live.py --script scam --interval 0.05 --stop-at 12   # hold at tick 12 (for screenshots)

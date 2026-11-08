@@ -71,7 +71,7 @@ def get_json(url: str, timeout: float = 1.5, opener: Opener | None = None) -> di
 
 def post_multipart(url: str, fields: dict[str, str], file_field: str, filename: str, data: bytes,
                    timeout: float = 10.0, opener: Opener | None = None, content_type: str = "audio/wav") -> dict:
-    boundary = "----doublespeak" + secrets.token_hex(12)
+    boundary = "----tell" + secrets.token_hex(12)
     out = b""
     for k, v in fields.items():
         out += f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode()

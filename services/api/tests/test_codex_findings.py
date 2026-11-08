@@ -7,8 +7,8 @@ import pytest
 from fastapi import FastAPI, UploadFile
 from fastapi.testclient import TestClient
 
-from doublespeak import llm, pipeline, speak, uploads
-from doublespeak.types import Tell
+from tell import llm, pipeline, speak, uploads
+from tell.types import Tell
 
 NO_DISCLOSURE = ("Hi, this is Sarah from Bright Horizons Insurance. I hope you are doing well today. I would be glad to walk you "
                  "through our updated plans. Great question, the premium is very competitive. Absolutely, I can send the details.")
@@ -51,7 +51,7 @@ def test_large_uploads_stay_in_memory(monkeypatch):
 
 def test_the_real_app_applies_the_fix_at_import():
     from starlette.formparsers import MultiPartParser
-    import doublespeak.main  # noqa: F401
+    import tell.main  # noqa: F401
     assert MultiPartParser.spool_max_size >= 25 * 1024 * 1024
 
 
@@ -80,7 +80,7 @@ def test_the_route_sends_only_fixed_wording_to_the_tts_cli(monkeypatch):
     monkeypatch.setenv("GRADIUM_API_KEY", "k")
     monkeypatch.setattr(speak.shutil, "which", lambda n: "/usr/bin/uvx")
     monkeypatch.setattr(speak.subprocess, "run", fake_run)
-    from doublespeak.main import app
+    from tell.main import app
     c = TestClient(app)
     c.post("/speak", data={"headline": "Scam pattern", "evidence": "secrecy: “don't tell mom”"})
     assert seen["cmd"][3] == "Heads up. Scam pattern." and "mom" not in " ".join(seen["cmd"])

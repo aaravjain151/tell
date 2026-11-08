@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 import pytest
 
-from doublespeak.signals import pella, windows
+from tell.signals import pella, windows
 
 SR = 16_000
 

@@ -1,9 +1,9 @@
 """Display-only scores: table tests, additive field, Tell.detail never serialised or signed, voice_windows merge."""
 import pytest
 
-from doublespeak import pipeline, scorer
-from doublespeak.scores import confidence_label, scores_for
-from doublespeak.types import Tell, Verdict
+from tell import pipeline, scorer
+from tell.scores import confidence_label, scores_for
+from tell.types import Tell, Verdict
 
 
 def V(tier, p_ai=0.5, p_scam=0.0, conf=0.9, tells=None):
@@ -63,7 +63,7 @@ def test_additive_field_and_signature_unchanged():
     for k in ("tier", "p_ai", "p_scam", "confidence", "tells", "signature", "egress", "reasons", "transcript"):
         assert k in d
     # the signed payload does not include scores: recomputing without them verifies
-    from doublespeak import privacy
+    from tell import privacy
     payload = {"tier": v.tier, "p_ai": round(v.p_ai, 3), "p_scam": round(v.p_scam, 3),
                "tells": [(t.name, round(t.score, 3)) for t in v.tells], "thresholds_version": v.thresholds_version}
     assert v.signature == privacy.sign(payload, privacy.audio_fingerprint(None))
