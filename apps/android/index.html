@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Doublespeak for Android</title>
+<meta name="description" content="Listens to a call on speakerphone and checks it on your own computer over USB. Nothing is recorded or stored.">
+<meta name="theme-color" content="#0B1020" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="color-scheme" content="light dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preload" href="outfit.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="app.css">
+<script>
+/* Theme before first paint: ?theme=light|dark forces one (used for screenshots); otherwise the phone decides. */
+try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; }catch(e){}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the verdict</a>
+<div class="app" id="app">
+
+  <header class="top">
+    <div class="brand" aria-label="Doublespeak">
+      <img class="mk mk-l" src="icons/mark-light.svg" alt="" width="30" height="28">
+      <img class="mk mk-d" src="icons/mark-dark.svg" alt="" width="30" height="28">
+      <span>Doublespeak</span>
+    </div>
+    <button class="conn" id="conn" type="button" aria-haspopup="dialog">
+      <i class="dot" aria-hidden="true"></i><span id="conn-t">Checking</span>
+    </button>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!-- caution (amber) -->
+    <p class="caution" id="caution" role="status" hidden></p>
+
+    <!-- hero: the orb -->
+    <section class="hero" aria-labelledby="headline">
+      <div class="orb" id="orb" role="img" aria-label="Verdict gauge">
+        <svg viewBox="0 0 240 240" aria-hidden="true" focusable="false">
+          <defs>
+            <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+              <stop offset="55%" style="stop-color:var(--tier)" stop-opacity=".30"/>
+              <stop offset="100%" style="stop-color:var(--tier)" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle class="glow" cx="120" cy="120" r="120" fill="url(#glow)"/>
+          <circle class="disc" cx="120" cy="120" r="82"/>
+          <g class="ticks" id="ticks"></g>
+        </svg>
+        <div class="orb-txt"><b id="orb-word">Ready</b><small id="orb-sub"></small></div>
+      </div>
+      <h1 id="headline">Waiting for a call</h1>
+      <p class="advice" id="advice">Put the call on speakerphone, then tap Start listening.</p>
+      <p class="changed" id="changed" hidden></p>
+    </section>
+
+    <!-- error / notice -->
+    <section class="card err" id="err" role="alert" hidden></section>
+
+    <!-- not connected -->
+    <section class="card pair" id="pair" aria-labelledby="pair-h" hidden></section>
+
+    <!-- idle: how it works -->
+    <section class="card steps" id="steps" aria-label="How to use Doublespeak">
+      <ol>
+        <li><b>Put the call on speakerphone.</b><span>Android gives apps no call audio. The microphone hears the speaker.</span></li>
+        <li><b>Tap Start listening.</b><span>Audio goes only to your computer, over USB.</span></li>
+        <li><b>Keep this screen on.</b><span>Leaving the app may stop the microphone.</span></li>
+      </ol>
+      <button class="link" id="open-speaker" type="button">How speaker mode works</button>
+    </section>
+
+    <!-- live reading -->
+    <section class="read" id="read" hidden>
+      <div class="card grid-card">
+        <div class="quad" id="quad">
+          <div class="quad-ax quad-top"><span>Not scam</span><span>Scam</span></div>
+          <div class="quad-ax quad-left"><span>Human</span><span>AI</span></div>
+          <div class="quad-grid" id="quad-grid" role="img"><i data-c="human_ok"></i><i data-c="human_scam"></i><i data-c="ai_ok"></i><i data-c="ai_scam"></i></div>
+        </div>
+        <dl class="scores" id="scores">
+          <div><dt>Scam score</dt><dd id="s-scam">0</dd><span class="px" id="p-scam"></span></div>
+          <div><dt>AI-voice score</dt><dd id="s-ai">0</dd><span class="px" id="p-ai"></span></div>
+          <div><dt>How sure</dt><dd id="s-conf">Low</dd><span class="px" id="p-conf"></span></div>
+        </dl>
+        <p class="quad-txt" id="quad-txt"></p>
+      </div>
+
+      <ul class="why" id="why"></ul>
+
+      <div class="tl-wrap">
+        <div class="tl-head"><h2>The call so far</h2><span id="tl-note"></span><time id="tl-end">0:00</time></div>
+        <div class="tl" id="tl" role="img" aria-label="Call timeline"></div>
+      </div>
+
+      <div class="tx-wrap">
+        <div class="tx-head"><h2>What was said</h2><span>last 10 seconds, on this screen only</span></div>
+        <p class="tx" id="tx" tabindex="0"></p>
+      </div>
+    </section>
+
+    <p class="foot">Doublespeak can be wrong. It never speaks to the caller and never records.</p>
+  </main>
+
+  <!-- the dock: the primary action lives in the thumb zone -->
+  <footer class="dock" id="dock" data-state="idle">
+    <div class="dock-idle" id="dock-idle">
+      <button class="btn primary big" id="start" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 0 0 3.5-3.5V6.5a3.5 3.5 0 0 0-7 0V12a3.5 3.5 0 0 0 3.5 3.5Zm6-3.5a6 6 0 0 1-12 0M12 18v3"/></svg><span id="start-t">Start listening</span></button>
+      <p class="dock-note" id="dock-note">Speaker mode. Put the call on speakerphone first.</p>
+    </div>
+    <div class="dock-live" id="dock-live" role="group" aria-label="Listening">
+      <div class="live-row">
+        <span class="rec" aria-hidden="true"></span>
+        <div class="live-txt"><b>Listening</b><small id="live-sub">0:00 · speaker mode</small></div>
+        <button class="btn stop" id="stop" type="button">Stop</button>
+      </div>
+      <div class="meter" id="meter" aria-hidden="true"></div>
+      <p class="dock-note" id="live-note">Audio goes only to your computer over USB. Nothing is saved.</p>
+    </div>
+    <div class="dock-end" id="dock-end">
+      <div class="end-txt"><b>Listening stopped</b><small id="end-sub">Nothing was saved.</small></div>
+      <button class="btn ghost" id="clear" type="button">Clear screen</button>
+      <button class="btn primary" id="again" type="button">Start again</button>
+    </div>
+  </footer>
+
+  <!-- red alert takeover -->
+  <div class="alertfull" id="alert" role="alertdialog" aria-modal="true" aria-labelledby="al-h" aria-describedby="al-a" hidden>
+    <div class="al-in">
+      <svg class="al-ic" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6 3 42h42L24 6Zm0 14v11m0 5v.5"/></svg>
+      <h2 id="al-h">This looks like a scam</h2>
+      <p class="al-a" id="al-a">Hang up. Do not send money, cards, or codes.</p>
+      <ul class="al-why" id="al-why"></ul>
+      <button class="btn al-btn" id="al-dismiss" type="button">Dismiss</button>
+      <p class="al-note">Dismiss clears this alert. Doublespeak keeps listening and will warn again if there is new evidence.</p>
+    </div>
+  </div>
+
+  <!-- sheets -->
+  <div class="scrim" id="scrim" hidden></div>
+
+  <section class="sheet" id="sheet-consent" role="dialog" aria-modal="true" aria-labelledby="sc-h" hidden>
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="sc-h">Before you listen</h2>
+    <p class="lead" id="consent-text">Doublespeak listens to this call through your microphone on your phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it.</p>
+    <p class="small">This works in speaker mode only: the call has to be on speakerphone.</p>
+    <div class="sheet-actions">
+      <button class="btn primary big" id="consent-yes" type="button">I understand, continue</button>
+      <button class="btn ghost" id="consent-no" type="button">Not now</button>
+    </div>
+  </section>
+
+  <section class="sheet" id="sheet-speaker" role="dialog" aria-modal="true" aria-labelledby="ss-h" hidden>
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="ss-h">How speaker mode works</h2>
+    <p class="lead">Android does not give apps the audio of a phone call. So Doublespeak listens the way you do: through the microphone, while the call plays out loud on speakerphone.</p>
+    <ul class="facts">
+      <li><b>It hears</b> the caller from the speaker, your own voice, and the room.</li>
+      <li><b>It does not hear</b> a call held to your ear, on Bluetooth, or on headphones.</li>
+      <li><b>Some phones silence the microphone</b> for other apps during a call. If the level bars stay flat, this phone is doing that and Doublespeak cannot help on this call.</li>
+      <li><b>Accuracy is lower</b> than with clean audio, so the engine caps how sure it says it is.</li>
+      <li><b>Keep this screen on.</b> If you switch apps, Android may stop the microphone.</li>
+    </ul>
+    <div class="sheet-actions"><button class="btn primary" data-close type="button">Got it</button></div>
+  </section>
+
+  <section class="sheet" id="sheet-connect" role="dialog" aria-modal="true" aria-labelledby="cn-h" hidden>
+    <div class="grab" aria-hidden="true"></div>
+    <div id="connect-body"></div>
+    <div class="sheet-actions"><button class="btn ghost" data-close type="button">Close</button></div>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+</div>
+
+<script src="lib/pcm.js"></script>
+<script src="lib/protocol.js"></script>
+<script src="lib/verdict.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
