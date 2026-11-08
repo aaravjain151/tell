@@ -1217,6 +1217,10 @@ function endSession(reason){
   if (!L.active) return;
   L.elapsed = Math.max(L.elapsed, liveClock()); L.ended = true; L.endReason = reason || "";
   HTML.dataset.ended = "1"; $("caution").hidden = true; $("redbar").hidden = true; HTML.dataset.banner = "0"; drawBar();
+  if (!$("livetx").textContent.trim()) {   // the call ended and no words were ever heard: say so, do not leave "Gathering..." up
+    swapHeadline("Nothing was heard", "No speech reached Doublespeak on this call. Check that the call is answered on this Mac and plays through its speakers.", true);
+    $("tierlabel").textContent = "Nothing heard";
+  }
 }
 function clearSession(){ Object.assign(L, {active:false, ended:false, ticks:[], tier:null}); HTML.dataset.ended = "0"; setLive(conn.ok ? "empty" : "offline"); drawBar(); }
 function stableView(v, st){
