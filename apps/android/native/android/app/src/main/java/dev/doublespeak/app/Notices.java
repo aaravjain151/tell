@@ -113,5 +113,18 @@ final class Notices {
 
     static void cancelNotice(Context c) { nm(c).cancel(ID_NOTICE); }
 
+    /** The OS silenced the microphone during the call. The engine and cable are fine; say so honestly. */
+    @SuppressWarnings("deprecation")
+    static void blocked(Context c) {
+        channels(c);
+        String big = Wording.MIC_BLOCKED_TEXT + " " + Wording.MIC_BLOCKED_SUB;
+        Notification.Builder b = builder(c, CH_NOTICE).setSmallIcon(R.drawable.ic_stat_mic)
+            .setContentTitle(Wording.MIC_BLOCKED_TITLE).setContentText(Wording.MIC_BLOCKED_TEXT)
+            .setStyle(new Notification.BigTextStyle().bigText(big))
+            .setContentIntent(openApp(c)).setAutoCancel(true);
+        if (Build.VERSION.SDK_INT >= 26) b.setTimeoutAfter(30 * 60 * 1000L);
+        nm(c).notify(ID_NOTICE, b.build());
+    }
+
     static NotificationManager nm(Context c) { return (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE); }
 }

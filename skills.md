@@ -3,7 +3,7 @@
 Every tool and every human reads this first. Edit *this* file; `CLAUDE.md`, `AGENTS.md` and `.cursor/rules/tell.mdc` are thin pointers.
 
 ## 1. Overview
-Tell is a privacy-first detector that classifies the voice on a call as **Human · AI (disclosed) · AI (undisclosed) · Scam**, with the specific "tells" that fired, and never sends caller audio off-device. Built at HACK1984 (Privacy-First track + Gradium side prize). Product brief: `pm/PRODUCT.md`. Decisions: `pm/DECISIONS.md`.
+Tell is a privacy-first detector that classifies the voice on a call as **Human · AI (disclosed) · AI (undisclosed) · Scam**, with the specific "tells" that fired, and never sends caller audio off-device. Built at HACK1984, targeting the Privacy-First (main) track, Most Startup-able, and the Best Use of Gradium side prize (which stacks with Privacy-First). We used Gradium to clone our own teammates' voices for the red-team attacker calls and to speak the verdict — only our own script text is ever sent to Gradium, never a caller. Product brief: `pm/PRODUCT.md`. Decisions: `pm/DECISIONS.md`.
 
 Core loop: user feeds a clip or mic → local analysis → verdict card with evidence + "bytes leaving device: 0".
 

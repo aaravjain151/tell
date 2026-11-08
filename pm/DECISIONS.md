@@ -22,7 +22,7 @@
 
 ## D-006 · 2026-11-07 · Gradium: attacker simulator + spoken verdict only
 **Decision:** Gradium TTS generates red-team clips (incl. a cloned teammate) and speaks the verdict. Caller audio never goes to Gradium STT in v1; transcripts are pasted or produced locally.
-**Why:** Keeps the privacy guarantee intact while using Gradium meaningfully for the side prize.
+**Why:** Keeps the privacy guarantee intact while using Gradium meaningfully for the Best Use of Gradium side prize (which stacks with Privacy-First): red-team clips from our own cloned voices + the optional spoken verdict, with only our own script text ever sent to Gradium.
 
 ## D-007 · 2026-11-07 · Data to collect from day 1 (post-hackathon, opt-in only)
 **Decision:** Per verdict: tier, p_ai, p_scam, confidence, which tells fired, clip duration, band-limited flag, user correction (thumbs up/down). Never audio, never transcript, unless the user explicitly donates a clip to the eval set.

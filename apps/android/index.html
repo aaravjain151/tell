@@ -36,6 +36,11 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
     </div>
   </header>
 
+  <!-- recorded-demo label (stage): persistent while demo mode is on; never shown in the normal flow -->
+  <div class="demo-banner" id="demo-banner" role="status" hidden>
+    <span class="demo-dot" aria-hidden="true"></span>RECORDED DEMO &mdash; not a live call
+  </div>
+
   <main id="main" tabindex="-1">
 
     <!-- caution (amber) -->
@@ -141,6 +146,16 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
       <button class="btn ghost" id="clear" type="button">Clear screen</button>
       <button class="btn primary" id="again" type="button">Start again</button>
     </div>
+    <div class="dock-demo" id="dock-demo" role="group" aria-label="Recorded demo">
+      <div class="demo-pick">
+        <button class="btn demo-scam" id="demo-scam" type="button">Scam call</button>
+        <button class="btn demo-human" id="demo-human" type="button">Human call</button>
+      </div>
+      <div class="demo-foot">
+        <p class="dock-note" id="demo-note">Plays a recorded clip into the real engine over USB. The verdict is the engine's own.</p>
+        <button class="link" id="demo-exit" type="button">Exit demo</button>
+      </div>
+    </div>
   </footer>
 
   <!-- red alert takeover -->
@@ -230,6 +245,7 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
 <script src="lib/protocol.js"></script>
 <script src="lib/verdict.js"></script>
 <script src="lib/autolisten.js"></script>
+<script src="lib/demo.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

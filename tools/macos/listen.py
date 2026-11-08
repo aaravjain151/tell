@@ -40,6 +40,7 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[2]
 LOOPBACK = {"127.0.0.1", "localhost", "::1"}
 DEFAULT_TAP = ROOT / "tools" / "macos" / "tap_audio" / ".build" / "release" / "tap_audio"
+VERDICT_AUDIO_DIR = ROOT / "apps" / "web" / "verdict_audio"   # pre-rendered spoken verdicts (make verdict-audio)
 DEFAULT_CALL_PROCESSES = ("FaceTime", "Phone", "callservicesd", "avconferenced", "zoom.us", "WhatsApp",
                           "Microsoft Teams")
 CONSENT = ("Tell will listen to this call. The audio is analysed in memory on THIS machine only: nothing is "
@@ -86,6 +87,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--poll-s", type=float, default=2.0, help="--watch: seconds between tap_audio --list polls")
     ap.add_argument("--speed", type=float, default=1.0, help="--file: 1 = real time")
     ap.add_argument("--sound", action="store_true", help="play a sound with notifications (off by default)")
+    ap.add_argument("--speak", action="store_true", help="speak the verdict aloud when the stable tier changes, using "
+                    "the PRE-RENDERED local Gradium clips in apps/web/verdict_audio (run `make verdict-audio` first). "
+                    "No network, no caller audio — it only plays a local file. Off by default.")
     ap.add_argument("--no-notify", action="store_true", help="never show a macOS notification")
     ap.add_argument("--save-labeled", metavar="DIR", help="OPT-IN: write the analysed audio + sidecar under DIR/<label>/ "
                     "(needs --label, --speaker, --consent-note)")
@@ -194,6 +198,21 @@ def notify(text: str, sound: bool) -> None:
 
 def say(msg: str) -> None:
     print(msg, flush=True)
+
+
+def play_verdict(tier: str, audio_dir: Path = VERDICT_AUDIO_DIR) -> bool:
+    """Play the PRE-RENDERED local clip for `tier` with afplay. No network; it only reads a local file. Returns
+    True if a file was found and playback was started. Never raises."""
+    if sys.platform != "darwin" or not tier:
+        return False
+    wav = audio_dir / f"{tier}.wav"
+    if not wav.is_file():
+        return False
+    try:
+        subprocess.Popen(["afplay", str(wav)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except (OSError, subprocess.SubprocessError):
+        return False
 
 
 def banner(on: bool, label: str = "", saving: bool = False) -> None:
@@ -379,7 +398,7 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
         loop = asyncio.get_running_loop()
         t_start = loop.time()
         sent_at: list[float] = []                       # wall time at which each whole second of audio was sent
-        state = {"alert": "none", "sent": 0, "stable": None}
+        state = {"alert": "none", "sent": 0, "stable": None, "spoken": None}
 
         async def reader() -> None:
             async for raw in ws:
@@ -398,6 +417,10 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
                     state["alert"] = new
                     if text and not args.no_notify:
                         notify(text, args.sound)
+                    if args.speak:
+                        stable_tier = (m.get("stable") or {}).get("tier")
+                        if stable_tier and stable_tier != state.get("spoken") and play_verdict(stable_tier):
+                            state["spoken"] = stable_tier
                 elif m.get("type") in ("warn", "error"):
                     say(f"LISTENING | {m.get('type')}: {m.get('code')}")
                     if m.get("type") == "error":

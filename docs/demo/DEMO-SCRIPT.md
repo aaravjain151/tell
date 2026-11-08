@@ -2,6 +2,12 @@
 
 **This file is the one plan.** The deck (claude.ai Slides artifact "Tell: pitch deck") carries exactly the slides this script uses, in this order, and its speaker notes repeat these lines word for word. If the deck and this file ever disagree, this file wins. Preflight: `PREFLIGHT.md`. If a step fails: `FALLBACKS.md`. Judge questions: `QA-PREP.md`. Practice: `REHEARSAL.md`. `RUN-OF-SHOW.md` and `PRESENTATION-OUTLINE.md` are older drafts kept for detail; do not present from them.
 
+## Tracks we are entering, and how the pitch answers the judging
+
+- **Privacy-First (primary target).** Judged on "what leaves the device, who can read it, can you prove it, then would anyone use it." Our answers, in order: caller audio is blocked from leaving by code — zero by design (segment 5, `tests/test_privacy.py`); who can read it — the engine binds to loopback only, so no other machine reaches it, and a per-install token on every data route (401 without it) adds same-machine isolation (PR #90, open — see Q5); can you prove it — the OS's own count of the engine's outbound connections since start reads zero, and a judge can block Tell's outbound (Little Snitch / `lsof`) and the verdict still comes; would anyone use it — the live demo plus the who-pays answer (segment 4, Q19).
+- **Most Startup-able (secondary target).** Judged on "how fundable, who is it for, would they pay, why this team." First customer: adult children buying a family plan for a parent (60+). Price hypothesis: ~US$5/month ([N of M said yes tonight]). Why this team: we already shipped the live system, the model pipeline and the voices/data (segment 7, Q19–Q21, team slide).
+- **Best Use of Gradium (side prize, stacks with Privacy-First).** We cloned our own teammates' voices in Gradium to manufacture the red-team attacker calls that attack our own detector, and Gradium speaks Tell's verdict — only our own script text is ever sent to Gradium, never a caller (segment 7, Q18). The privacy-correctness of that use is itself the story.
+
 ## Who is where
 
 | Person | Role on stage | Says |
@@ -120,6 +126,8 @@ If the iPhone call does not reach the Mac within 15 s, use `FALLBACKS.md` step 4
 **AARAV:** "Wi-Fi is off now, and Tell is still running. Caller audio is blocked from leaving by code: zero by design. The independent check is the operating system's own count of the engine's network connections during the call: zero. And Tell never speaks to the caller." (45 words)
 
 Never present the 0 as a measurement of audio: the audio 0 is a design invariant (the code refuses to send it), the OS count is the measured check. If any number in terminal C is not 0, or os_check is not ok: "That number is not zero. We won't talk past it." Point at it and move on.
+
+**Invite the judge to verify it themselves (say this, and mean it).** "Don't take our word for it. During a call, block every outbound connection for Tell in Little Snitch, or run `lsof -i` against the engine process — the verdict keeps coming, because caller analysis needs nothing to leave this device. Come try it at our table." This is provable today on the demo build. The matching claim for the live feed — `curl` it without the per-install token and you get 401 — depends on PR #90, which is open and not merged as of this writing; only add "and curl the live feed without the token, you get 401" if #90 is on the demo build by 11:00 (see Q5). Do not invite a check that would fail.
 
 Scope, for Q&A: the page's OS count is polled every 50 ms during each analysis for the engine process and its children; terminal C's `/health` figure is a snapshot taken at that moment. Neither covers Ollama, which is a separate local process (`QA-PREP.md` Q2).
 

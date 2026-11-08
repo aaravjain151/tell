@@ -16,8 +16,8 @@ import os
 import numpy as np
 
 from ..types import Tell
-from . import windows
-from .pella import pella_vote
+from . import learned, windows
+from .pella import pella_vote, pella_vote_ex
 
 log = logging.getLogger("tell.neural")
 W_ONNX, W_HF = 1.8, 0.7   # W_HF 1.4 -> 0.7 (2026-11-07.2): ~chance on Qwen3-TTS (AUC 0.55/0.48 alone); kept non-zero so it can still vote
@@ -102,4 +102,13 @@ def hf_vote(x16k: np.ndarray) -> Tell:
 def analyze(x16k: np.ndarray, dur_s: float) -> list[Tell]:
     if dur_s < 3.0:
         return [Tell("neural", "acoustic", 0.5, 1.0, "clip too short for neural voters (< 3 s)", applicable=False)]
-    return [onnx_vote(x16k), hf_vote(x16k), pella_vote(x16k)]
+    layers = learned.layers_needed()
+    if layers:
+        pt, extras = pella_vote_ex(x16k, layers)   # one Pellav2 forward also yields the embedding the learned voter reads
+    else:
+        pt, extras = pella_vote(x16k), None
+    out = [onnx_vote(x16k), hf_vote(x16k), pt]
+    lt = learned.learned_vote(x16k, extras)        # None when TELL_LEARNED_TELLS is off: nothing is added
+    if lt is not None:
+        out.append(lt)
+    return out

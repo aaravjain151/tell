@@ -208,3 +208,14 @@ def test_score_saved_loopback_only_and_table(tmp_path, capsys):
     assert S.main([str(tmp_path)], poster=fake) == 0
     out = capsys.readouterr().out
     assert "tier=human" in out and "sanity check" in out and "mean p_ai" in out
+
+
+def test_speak_flag_defaults_off_and_parses():
+    assert L.parse_args(["--file", "x.wav"]).speak is False
+    assert L.parse_args(["--file", "x.wav", "--speak"]).speak is True
+
+
+def test_play_verdict_needs_a_local_file(tmp_path):
+    # No file for this tier -> returns False (and never raises), so listen falls back to silence, not a crash.
+    assert L.play_verdict("scam", audio_dir=tmp_path) is False
+    assert L.play_verdict("", audio_dir=tmp_path) is False
