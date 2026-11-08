@@ -116,6 +116,16 @@ def test_silence_peak_and_status_line():
     assert line.startswith("LISTENING") and "lat=1.2s" in line and "alert=none" in line
 
 
+def test_final_line_reports_stable_state_and_tail():
+    st = {"tier": "scam", "state": "latched", "alert": "red"}
+    line = L.final_line({"type": "final", "ticks": 9, "reason": "stop", "tail": "scored"}, st)
+    assert line.startswith("FINAL") and "shown=scam latched alert=red" in line and "9 verdicts" in line
+    assert "last seconds scored" in line
+    assert "NOT scored" in L.final_line({"type": "final", "ticks": 3, "tail": "timeout"}, None)
+    assert "tail not reported" in L.final_line({"type": "final", "ticks": 0}, None)   # an older API
+    assert L.STOP_WAIT_S > 6.0                                 # longer than the API's default flush budget
+
+
 # ---- opt-in labelled capture ----------------------------------------------------------------------------------
 import json  # noqa: E402
 import wave  # noqa: E402
