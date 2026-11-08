@@ -78,3 +78,31 @@ only (loopback), and the API never speaks to the caller.
 * Cold start: the first tick after server start can lag by many seconds while models load. Start the API ahead of time.
 * Phone-band audio (8 kHz) is the weakest case for the acoustic voters; the content (intent) side still works.
 * The stabiliser trades speed for stability: red needs two agreeing ticks (about 6 s of audio) after the evidence is in.
+
+## "How sure" is about the voice, not our signal count
+
+`confidence` counts how many of our signals ran and how far p_ai is from the threshold; it is not evidence that the voice
+call is right. An AI voice relayed through iPhone to Mac scored raw p_ai 0.24 to 0.47 all call yet the page said
+"How sure: High (100 out of 100)". The page now uses `scores.confidence_label` / `scores.voice_sure` /
+`scores.confidence_note` (display only, additive; `confidence` and the signature are unchanged). The voice question is
+unresolved when p_ai is 0.30 to 0.60, when fewer than 2 acoustic voters applied, or when the neural voters differ by
+more than 0.35; the label is then capped at Medium (Low if they disagree and p_ai is in the band) and the page says
+"The voice check is not sure." or "The voice checks disagree." Android: `apps/android/` is not in this repository
+checkout, so it was not changed; it should read the same three fields when present and fall back otherwise.
+
+## Optional: save labelled clips to build real evaluation data
+
+OFF by default. Only record people who agreed. All four flags are required and are never defaulted:
+
+    python3 tools/macos/listen.py --now --save-labeled data/labelled --label ai --speaker "Sam" \
+        --consent-note "Sam agreed by text on 7 Nov" --i-understand
+
+* Writes the 16 kHz PCM it analysed to `DIR/<label>/<timestamp>.wav` and `<timestamp>.json` (label human|ai|scam_human|scam_ai,
+  speaker, consent note, date, source, raw per-tick scores), both mode 0600. Use `data/...` (gitignored) or another local
+  directory; a network mount is refused.
+* `SAVING AUDIO TO DISK` is printed as a banner and stays in every `LISTENING` status line. `--watch` saves only when the
+  same flags are given.
+* Limit: the listener is a separate process from the API, so the API's `privacy_posture` / egress report cannot show
+  "saving enabled" (it would need a new listener-to-API signal). The terminal banner is the honest indicator.
+* Score what you saved: `python3 tools/score_saved.py DIR` posts each WAV to the loopback API and prints label vs
+  p_ai / p_scam / tier / quadrant. A few clips are a sanity check, not an evaluation.

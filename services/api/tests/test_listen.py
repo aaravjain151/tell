@@ -114,3 +114,87 @@ def test_silence_peak_and_status_line():
          "stable": {"tier": "human", "state": "steady", "alert": "none"}}
     line = L.status_line(m, 1.234)
     assert line.startswith("LISTENING") and "lat=1.2s" in line and "alert=none" in line
+
+
+# ---- opt-in labelled capture ----------------------------------------------------------------------------------
+import json  # noqa: E402
+import wave  # noqa: E402
+
+FULL = ["--now", "--save-labeled", "OUT", "--label", "ai", "--speaker", "Sam", "--consent-note", "Sam agreed by text"]
+
+
+def test_capture_is_off_by_default():
+    a = L.parse_args(["--now"])
+    assert a.save_labeled is None and a.label is None and a.speaker is None and a.consent_note is None
+    assert L.save_error(a) is None
+
+
+@pytest.mark.parametrize("drop", ["--save-labeled", "--label", "--speaker", "--consent-note"])
+def test_refuses_without_each_required_flag(drop, tmp_path):
+    argv = [x if x != "OUT" else str(tmp_path) for x in FULL]
+    i = argv.index(drop)
+    del argv[i:i + 2]
+    err = L.save_error(L.parse_args(argv), mount_text="")
+    assert err and drop in err
+
+
+def test_refuses_blank_consent_and_bad_label(tmp_path):
+    argv = [x if x != "OUT" else str(tmp_path) for x in FULL]
+    argv[argv.index("Sam agreed by text")] = "   "
+    assert "--consent-note" in L.save_error(L.parse_args(argv), mount_text="")
+    with pytest.raises(SystemExit):
+        L.parse_args(["--now", "--label", "robot"])
+
+
+def test_main_refuses_before_listening(tmp_path, capsys):
+    tap = tmp_path / "tap"
+    tap.write_text("x")
+    rc = L.main(["--now", "--tap", str(tap), "--label", "ai", "--i-understand"])
+    assert rc == 2 and "--save-labeled" in capsys.readouterr().err
+
+
+def test_network_mount_refused(tmp_path):
+    mounts = f"//u@srv/share on {tmp_path.resolve()} (smbfs, nodev)\n/dev/disk3 on / (apfs, local)\n"
+    argv = [x if x != "OUT" else str(tmp_path / "d") for x in FULL]
+    assert "network" in L.save_error(L.parse_args(argv), mount_text=mounts)
+    assert L.save_error(L.parse_args(argv), mount_text="/dev/disk3 on / (apfs, local)\n") is None
+
+
+def test_saver_writes_wav_and_sidecar_0600(tmp_path):
+    a = L.parse_args([x if x != "OUT" else str(tmp_path) for x in FULL])
+    sv = L.LabeledSaver(a, "tap", now=L.datetime.datetime(2026, 11, 7, 12, 0, 1))
+    sv.write(b"\x01\x00" * 16000)
+    sv.tick({"t": 3.0, "window": [0, 3], "tier": "human", "p_ai": 0.3, "p_scam": 0.0, "stable": {"x": 1}})
+    sv.close()
+    wav, js = tmp_path / "ai" / "20261107T120001.wav", tmp_path / "ai" / "20261107T120001.json"
+    with wave.open(str(wav)) as w:
+        assert (w.getframerate(), w.getnchannels(), w.getnframes()) == (16000, 1, 16000)
+    side = json.loads(js.read_text())
+    assert side["label"] == "ai" and side["speaker"] == "Sam" and side["consent_note"] == "Sam agreed by text"
+    assert side["source"] == "tap" and side["ticks"][0]["p_ai"] == 0.3 and "stable" not in side["ticks"][0]
+    assert stat.S_IMODE(wav.stat().st_mode) == 0o600 and stat.S_IMODE(js.stat().st_mode) == 0o600
+
+
+def test_banner_and_status_line_show_saving(capsys):
+    L.banner(True, "tap", saving=True)
+    assert "SAVING AUDIO TO DISK" in capsys.readouterr().out
+    assert "SAVING AUDIO TO DISK" in L.status_line({"t": 1}, None, saving=True)
+    assert "SAVING" not in L.status_line({"t": 1}, None)
+    L.banner(True, "tap")
+    assert "SAVING" not in capsys.readouterr().out
+
+
+def test_score_saved_loopback_only_and_table(tmp_path, capsys):
+    spec2 = importlib.util.spec_from_file_location("score_saved", P.parents[1] / "score_saved.py")
+    S = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(S)
+    assert S.main([str(tmp_path), "--url", "http://10.0.0.5:8000"]) == 2
+    (tmp_path / "ai").mkdir()
+    (tmp_path / "ai" / "a.wav").write_bytes(b"RIFF")
+
+    def fake(base, p):
+        return {"p_ai": 0.3, "p_scam": 0.0, "tier": "human", "quadrant": {"combo_label": "Human voice, no scam pattern heard."}}
+
+    assert S.main([str(tmp_path)], poster=fake) == 0
+    out = capsys.readouterr().out
+    assert "tier=human" in out and "sanity check" in out and "mean p_ai" in out
