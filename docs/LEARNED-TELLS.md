@@ -337,3 +337,29 @@ Human false alarms at p_ai >= 0.60 by speaker domain (each clip scored by a mode
 | chain_replay_call | current | 0/400 | 0/23 | 0/12 | 0.14 |
 | chain_replay_call | fixes only (breath 0, Pellav2 all windows) | 0/400 | 0/23 | 0/12 | 0.15 |
 | chain_replay_call | **new engine** (fixes + learned_tells W 8) | 0/400 | 0/23 | 0/12 | 0.24 |
+
+## Pause stacker (2026-11-08) - code only, NOT trained, nothing changes until it is
+
+Pause style is a property of the whole call, and a 4 s window rarely holds a sentence-end pause, so pauses are added at the
+CALL level: call logit = head_coef * mean(window logit) + sum_i b_i * z(pause_i) + intercept, re-centred on humans like the head.
+
+* Features (`services/api/tell/signals/pauses.py`, numpy, relative speech mask from `shadow._speech_mask`): long pauses
+  (>= 300 ms) per minute, median long-pause length, pause CV, pause share of the speech span, median speech-run length.
+* Runtime (`signals/learned.py`): an optional `"pauses"` block in `learned_tells.json`. Absent (as shipped) = the plain mean,
+  bit-identical; tests in `tests/test_pauses.py` (synthetic gaps, neutral block identical, sign, refusals, training export ==
+  runtime decision).
+* Training (`training/learned_tells/pauses.py`): `feats` (from the `audio_<cond>.npz` caches), `stack` (held-out head vs
+  head+pauses per scenario x channel, stacker fitted only on other groups' out-of-fold head logits in the training channels;
+  prints the mean coefficient per scenario so a generator-specific sign shows up), `export` (adds the block, prints the SHA;
+  then update `learned.SHA256` and bump `THRESHOLDS_VERSION`). Ship bar unchanged.
+
+Local sanity check only (10 local human-memo vs Qwen-clone pairs, 7 measurable, one speaker family, NOT an eval):
+
+| channel | long pauses/min, human vs Qwen (median) | human > Qwen | median long-pause ms | human > Qwen |
+|---|---|---|---|---|
+| clean | 19.3 vs 10.6 | 5/7 | 523 vs 625 | 3/7 |
+| opus8k | 19.5 vs 10.6 | 6/7 | 495 vs 625 | 2/7 |
+| chain_replay_call | 14.6 vs 10.6 | 6/7 | 580 vs 520 | 5/7 |
+
+Long pauses per minute keeps its direction through codec and replay; pause length does not. Whether it holds for Gradium,
+`say`, ElevenLabs and real calls is exactly what `stack` answers on the full cache.
