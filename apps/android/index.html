@@ -28,9 +28,12 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
       <img class="mk mk-d" src="icons/mark-dark.svg" alt="" width="30" height="28">
       <span>Tell</span>
     </div>
-    <button class="conn" id="conn" type="button" aria-haspopup="dialog">
-      <i class="dot" aria-hidden="true"></i><span id="conn-t">Checking</span>
-    </button>
+    <div class="top-r">
+      <button class="conn" id="conn" type="button" aria-haspopup="dialog">
+        <i class="dot" aria-hidden="true"></i><span id="conn-t">Checking</span>
+      </button>
+      <button class="gear" id="open-settings" type="button" aria-haspopup="dialog" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10m4 0h2M4 17h4m4 0h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+    </div>
   </header>
 
   <main id="main" tabindex="-1">
@@ -73,6 +76,17 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
         <li><b>Keep this screen on.</b><span>Leaving the app may stop the microphone.</span></li>
       </ol>
       <button class="link" id="open-speaker" type="button">How speaker mode works</button>
+    </section>
+
+    <!-- auto-listen: start when a call is answered (installed app only; opt-in, off by default) -->
+    <section class="card auto" id="auto" aria-labelledby="auto-h">
+      <div class="auto-row">
+        <div class="auto-txt"><b id="auto-h">Listen automatically when I answer a call</b><small id="auto-line">Auto-listen is off</small></div>
+        <button class="switch" type="button" role="switch" aria-checked="false" aria-labelledby="auto-h" data-auto></button>
+      </div>
+      <p class="auto-sub" id="auto-sub"></p>
+      <p class="auto-msg" id="auto-msg" role="status" hidden></p>
+      <button class="link" type="button" data-appsettings hidden>Open app settings</button>
     </section>
 
     <!-- live reading -->
@@ -155,6 +169,40 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
     </div>
   </section>
 
+  <section class="sheet" id="sheet-auto" role="dialog" aria-modal="true" aria-labelledby="sa-h" hidden>
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="sa-h">Listen when you answer</h2>
+    <p class="lead" id="auto-consent-text">When you answer a call, Tell listens through your microphone in speaker mode and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it.</p>
+    <ul class="facts">
+      <li><b>Android asks for the Phone permission next.</b> Tell uses it only to see that a call was answered and when it ended. It never reads numbers, contacts or call history.</li>
+      <li><b>Put the call on speaker.</b> Android gives apps no call audio; Tell hears the speaker through the microphone.</li>
+      <li><b>A notification shows while Tell listens,</b> with a Stop button. When Tell is not on screen, Android 11 and newer ask you to tap Listen first.</li>
+      <li><b>Keep the USB cable plugged in.</b> If Tell cannot reach your computer, it says so in a notification.</li>
+    </ul>
+    <div class="sheet-actions">
+      <button class="btn primary big" id="auto-yes" type="button">Turn on auto-listen</button>
+      <button class="btn ghost" id="auto-no" type="button">Not now</button>
+    </div>
+  </section>
+
+  <section class="sheet" id="sheet-settings" role="dialog" aria-modal="true" aria-labelledby="st-h" hidden>
+    <div class="grab" aria-hidden="true"></div>
+    <h2 id="st-h">Settings</h2>
+    <div class="set-row">
+      <div class="auto-txt"><b id="set-auto-h">Listen automatically when I answer a call</b><small id="set-auto-line">Auto-listen is off</small></div>
+      <button class="switch" type="button" role="switch" aria-checked="false" aria-labelledby="set-auto-h" data-auto></button>
+    </div>
+    <p class="small" id="set-auto-sub"></p>
+    <p class="auto-msg" id="set-auto-msg" role="status" hidden></p>
+    <button class="link" type="button" data-appsettings hidden>Open app settings</button>
+    <ul class="facts">
+      <li><b>Off by default.</b> Nothing starts on a call unless you turn this on.</li>
+      <li><b>Never records.</b> Audio goes only to your computer over the USB cable and is not stored.</li>
+      <li><b>Stops by itself</b> when the call ends, when you tap Stop, or when you swipe Tell away.</li>
+    </ul>
+    <div class="sheet-actions"><button class="btn primary" data-close type="button">Done</button></div>
+  </section>
+
   <section class="sheet" id="sheet-speaker" role="dialog" aria-modal="true" aria-labelledby="ss-h" hidden>
     <div class="grab" aria-hidden="true"></div>
     <h2 id="ss-h">How speaker mode works</h2>
@@ -181,6 +229,7 @@ try{ var t = new URLSearchParams(location.search).get("theme"); if (t === "light
 <script src="lib/pcm.js"></script>
 <script src="lib/protocol.js"></script>
 <script src="lib/verdict.js"></script>
+<script src="lib/autolisten.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

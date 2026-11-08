@@ -2,7 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -96,6 +96,57 @@ test("app never uses the network beyond loopback and has no analytics", () => {
   assert.ok(!/https?:\/\/(?!localhost|127\.0\.0\.1)[a-z0-9.-]+\.[a-z]{2,}/i.test(js.replace(/https?:\/\/www\.w3\.org[^"']*/g, "")));
   assert.ok(!/gtag|sentry|segment|mixpanel|google-analytics/i.test(js));
   assert.match(js, /echoCancellation: false, noiseSuppression: false, autoGainControl: false/);
+});
+
+// ---------- auto-listen (start when a call is answered) ----------
+const AL = require("../lib/autolisten.js");
+const NATIVE_SRC = join(root, "native", "android", "app", "src", "main");
+const javaSrc = () => {
+  const dir = join(NATIVE_SRC, "java", "dev", "doublespeak", "app");
+  const files = [...readdirSync(dir).map((f) => join(dir, f)), ...readdirSync(join(dir, "call")).map((f) => join(dir, "call", f))];
+  return files.filter((f) => f.endsWith(".java")).map((f) => readFileSync(f, "utf8")).join("\n");
+};
+
+test("auto-listen consent wording is exact in the page, the lib and the native strings", () => {
+  const exact = "When you answer a call, Tell listens through your microphone in speaker mode and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it.";
+  assert.equal(AL.CONSENT, exact);
+  assert.ok(readFileSync(join(root, "index.html"), "utf8").includes(exact));
+  assert.ok(javaSrc().includes(exact));
+});
+
+test("auto-listen status line", () => {
+  assert.equal(AL.status(null).line, "Auto-listen needs the installed Tell app");
+  assert.equal(AL.status({ available: true, enabled: false, missing: [] }).line, "Auto-listen is off");
+  const on = AL.status({ available: true, enabled: true, missing: [], state: "idle", background: "tap" });
+  assert.equal(on.line, "Auto-listen is on: Tell starts when you answer");
+  assert.match(on.sub, /tap Listen/);
+  assert.equal(AL.status({ available: true, enabled: true, missing: [], state: "idle", background: "direct" }).sub, "Put the call on speaker after you answer.");
+  assert.equal(AL.status({ available: true, enabled: true, missing: ["phone"] }).line, "Auto-listen is paused");
+  assert.equal(AL.status({ available: true, enabled: true, missing: [], state: "listening" }).line, "Listening to this call");
+  assert.equal(AL.status({ available: true, enabled: true, missing: [], state: "silent" }).tone, "warn");
+});
+
+test("auto-listen end reasons: the not-connected path says plug in the cable", () => {
+  assert.equal(AL.endedText("ended:not_connected"), "Tell could not reach your computer; plug in the USB cable.");
+  assert.match(AL.endedText("ended:refused"), /make api-android/);
+  assert.equal(AL.endedText("ended:stopped"), "");
+});
+
+test("auto-listen stays within Play policy: no hidden APIs, accessibility, overlays, call log, recording to storage", () => {
+  const m = readFileSync(join(NATIVE_SRC, "AndroidManifest.xml"), "utf8"), j = javaSrc();
+  for (const p of ["SYSTEM_ALERT_WINDOW", "MODIFY_PHONE_STATE", "READ_CALL_LOG", "PROCESS_OUTGOING_CALLS", "CAPTURE_AUDIO_OUTPUT",
+    "BIND_ACCESSIBILITY_SERVICE", "USE_FULL_SCREEN_INTENT", "READ_CONTACTS", "ANSWER_PHONE_CALLS", "MANAGE_OWN_CALLS", "BIND_INCALL_SERVICE"])
+    assert.ok(!m.includes(p), "manifest must not use " + p);
+  const code = j.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");   // comments may name what is NOT used
+  assert.ok(!/AccessibilityService|getDeclaredMethod|setAccessible|Class\.forName|setSpeakerphoneOn|setCommunicationDevice/.test(code), "no reflection / route switching");
+  assert.ok(!/FileOutputStream|openFileOutput|MediaRecorder\(|getExternal|RandomAccessFile/.test(code), "never writes audio to storage");
+  assert.ok(!/EXTRA_INCOMING_NUMBER|getLine1Number/.test(code), "never reads numbers");
+  // the receiver starts disabled (setting off by default) and only listens for PHONE_STATE
+  assert.match(m, /android:name="\.CallStateReceiver"\s+android:enabled="false"/);
+  assert.match(m, /<action android:name="android\.intent\.action\.PHONE_STATE" \/>/);
+  // native capture only ever connects to 127.0.0.1
+  assert.match(code, /new byte\[\]\{127, 0, 0, 1\}/);
+  assert.ok(!/new Socket\("|InetAddress\.getByName\(/.test(code));
 });
 
 test("consent wording is exact", () => {
