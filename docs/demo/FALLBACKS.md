@@ -26,10 +26,11 @@ QuickTime Player > File > New Screen Recording, then record the whole screen dur
 
 There is nothing to fail except the page. See step 0. If the projector is dead, give the hook and the problem without slides. They work without a screen.
 
-## 2. Wi-Fi toggle
+## 2. Wi-Fi toggle (segment 5 only)
 
-- The Wi-Fi menu does not respond: skip it. Leave Wi-Fi on and say nothing about Wi-Fi in demo 1. In segment 5 show the counter only.
-- Wi-Fi does not come back for demo 2: go straight to step 4b (plan B, which needs no network) or 4c.
+Wi-Fi stays on through both demos and goes off only in the privacy proof, after the iPhone call has ended.
+
+- The Wi-Fi menu does not respond in segment 5: skip it. Drop the "Wi-Fi is off now" sentence and show the counter and terminal C only.
 
 ## 3. Live demo 1: the TEST ATTACKER
 
@@ -39,7 +40,7 @@ There is nothing to fail except the page. See step 0. If the projector is dead, 
 | voice-talk does not start, or the bot is silent | Check that the voice-talk tab shows no error and that Ollama is running (`curl -s 127.0.0.1:11434/api/tags`). Do not debug on stage. Replay the recorded run through the speakers while terminal B listens: `afplay "$CALL"` | "Here's the same test bot, recorded this morning. Still the TEST ATTACKER, fictional." |
 | The bot's reply takes more than 4 s | Press **Escalate**: stage lead lines are cached and play at once. | (nothing) |
 | The bot drifts off script | Press **Escalate**. The next line is a fixed canned line. | (nothing) |
-| No red by 1:44 | Do not replay or refresh. Read the screen. | "It hasn't gone red. It needs two scam signs that agree before it alerts. We don't override it." |
+| No red by 1:30 | Do not replay or refresh. Read the screen. | "It hasn't gone red. It needs two scam signs that agree before it alerts. We don't override it." |
 | Room cannot hear the bot (speakers dead) | Ctrl-C terminal B. Stream the recording straight to the engine, in real time, with no speakers involved: `$PY tools/macos/listen.py --file "$CALL" --i-understand`. The card still updates. | "You can't hear it, but the engine is getting the same recording. Watch the card." |
 | The attacker app is down and `$CALL` is missing too | Stored test clips, Qwen voice: `afplay data/calls/qwen3tts/casual_clone.wav && afplay data/calls/qwen3tts/scam_bank_otp.wav` while terminal B listens. Note that this script names a real brand ("Amazon security"), so call it a test script, not a fictional brand. | "These are stored test clips of a cloned voice. A test script, not a real call." |
 | Nothing at all works | Page > **More** > **Grandparent scam**. The provenance line says it is a stored sample. | "Stored sample, not a live call." |
@@ -64,9 +65,9 @@ There is nothing to fail except the page. See step 0. If the projector is dead, 
 - Any number is not 0, or os_check is not `ok`: "That number is not zero. We won't talk past it." Point at it. Do not explain it away on stage. Q&A can cover it. `os_outbound_seen` in `/health` lists what the OS saw.
 - The page counter is off screen or missing: show terminal C only.
 
-## 6–9. Talk segments
+## 6–11. Talk segments
 
-Nothing technical can fail. If a speaker blanks, Aarav says that speaker's one-line summary: model = "Pellav2 for the voice, Whisper and a small local model for the words"; voices = "Sanath's recordings and his consented clones are our test set".
+Nothing technical can fail. If a speaker blanks, Aarav says that speaker's one-line summary: how it works = "Pellav2 for the voice, Whisper and a small local model for the words, all on your own computer"; Gradium = "Sanath cloned his voice in Gradium for our test scripts; Gradium got our script text, never a caller".
 
 ## Total failure
 

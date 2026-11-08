@@ -1,6 +1,6 @@
 # Presentation outline — Sunday 11:00
 
-> **Superseded for Sunday by `DEMO-SCRIPT.md`** (4 minutes, phones-first positioning, the voice-talk TEST ATTACKER, owner-by-owner how-it-works). This Mac-first deck draft stays for detail. Do not use its "Mac: live" / "Mac today" framing or the "9 of about 10 clips" line (no source in the repo); `DEMO-SCRIPT.md` segment 7 uses the audited counts.
+> **Superseded for Sunday by `DEMO-SCRIPT.md`** (4 minutes, the voice-talk TEST ATTACKER, one-speaker how-it-works). This Mac-first deck draft stays for detail. Do not use its "Mac: live" / "Mac today" framing or its retired informal clip count (no source in the repo); `DEMO-SCRIPT.md` segment 8 uses the audited counts. Platform wording everywhere: "Android: working prototype, speaker mode, real call not verified yet"; "iOS gives apps no call audio; iPhone calls work today through the owner's own Mac; the iPhone app is in progress".
 
 Twelve slides. One line on the slide. The speaker notes are the words. Dark theme. The live demo slide is a cut to the Mac, run from `docs/demo/RUN-OF-SHOW.md`.
 
@@ -50,7 +50,7 @@ Twelve slides. One line on the slide. The speaker notes are the words. Dark them
 
 **Visual:** The real proof block: the big **0** and the caption **bytes of caller audio sent off this device**. Beside it, a terminal crop of the health check: `caller_audio_bytes_sent 0`, `bytes_sent_external 0`, `os_check ok`, `os_outbound_count 0`.
 
-**Say:** "The page counts caller-audio bytes sent off this device. The health check adds external bytes sent, and an operating-system check of outbound connections from the engine. On this demo those read 0, 0, and 0. If a counter shows something else, read the number on screen and move on."
+**Say:** "Caller audio is blocked from leaving by code: zero by design. The independent check is the operating system's own count of the engine's network connections during the call: zero. If a counter shows something else, read the number on screen and move on."
 
 ## Slide 7 — Live, on this Mac
 
@@ -62,23 +62,23 @@ Twelve slides. One line on the slide. The speaker notes are the words. Dark them
 
 ## Slide 8 — What we measured
 
-**Message:** In a small informal test, the team judged 9 of about 10 clips correct. That is not a rate.
+**Message:** Retired. Use `DEMO-SCRIPT.md` segment 8 (audited counts from `pm/AUDITS.md`).
 
-**Visual:** One line of type: "In a small informal test of about 10 audio clips, the team judged 9 correct." No percent sign. No chart that implies a benchmark.
+**Visual:** See the deck's "What we measured" slide. No percent sign. No chart that implies a benchmark.
 
-**Say:** "In a small informal test of about 10 audio clips, 9 were judged correct by the team. Do not turn that into a percentage. We also evaluated and fine-tuned an open-source detector head on many speakers. It helps on speaker-replay audio. It is not in the shipped detector yet. The card you just saw is the detector we are running today."
+**Say:** Use `DEMO-SCRIPT.md` segment 8. Background only: we also evaluated and fine-tuned an open-source detector head on many speakers. It helps on speaker-replay audio. It is not in the shipped detector yet. The card you just saw is the detector we are running today."
 
 ## Slide 9 — Where it runs
 
-**Message:** Mac is the live path. Android is early access. The iPhone is covered through the Mac.
+**Message:** Android: working prototype, speaker mode, real call not verified yet. iPhone calls work today through the owner's own Mac; the iPhone app is in progress.
 
 **Visual:** Three rows, short labels, no store badges.
 
 - Mac: live. iPhone calls answered on the Mac through Calls on Other Devices are heard here.
-- Android early access (speaker mode). Real-call behaviour is not verified yet.
-- iPhone app: it exists and is coming. iOS gives apps no call audio.
+- Android: working prototype, speaker mode, real call not verified yet.
+- iPhone: iOS gives apps no call audio; iPhone calls work today through the owner's own Mac; the iPhone app is in progress.
 
-**Say:** "Today the live demo is the Mac. Answer the iPhone on the Mac and the listener can hear the caller. Android early access is speaker mode: the app listens through the phone microphone while the call is on speaker. We have not verified that on a real call. An iPhone app exists and is coming. iOS does not give apps call audio, so that app is not how we hear an iPhone call today."
+**Say:** "Today the live demo is the Mac. Answer the iPhone on the Mac and the listener can hear the caller. The Android working prototype uses speaker mode: the app listens through the phone microphone while the call is on speaker. We have not verified that on a real call. The iPhone app is in progress. iOS does not give apps call audio, so that app is not how we hear an iPhone call today."
 
 ## Slide 10 — What is already in the world
 

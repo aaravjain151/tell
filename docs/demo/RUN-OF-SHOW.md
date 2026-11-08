@@ -1,6 +1,6 @@
 # Run of show — Sunday 11:00 (5:00)
 
-> **Superseded for Sunday by `DEMO-SCRIPT.md`** (4 minutes, phones-first positioning, the voice-talk TEST ATTACKER, owner-by-owner how-it-works). This 5-minute Mac-first draft stays for detail. Do not use its "Mac: live" / "Mac today" framing or the "9 of about 10 clips" line (no source in the repo); `DEMO-SCRIPT.md` segment 7 uses the audited counts.
+> **Superseded for Sunday by `DEMO-SCRIPT.md`** (4 minutes, the voice-talk TEST ATTACKER, one-speaker how-it-works). This 5-minute Mac-first draft stays for detail. Do not use its "Mac: live" / "Mac today" framing or its retired informal clip count (no source in the repo); `DEMO-SCRIPT.md` segment 8 uses the audited counts. Platform wording everywhere: "Android: working prototype, speaker mode, real call not verified yet"; "iOS gives apps no call audio; iPhone calls work today through the owner's own Mac; the iPhone app is in progress".
 
 Live demo on the Mac. One speaker. One operator. One teammate offstage with a phone. The page the room sees is `http://127.0.0.1:5173`. The engine stays on this laptop.
 
@@ -108,7 +108,7 @@ Point at the grid when the sentence changes. Hang nothing up; this audio is the 
 
 **Do.** Scroll to **bytes of caller audio sent off this device**. Leave the big **0** in frame. Operator runs the health curl from pre-flight again and leaves the six numbers visible in a corner terminal.
 
-**Say.** "Caller audio bytes sent off this device: 0. External bytes sent: 0. The operating system reports 0 outbound connections from the engine (`os_check` ok, `os_outbound_count` 0). The audio was analysed in memory on this Mac. Tell does not speak to the caller."
+**Say.** "Caller audio is blocked from leaving by code: zero by design. The independent check is the operating system's own count of the engine's network connections during the call: zero (`os_check` ok, `os_outbound_count` 0). The audio was analysed in memory on this Mac. Tell does not speak to the caller."
 
 **Fallback.** If any of those three numbers is not 0, or `os_check` is not `ok`: "That counter is not at 0. We will not talk past it." Point at the number that is there. Move to the close.
 
@@ -116,7 +116,7 @@ Point at the grid when the sentence changes. Hang nothing up; this audio is the 
 
 **Do.** Ctrl-C the listener if it is still in `--now`. Projector back on the page, including the line **Tell can be wrong.**
 
-**Say.** "In a small informal test of about 10 audio clips, the team judged 9 correct. That is a small informal test, not a rate. If a call asks for money or a code, hang up and call back on a number you already have."
+**Say.** "Caller ID tells you who's calling. Tell tells you what they want. Every voice has a tell." On screen: "Tell can be wrong. If a call asks for money or a code, hang up and call back on a number you already have."
 
 **Fallback.** Clock is over: stop after "Tell can be wrong." The measurement sentence can move to questions.
 
@@ -127,11 +127,11 @@ Point at the grid when the sentence changes. Hang nothing up; this audio is the 
 | On this Mac. On your own device. | "Fully shipped." "Works on all devices." "100% private." |
 | Two answers: human or AI, and scam pattern or not, plus the evidence line on screen. | "Detects all." "Fraud confirmed." "Provably" anything. |
 | The listener starts by itself when a call plays. The card updates about every 3 seconds and can change mid-call. | "It catches the scam immediately." |
-| Caller-audio bytes sent: 0. External bytes: 0. OS outbound count: 0. It does not speak to the caller. | "Safe." "Legal." "Illegal." |
-| iPhone calls are covered when you answer them on the Mac. An iPhone app exists and is coming. iOS gives apps no call audio. | "The iPhone app hears the call." |
-| Android early access (speaker mode). Real-call behaviour is not verified yet. | "Android works on a normal call." |
+| Caller audio is blocked from leaving by code: zero by design. The OS's own count of the engine's network connections: 0. It does not speak to the caller. | "Safe." "Legal." "Illegal." |
+| iPhone calls are covered when you answer them on the Mac. The iPhone app is in progress. iOS gives apps no call audio. | "The iPhone app hears the call." |
+| Android: working prototype, speaker mode, real call not verified yet. | "Android works on a normal call." |
 | Google Scam Detection on-device, Hiya AI Phone, and Truecaller also do real-time or on-device scam detection. | "Only." "First." "Better than Truecaller, Hiya, or Google." |
-| In a small informal test of about 10 clips, the team judged 9 correct. | Any accuracy percentage. |
+| Exact audited counts from `pm/AUDITS.md`, "in-sample" said before the count (see `DEMO-SCRIPT.md` segment 8). | Any accuracy percentage; the retired informal clip count. |
 | We evaluated and fine-tuned an open-source detector head on many speakers. It helps on speaker-replay audio. It is not in the shipped detector yet. | "The fine-tune is in today's build." |
 | TEST ATTACKER. Fictional scenario. Disclosed Qwen voice. Recorded demo. | A real victim, a real scammer, or unlabelled AI audio. |
 | Tell can be wrong. Hang up and call back on a number you already have. | "You are fine to keep talking." |

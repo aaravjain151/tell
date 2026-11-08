@@ -21,10 +21,11 @@ Exit criteria: the branch lines in `DEMO-SCRIPT.md` match what you saw, `$CALL` 
 
 Goal: land the 4:00 with the real demos. Full script, every word, stopwatch running.
 
-- **Time:** each segment against the timing table. Write the actual times in the form. Checkpoints: end of demo 1 at **1:48**, end of demo 2 at **2:30**, end of how it works at **3:24**, finish at **4:00**.
-- **Wi-Fi gate (run it twice):** turn Wi-Fi off, wait 20 s, turn it on, and have Sanath call at once. Measure from Wi-Fi on to the Mac showing the Answer banner. If both tries are under 20 s, use Wi-Fi off in demo 1. Otherwise leave it on until segment 5.
-- **Cut list:** if a run ends past 4:10, apply cuts from the top of the cut list until the next run lands between 3:50 and 4:00.
-- **Handovers:** Samarth starts terminal B before Aarav finishes "On the right is Tell". Sanath dials on "Sanath, call me", not before.
+- **Time:** each segment against the timing table. Write the actual times in the form. Checkpoints: end of demo 1 at **1:34**, end of demo 2 at **2:12**, end of how it works at **2:46**, finish at **4:06** planned (cut 1 brings it to about 3:52).
+- **Wi-Fi:** on for both demos; off only on cue in segment 5. Check once that switching it off does not stop the engine or the page.
+- **Voice-row lines:** rehearse all four voice-row lines in demo 1 (AI from the voice check, AI because the bot disclosed, not sure, human) until each comes out without reading. Rehearse the two seconds of silence on red.
+- **Cut list:** if a run ends past 4:06, apply cuts from the top of the cut list until the next run lands between 3:50 and 4:06.
+- **Handovers:** Samarth starts terminal B while Sanath is still talking in segment 2. Sanath dials on "Sanath, call me", not before, and says "Same voice. One was me..." as he hangs up.
 
 ## Round 3: dress rehearsal (Sunday 10:00, one run, as if judges were there)
 
@@ -42,18 +43,20 @@ Goal: one clean run with no stops, recorded as the backup video (`FALLBACKS.md` 
 ## Feedback form (copy for each run)
 
 ```text
-Run: ___  Round: ___  Date/time: ________  Stage voice: sanath / demo-say  Disclosure: on / off  Wi-Fi off in demo 1: yes / no
+Run: ___  Round: ___  Date/time: ________  Stage voice: sanath / demo-say  Disclosure: on / off  Wi-Fi off on cue in segment 5: yes / no
 
 Segment times (actual)     target   actual
   1 Hook                   0:20     ____
-  2 Problem                0:38     ____
-  3 Demo 1 end             1:48     ____
-  4 Demo 2 end             2:30     ____
-  5 Privacy end            2:48     ____
-  6 How it works end       3:24     ____
-  7 Measured end           3:42     ____
-  8 Roadmap end            3:55     ____
-  9 Close                  4:00     ____
+  2 The attacker           0:32     ____
+  3 Demo 1 end             1:34     ____
+  4 Demo 2 end             2:12     ____
+  5 Privacy end            2:30     ____
+  6 How it works end       2:46     ____
+  7 Gradium end            3:06     ____
+  8 Measured end           3:40     ____
+  9 Team end               3:45     ____
+ 10 Roadmap end            3:59     ____
+ 11 Close                  4:06     ____
 
 Demo 1: warming ended at ____  amber at ____ (or none)  red at ____ (or none)
         2x2 cell at red: [AI+scam] [human+scam] [not sure+scam] [other: ____]
@@ -62,7 +65,7 @@ Demo 2: Answer -> LISTENING ____ s   first verdict ____ s   cell: [human+no scam
 Privacy: numbers shown: caller audio ___ external ___ OS outbound ___ os_check ___
 Fallbacks used: ______________________
 
-Banned words heard (circle): only  first  safe  legal  fully shipped  better than  percent/accuracy  never leaves the phone  Mac today
+Banned words heard (circle): only  first  safe  legal  fully shipped  better than  detects all  percent/accuracy  100% private  early access  coming soon  never leaves the phone  Mac today
 Claims stronger than the docs: ______________________
 Lines that dragged: ______________________
 One change for the next run: ______________________
@@ -72,12 +75,12 @@ One change for the next run: ______________________
 
 The run counts as perfect only if all of these are true:
 
-1. Total time is between 3:50 and 4:00, and every checkpoint is within ±5 s.
+1. Total time is between 3:50 and 4:06, and every checkpoint is within ±5 s.
 2. Preflight was green (0 red) within the 15 minutes before the run.
-3. Demo 1: the TEST ATTACKER bar was visible the whole time, the card went from warming to a calm state to amber or red while the bot was still talking, and Aarav read the branch line that matched the screen.
-4. Demo 2: listening started with no click in Tell (terminal A armed by itself on pickup), and Aarav read the cell that was actually shown.
-5. The privacy numbers on screen were caller audio 0, external 0, OS outbound 0, os_check ok, and Aarav said them correctly.
-6. Each of the three people said their own "how it works" piece, and nobody claimed someone else's work.
+3. Demo 1: the TEST ATTACKER bar was visible the whole time, the card went from warming to a calm state to amber or red while the bot was still talking, Aarav held two seconds of silence on red, said "The words gave it away", and read the voice-row line that matched the screen (saying so plainly if the AI answer came from the disclosure).
+4. Demo 2: listening started with no click in Tell (terminal A armed by itself on pickup), Aarav read the cell that was actually shown, and Sanath said "Same voice. One was me. One was a copy asking for your code."
+5. The privacy numbers on screen were caller audio 0, external 0, OS outbound 0, os_check ok, and Aarav described them correctly: the audio 0 is by design (blocked by code), the OS count is the independent check.
+6. Samarth said how it works, Sanath said the Gradium piece, Aarav the team line, and nobody claimed someone else's work.
 7. There were zero banned words and zero claims beyond `docs/` and `pm/AUDITS.md`.
 8. Nobody clicked **Speak verdict** or **Start listening now**, and nobody refreshed to hunt for a red cell.
 9. If a fallback was used, it was named out loud ("recorded", "replay", "stored sample") and the run stayed on time.
