@@ -201,3 +201,26 @@ band_limited = 5-7.5 kHz vs 1-4 kHz < -37 dB (old rule flagged 71% of clean clip
 The fixes alone raise lossy false alarms (156 -> 221); they only ship with the voter. Golden eval identical (PASS).
 Not improved: replay chain (catch 0 everywhere at 0.60). Caveats: read speech + one conversational speaker + 12 memos; simulated
 channels; weight 8 and the Pellav2 clip were chosen on the same folds; tiny ElevenLabs/owner test sets.
+
+## few_pauses voter: rare long pauses push toward AI (2026-11-08, thresholds 2026-11-08.1 -> 2026-11-08.2) - SHIPPED, on by default
+Code: `services/api/tell/signals/pauses.py` (`few_pauses`), weight `ACOUSTIC_WEIGHTS["few_pauses"] = 3.0`, `PAUSE_RATE_SUSPECT 12`,
+`PAUSE_RATE_TTS 5`, `PAUSE_VOTE_MIN 0.8`, `PAUSE_MIN_SPAN_S 15`. Kill switch `TELL_PAUSE_TELL=0` (no Tell added, bit-identical).
+Rule: long pauses (>= 300 ms) per minute of speech span. <= 12/min over >= 15 s of speech -> vote 0.8..1.0 (1.0 at <= 5/min);
+otherwise ABSTAIN. It can only push toward AI; it never pulls a naturally pausing engine toward human. Basis: Qwen3-TTS clones
+leave about half the long pauses of the same speaker (cue study, 18 pairs, AUC 0.76-0.80, replicated on unseen scripts).
+
+Before/after, REAL pipeline (Pellav2 + learned_tells + HF on, stub LLM, local whisper), 10 local friend-memo vs Qwen-clone pairs
+x clean / opus8k / chain_replay_call (60 clips; tiny, one speaker family, NOT a held-out eval):
+
+| | votes | p_ai change | tier changes |
+|---|---|---|---|
+| Qwen clones >= 15 s (6 clips x 3) | 12/18 (4 clips; new_internship 23/min and coffee_7 20/min pause like people) | +0.01 to +0.10 | none (rough_morning opus8k 0.55 -> 0.61 stays "unsure" by the band) |
+| Qwen clones < 15 s (4 x 3) | 0 (abstain) | 0 | none |
+| humans (10 x 3) | 2/30, both chain_replay_call (reverb fills gaps: 14 -> 9/min, 19 -> 11/min) | +0.10, +0.08 (max human 0.34) | none |
+
+First version voted 0.6..1.0 and LOWERED an already-AI clip (stolen_package clean 0.66 -> 0.65, ai_undisclosed -> unsure): a vote
+below the clip's voice mean drags it down. Floor raised to 0.8; after the fix every vote raises p_ai (test `test_a_vote_never_lowers_p_ai`).
+Golden eval identical: transcript 0.98 (32), synthetic audio 1.00 (48), PASS. 277 related tests pass.
+Limits: 2 of 6 long Qwen clones have human-like pause rates, so the cue is real on average, not universal; replay pushes humans toward
+the threshold rate; live ticks (10 s) always abstain (< 15 s span); weight 3 chosen by hand, not on held-out folds. Next: Aarav's
+`training/learned_tells/pauses.py stack` on the full cache (LibriSpeech + 426 Qwen + Gradium + say), and feed the 30 s ring to the voter in live mode.
