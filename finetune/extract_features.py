@@ -92,7 +92,7 @@ def main():
     device = ("cuda" if torch.cuda.is_available()
               else "mps" if torch.backends.mps.is_available() else "cpu")
     model = Detector().to(device)
-    model.load_state_dict(torch.load(args.weights, map_location=device))
+    model.load_state_dict(torch.load(args.weights, map_location=device, weights_only=True))
     model.eval()
     print(f"Model loaded on {device}")
 

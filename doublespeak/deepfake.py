@@ -167,7 +167,7 @@ class DeepfakeDetector:
         device = "cpu"  # product targets CPU-only, offline machines
         Detector = _build_detector_class()
         model = Detector().to(device)
-        state = torch.load(weights_path, map_location=device)
+        state = torch.load(weights_path, map_location=device, weights_only=True)
         model.load_state_dict(state)
 
         # Apply the lightweight head delta if requested and no full checkpoint
@@ -178,7 +178,7 @@ class DeepfakeDetector:
             and weights_path == self.cfg.weights_path
             and self.cfg.finetuned_head_path.exists()
         ):
-            head = torch.load(self.cfg.finetuned_head_path, map_location=device)
+            head = torch.load(self.cfg.finetuned_head_path, map_location=device, weights_only=True)
             with torch.no_grad():
                 model.layer_weights.copy_(head["layer_weights"])
                 model.head.weight.copy_(head["head.weight"])
