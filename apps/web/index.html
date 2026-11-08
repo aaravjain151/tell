@@ -1713,7 +1713,7 @@ function onFeed(raw){
   let e; try{ e = JSON.parse(raw); }catch(x){ return; }
   if (!e || typeof e !== "object") return;
   if (e.type === "state") onState(e); else if (e.type === "verdict") onVerdict(e);
-  else if (e.type === "ended") endSession(e.reason ? String(e.reason).slice(0, 80) : "");
+  else if (e.type === "ended"){ if (L.skipEnded){ L.skipEnded = false; clearSession(); } else endSession(e.reason ? String(e.reason).slice(0, 80) : ""); }
 }
 const conn = {ok:false, es:null, tries:0, timer:0};
 function connect(){
@@ -1735,8 +1735,9 @@ function feedDown(){
 async function stopLive(){
   if (L.ended){ clearSession(); return; }
   if (recorder && recorder.state === "recording"){ recorder.stop(); return; }
-  // A call heard by the listener on this computer ends when the call ends (or Ctrl-C in the listener); the engine has no stop route.
-  barNote = "Listening ends when you hang up, or press Ctrl-C in the listener."; drawBar(); setTimeout(() => { barNote = ""; drawBar(); }, 6000);
+  L.skipEnded = true;                                    // the engine's "ended" for this stop must not redraw the old card
+  try{ const r = await api("/live/stop", {method:"POST"}); if (!r.ok) throw new Error(String(r.status)); clearSession(); }
+  catch(x){ L.skipEnded = false; barNote = "Could not stop: is the engine running?"; drawBar(); setTimeout(() => { barNote = ""; drawBar(); }, 6000); }
 }
 async function dismissAlert(){
   L.dismissed = true; $("redbar").hidden = true; HTML.dataset.banner = "0";

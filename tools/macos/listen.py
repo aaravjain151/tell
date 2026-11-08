@@ -89,7 +89,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--tap", default=str(DEFAULT_TAP), help="path to the tap_audio binary")
     ap.add_argument("--side", choices=("far", "near", "mix"), default="far")
     ap.add_argument("--silence-s", type=float, default=90.0, help="stop after this many seconds of silence")
-    ap.add_argument("--poll-s", type=float, default=2.0, help="--watch: seconds between tap_audio --list polls")
+    ap.add_argument("--poll-s", type=float, default=1.0, help="--watch: seconds between tap_audio --list polls "
+                    "(a hang-up is noticed after END_POLLS polls, about 3 s)")
     ap.add_argument("--speed", type=float, default=1.0, help="--file: 1 = real time")
     ap.add_argument("--sound", action="store_true", help="play a sound with notifications (off by default)")
     ap.add_argument("--speak", action="store_true", help="speak the verdict aloud when the stable tier changes, using "
@@ -127,6 +128,9 @@ def match_call(listing: list[tuple[str, str]], call_processes: list[str]) -> str
             if name.lower() == w or bundle.lower() == w:
                 return name
     return None
+
+
+STOPPED_FROM_PAGE = "stopped from the page"
 
 
 class WatchState:
@@ -464,6 +468,7 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
                     if m.get("type") == "error":
                         return
                 elif m.get("type") == "final":
+                    state["final_reason"] = m.get("reason")
                     say(final_line(m, state["stable"]))
                     return
 
@@ -477,9 +482,14 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
                     reason = "interrupted"
                     break
                 if rd.done():
-                    reason = "server closed"
+                    reason = STOPPED_FROM_PAGE if state.get("final_reason") == "stopped" else "server closed"
                     break
-                await ws.send(frame)
+                try:
+                    await ws.send(frame)
+                except websockets.ConnectionClosed:      # closed between the check and the send: read its final first
+                    await asyncio.wait({rd}, timeout=1.0)
+                    reason = STOPPED_FROM_PAGE if state.get("final_reason") == "stopped" else "server closed"
+                    break
                 if saver:
                     saver.write(frame)
                 state["sent"] += len(frame)
@@ -569,8 +579,12 @@ async def watch(args: argparse.Namespace, stop: asyncio.Event) -> int:
                 say(f"stopped: {task.result()}")
             except Exception as e:  # noqa: BLE001
                 say(f"stopped: {e}")
+            stopped_here = task.done() and not task.cancelled() and task.exception() is None and task.result() == STOPPED_FROM_PAGE
             task = None
-            ws_state.disarm()                            # the session ended on its own (silence, server): re-arm later
+            if stopped_here:                             # Stop on the page: stay idle until THIS call ends, then re-arm
+                say("stopped from the page: idle until this call ends")
+            else:
+                ws_state.disarm()                        # the session ended on its own (silence, server): re-arm later
         if ev == "arm" and task is None:
             say(f"call detected ({ws_state.armed}): arming")
             sess_stop = asyncio.Event()

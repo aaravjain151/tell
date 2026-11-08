@@ -260,3 +260,17 @@ def test_flush_budget_is_min_of_both_knobs(monkeypatch):
     assert sm.Session("x", sm.params()).flush_budget_s() == 4.0
     monkeypatch.delenv("TELL_STREAM_FINAL_S")
     assert sm.params()["final_flush_s"] == sm.FINAL_FLUSH_S
+
+
+def test_page_stop_ends_the_live_session_and_needs_the_token():
+    with TestClient(app, headers=AUTH) as c:
+        ws, s = open_ws(c)
+        send(ws, tone(2, QUIET))
+        assert TestClient(app).post("/live/stop", headers=ORIGIN).status_code == 401      # no token, no stop
+        r = c.post("/live/stop", headers=ORIGIN)
+        assert r.status_code == 200 and r.json() == {"stopped": 1}
+        fin = until(ws, "final")[-1]
+        assert fin["reason"] == "stopped" and "tail" not in fin                         # wiped at once, no extra analysis
+        assert s.closed and s.close_reason == "stopped" and sm.REGISTRY.count() == 0
+        ws.__exit__(None, None, None)
+        assert c.post("/live/stop", headers=ORIGIN).json() == {"stopped": 0}            # nothing live: harmless
