@@ -10,9 +10,7 @@ Hardening versus the reference script:
   * they are read with PyTorch's restricted unpickler (`weights_only=True`), so a tampered .pt cannot run code;
   * this module never touches the network (`local_files_only`): `make models` (tools/models/prefetch_pella.py) downloads
     the weights and the backbone's small config once; the 2.3 GB backbone is NOT downloaded, the config alone is enough;
-  * every non-silent 4 s window (2 s hop) of the analysed audio is scored, up to PELLA_MAX_WINDOWS (default 16, about 34 s;
-    a live 10 s tick has 4), and the call score is sigmoid(mean of window logits): smooth, so one window flipping no longer
-    swings p_ai by ~0.12 the way a 3-window vote of near-binary probabilities did (docs/LEARNED-TELLS.md, 2026-11-08);
+  * long calls are scored as at most PELLA_MAX_WINDOWS non-silent 4 s windows (signals/windows.py) to bound latency;
   * anything that goes wrong (missing deps, uncached model, hash mismatch, runtime error) makes the voter applicable=False.
 Enable with PELLA_MODEL=Sadanie/pellav2-audio-deepfake-detector (or a path to the .pt, which must match the pinned hash).
 """
@@ -41,8 +39,6 @@ BACKBONE_CONFIG_SHA256 = "f5572bd5998b68182e9c328a43127ed21fed687f6910497136b91a
 MIN_TORCH = (2, 6)                  # weights_only had a bypass (CVE-2025-32434) before torch 2.6
 MAX_LAYERS, MAX_HIDDEN = 64, 4096   # a poisoned config must not be able to demand terabytes
 SR, CROP, TARGET_LUFS = 16_000, 4 * 16_000, -23.0
-DEFAULT_MAX_WINDOWS = 16            # 3 -> 16 (2026-11-08): every window of a live 10 s tick, ~34 s of a file; see max_windows()
-LOGIT_EPS = 0.01                    # window P clipped to [0.01, 0.99] (logit +-4.6) so one extreme window cannot dominate
 _model = None
 _device = "cpu"
 _error = ""
@@ -248,68 +244,28 @@ def score_windows(chunks: list[np.ndarray]) -> list[float]:
         return [float(p) for p in torch.sigmoid(_model(batch)).cpu().tolist()]
 
 
-def score_windows_ex(chunks: list[np.ndarray], layers: tuple[int, ...]) -> tuple[list[float], dict[int, np.ndarray]]:
-    """Like score_windows, plus the masked time-mean of the requested backbone hidden layers per window ({layer: [n, D]}),
-    from the SAME forward pass (no extra cost). The learned_tells voter (signals/learned.py) reads these embeddings."""
-    import torch
-    batch = torch.from_numpy(np.stack([prep(c) for c in chunks])).to(_device)
-    with torch.no_grad():
-        feats, mask = _model.features(batch)
-        hs = _model.backbone(input_features=feats, attention_mask=mask, output_hidden_states=True).hidden_states
-        mk = mask[:, :, None].float()
-        means = torch.stack([(h * mk).sum(1) / mk.sum(1).clamp(min=1) for h in hs], 1)
-        w = torch.softmax(_model.layer_weights, dim=0)
-        p = torch.sigmoid(_model.head((means * w[None, :, None]).sum(1)).squeeze(-1))
-        emb = {int(L): means[:, int(L), :].float().cpu().numpy() for L in layers}
-    return [float(v) for v in p.cpu().tolist()], emb
-
-
-def max_windows() -> int:
-    try:
-        return max(1, int(os.environ.get("PELLA_MAX_WINDOWS", "") or DEFAULT_MAX_WINDOWS))
-    except ValueError:
-        return DEFAULT_MAX_WINDOWS
-
-
-def aggregate(probs: list[float]) -> float:
-    """Call score from window probabilities: sigmoid(mean(logit(p))), p clipped to [LOGIT_EPS, 1 - LOGIT_EPS]."""
-    p = np.clip(np.asarray(probs, dtype=np.float64), LOGIT_EPS, 1 - LOGIT_EPS)
-    return float(1 / (1 + np.exp(-np.mean(np.log(p / (1 - p))))))
-
-
 def pella_vote(x16k: np.ndarray) -> Tell:
-    return pella_vote_ex(x16k)[0]
-
-
-def pella_vote_ex(x16k: np.ndarray, layers: tuple[int, ...] = ()) -> tuple[Tell, dict | None]:
-    """(Tell, extras). extras = {"t": [window starts], "emb": {layer: [n, D]}, "p": [window P]} when `layers` were asked for and scoring
-    worked, else None. The Tell is identical whether or not embeddings were requested."""
     if not os.environ.get("PELLA_MODEL"):
-        return _na("no Pellav2 model configured (PELLA_MODEL)"), None
+        return _na("no Pellav2 model configured (PELLA_MODEL)")
     try:
         import scipy  # noqa: F401
         import torch  # noqa: F401
         import torchaudio  # noqa: F401
         import transformers  # noqa: F401
     except ImportError as e:
-        return _na(f"Pellav2 needs torch, torchaudio, transformers and scipy ({e.name} missing)"), None
+        return _na(f"Pellav2 needs torch, torchaudio, transformers and scipy ({e.name} missing)")
     _load()
     if _model is None:
-        return _na(_error or "Pellav2 not loaded"), None
-    ws = win.windows(x16k, SR, win_s=4.0, hop_s=2.0, max_n=max_windows())
+        return _na(_error or "Pellav2 not loaded")
+    ws = win.windows(x16k, SR, win_s=4.0, hop_s=2.0, max_n=int(os.environ.get("PELLA_MAX_WINDOWS", "3")))
     if not ws:
-        return _na("no speech found for Pellav2 (all windows silent)"), None
-    extras = None
+        return _na("no speech found for Pellav2 (all windows silent)")
     try:
-        if layers:
-            probs, emb = score_windows_ex([c for _, c in ws], tuple(layers))
-            extras = {"t": [float(t) for t, _ in ws], "emb": emb, "p": list(probs)}
-        else:
-            probs = score_windows([c for _, c in ws])
+        probs = score_windows([c for _, c in ws])
     except Exception as e:  # noqa: BLE001
         log.warning("Pellav2 inference failed: %s", e)
-        return _na(f"Pellav2 inference failed ({type(e).__name__})"), None
-    score, mx = aggregate(probs), float(np.max(probs))
-    return Tell("neural_pella", "acoustic", score, W_PELLA,
-                f"Pellav2: P(synthetic) = {score:.2f} over {len(probs)} window{'s' if len(probs) != 1 else ''} (highest {mx:.2f})",
-                detail={"windows": [{"t": round(float(t), 2), "p": round(p, 4)} for (t, _), p in zip(ws, probs)]}), extras
+        return _na(f"Pellav2 inference failed ({type(e).__name__})")
+    mean, mx = float(np.mean(probs)), float(np.max(probs))
+    return Tell("neural_pella", "acoustic", mean, W_PELLA,
+                f"Pellav2: P(synthetic) = {mean:.2f} over {len(probs)} window{'s' if len(probs) != 1 else ''} (highest {mx:.2f})",
+                detail={"windows": [{"t": round(float(t), 2), "p": round(p, 4)} for (t, _), p in zip(ws, probs)]})
