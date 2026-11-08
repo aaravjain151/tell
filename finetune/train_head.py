@@ -96,7 +96,7 @@ def main():
         print("WARNING: validation set lacks real or fake clips; "
               "make sure each speaker has both.")
 
-    state = torch.load(args.weights, map_location="cpu")
+    state = torch.load(args.weights, map_location="cpu", weights_only=True)
     lw0 = state["layer_weights"].float().clone()
     W0, b0 = state["head.weight"].float().clone(), state["head.bias"].float().clone()
 
