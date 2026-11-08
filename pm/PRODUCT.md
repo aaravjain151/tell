@@ -6,7 +6,7 @@
 
 **North star:** seconds-to-verdict on an unknown caller, with zero bytes of caller audio leaving the device.
 
-Built for HACK1984 — Privacy-First main track + "Best use of Gradium" side prize. Working name; see `pm/DECISIONS.md` D-001.
+Built for HACK1984 — targeting the Privacy-First main track, Most Startup-able, and the Best Use of Gradium side prize (which stacks with Privacy-First). We used Gradium to clone our own teammates' voices for the red-team attacker calls and to speak the verdict; only our own script text is ever sent to Gradium, never a caller. Working name; see `pm/DECISIONS.md` D-001.
 
 ---
 
