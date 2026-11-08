@@ -1,0 +1,70 @@
+import Foundation
+
+struct ReadyInfo: Equatable {
+    var ready: Bool
+    var privacyClean: Bool      // every switch in privacy_posture is false
+    static func parse(_ data: Data) -> ReadyInfo? {
+        guard let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return nil }
+        let posture = obj["privacy_posture"] as? [String: Any] ?? [:]
+        let anyOn = posture.values.contains { ($0 as? Bool) == true }
+        return ReadyInfo(ready: obj["ready"] as? Bool ?? false, privacyClean: !posture.isEmpty && !anyOn)
+    }
+}
+
+/// The only network code in the app. Every URL is built from 127.0.0.1 (see StaticChecksTests).
+struct LocalAPI {
+    var port: Int
+    static let uiOrigin = "http://localhost:5173"
+
+    var base: URL { URL(string: "http://127.0.0.1:\(port)")! }
+    static let session: URLSession = {
+        let c = URLSessionConfiguration.ephemeral
+        c.timeoutIntervalForRequest = 4
+        c.waitsForConnectivity = false
+        c.urlCache = nil
+        return URLSession(configuration: c)
+    }()
+
+    /// nil = nothing answered (or not our engine).
+    func ready() async -> ReadyInfo? {
+        var req = URLRequest(url: base.appendingPathComponent("ready"))
+        req.setValue(Self.uiOrigin, forHTTPHeaderField: "Origin")
+        guard let (data, resp) = try? await Self.session.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        return ReadyInfo.parse(data)
+    }
+
+    static func pageIsUp() async -> Bool {
+        var req = URLRequest(url: URL(string: "http://127.0.0.1:\(LaunchPlan.uiPort)/")!)
+        req.timeoutInterval = 1.5
+        guard let (_, resp) = try? await session.data(for: req) else { return false }
+        return (resp as? HTTPURLResponse) != nil
+    }
+
+    /// Streams GET /live/events until the connection drops. Calls `onEvent` on the main actor.
+    func streamEvents(onEvent: @escaping @MainActor (LiveEvent) -> Void) async {
+        var req = URLRequest(url: base.appendingPathComponent("live/events"))
+        req.setValue(Self.uiOrigin, forHTTPHeaderField: "Origin")
+        req.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        req.timeoutInterval = 3600
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.timeoutIntervalForRequest = 3600
+        cfg.urlCache = nil
+        let s = URLSession(configuration: cfg)
+        defer { s.invalidateAndCancel() }
+        guard let (bytes, resp) = try? await s.bytes(for: req), (resp as? HTTPURLResponse)?.statusCode == 200 else { return }
+        var parser = SSEParser()
+        var chunk = Data()
+        do {
+            for try await b in bytes {
+                chunk.append(b)
+                if b == 0x0A {
+                    for payload in parser.feed(chunk) {
+                        if let e = LiveEvent.parse(payload) { await onEvent(e) }
+                    }
+                    chunk.removeAll(keepingCapacity: true)
+                }
+            }
+        } catch { return }
+    }
+}

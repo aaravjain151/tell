@@ -18,7 +18,7 @@ import json
 
 from fastapi import APIRouter, HTTPException, Request, WebSocket
 
-from . import limits, live, session as sess_mod
+from . import blocklist, feedback, limits, live, session as sess_mod
 from .session import MAX_TEXT_BYTES, REGISTRY, SIDES, Session
 
 router = APIRouter()
@@ -48,6 +48,8 @@ async def delete_session(sid: str) -> dict:
 
 @router.post("/panic")
 async def panic() -> dict:
+    blocklist.wipe()   # the user's own encrypted local lists go too (docs/BLOCK-SPAM.md)
+    feedback.wipe()
     return {"wiped": REGISTRY.panic()}
 
 

@@ -263,7 +263,24 @@ class Session:
                 "tier": d.get("tier"), "p_ai": d.get("p_ai"), "p_scam": d.get("p_scam"),
                 "confidence": round(conf, 3), "confidence_capped": capped, "headline": d.get("headline", ""),
                 "degraded": degraded, "lag_s": round(self.last_lag_s, 2), "side": self.side,
-                "dropped_ms": self.dropped_ms}
+                "dropped_ms": self.dropped_ms, "verdict": self.client_verdict(d, conf, capped)}
+
+    @staticmethod
+    def client_verdict(d: dict, conf: float, capped: bool) -> dict:
+        """The full per-window verdict for THIS session's own client (additive; same shape as /analyze and the live feed),
+        so a companion app never has to read the global /live/events feed, which carries every session. On side=mix
+        the confidence cap is applied here too, so `scores` never claims more than the top-level field."""
+        v = dict(d)
+        if capped:
+            v["confidence"] = round(conf, 3)
+            sc = v.get("scores")
+            if isinstance(sc, dict):
+                sc = dict(sc)
+                sc["confidence"] = min(int(sc.get("confidence") or 0), int(round(MIX_CONF_CAP * 100)))
+                if sc.get("confidence_label") == "high":
+                    sc["confidence_label"] = "medium"
+                v["scores"] = sc
+        return v
 
     def lag_report(self) -> dict:
         return {"lag_s": round(self.last_lag_s, 2), "last_job_s": round(self.last_job_s, 2),
