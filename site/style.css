@@ -1,5 +1,5 @@
 /* Hallmark · checked: 2026-11-07 · genre: modern-minimal (inferred, a call-screening product)
- * material: flat ink on white paper, hairline rules, square pixel-cell meters, no shadows, no curves · type: Outfit variable (weight 200 display, 300 to 500 text) · palette: tokens at :root (bg ink muted line plane, teal red amber blue unsure) with one dark set, the tier colour is the only signal · radius: 2px on every control · motion: one looping recorded demo (steps() cells, transform and opacity only), reduced-motion fallback shows the final frame
+ * material: flat ink on white paper, hairline rules, square pixel-cell meters, no shadows, no curves · type: Outfit variable (weight 200 display, 300 to 500 text) · palette: tokens at :root (bg ink muted line plane, teal red amber blue unsure) with one dark set, the tier colour is the one signal · radius: 2px on every control · motion: one looping scripted illustration (steps() cells, transform and opacity), reduced-motion fallback shows the final frame
  * floor: 0 FAIL · fixed: none yet · reflex fixed: none yet
  * built: the project (same identity as apps/web) · v2.0.0 */
 @font-face{font-family:"Outfit";src:url("outfit.woff2") format("woff2");font-weight:200 600;font-style:normal;font-display:swap}
