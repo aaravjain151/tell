@@ -1,0 +1,14 @@
+{
+  "appId": "dev.doublespeak.app",
+  "appName": "Doublespeak",
+  "webDir": "www",
+  "backgroundColor": "#0B1020",
+  "server": {
+    "androidScheme": "http",
+    "hostname": "localhost"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": true
+  }
+}
