@@ -1,0 +1,88 @@
+# Doublespeak for iPhone
+
+A thin client, like the Android app. The phone listens through its microphone and the audio goes over the USB cable to the Doublespeak engine on your Mac. The engine does the analysis; the phone shows the verdict. Nothing is recorded or stored on the phone or the Mac, there is no LAN, Wi-Fi, cloud, relay, analytics or third-party SDK, and the app never speaks to the caller (D-003, D-004, D-009, D-011).
+
+## What it can and cannot do (read this first)
+
+* **Speaker mode only.** iOS gives apps no call audio. The call has to be on speakerphone; the microphone hears the caller from the speaker, plus your own voice and the room. The app never claims to hear both sides, and does not hear a call held to the ear, on Bluetooth or on headphones.
+* A call can interrupt the microphone for other apps. If the level bars stay flat for 8 seconds the app says so. Whether the iPhone 14 Pro Max does this on a real call is exactly what the call test below finds out. **Not yet verified on a real call or a real device.**
+* The models do not run on the phone. The Mac engine must be running and the cable plugged in.
+* Speakerphone audio is a blend of both voices, so the app sends `side=mix` and the engine caps how sure it says it is (0.6). The "How sure" label is also honest about the voice: while the voice question is unresolved it can never read High, and a note says "The voice check is not sure." or "The voice checks disagree."
+
+## How the audio gets to the Mac (inverted direction)
+
+An iPhone cannot reach the Mac's `localhost`, so the app runs a tiny WebSocket **server on the phone's own loopback** (127.0.0.1 and ::1, port 8765, Network.framework, loopback interface only). `iproxy` (libimobiledevice, usbmuxd, USB only, never `-n`) forwards the Mac's `127.0.0.1:8765` to that port, and `tools/ios/bridge.py` connects as the client:
+
+```
+iPhone mic -> app (PCM16 16 kHz mono, 100 ms frames) -- loopback WS server :8765
+   <== USB cable (usbmuxd / iproxy) ==>  tools/ios/bridge.py  -> engine POST /session + WS /ws/stream (side=mix, source=iphone)
+engine GET /live/events (verdict + stable + 2x2 + How sure) -> bridge -> phone JSON ticks
+```
+
+The phone accepts one client, requires the per-launch **pairing code** shown on its connection screen (the bridge sends it in its first message, within 5 s), and refuses anything with an `Origin` header (a web page). Stop on either side wipes buffers; the engine wipes its ring when the stream closes.
+
+## Computer setup
+
+```
+brew install libimobiledevice xcodegen      # iproxy / idevice_id, and the project generator
+make api                                    # the engine on 127.0.0.1:8000 (default origins are enough)
+cd apps/ios && xcodegen generate            # creates Doublespeak.xcodeproj (not committed)
+```
+
+## One-time phone and Xcode setup (needs the owner)
+
+This Mac had no code-signing identity when this was built (`security find-identity -v -p codesigning` printed 0), so **the app has not been installed on the phone.** Nothing here creates certificates or touches an Apple ID.
+
+1. Xcode > Settings > Accounts > **+** > Apple ID. A free Personal Team works; its profile **expires after 7 days**, then rebuild and reinstall (the app opens no more after expiry).
+2. On the iPhone: Settings > Privacy & Security > **Developer Mode** > on, restart, confirm.
+3. Plug the iPhone in, unlock it, tap **Trust This Computer** and enter the passcode. `xcrun devicectl list devices` must show it (UDID `00008120-000E503E0238C01E`).
+4. Find your team id: Xcode > Settings > Accounts > the team > or `defaults read com.apple.dt.Xcode IDEProvisioningTeamByIdentifier`. Put it in `apps/ios/project.yml` as `DEVELOPMENT_TEAM` for your own checkout (do not commit it), or pass it on the command line below.
+
+## Build and install
+
+```
+cd apps/ios
+xcodebuild -project Doublespeak.xcodeproj -scheme Doublespeak -configuration Release \
+  -destination 'id=00008120-000E503E0238C01E' -allowProvisioningUpdates \
+  DEVELOPMENT_TEAM=YOURTEAMID -derivedDataPath build build
+
+xcrun devicectl device install app --device 00008120-000E503E0238C01E build/Build/Products/Release-iphoneos/Doublespeak.app
+xcrun devicectl device process launch --device 00008120-000E503E0238C01E dev.doublespeak.app.ios
+```
+
+Or open `Doublespeak.xcodeproj` in Xcode, pick the phone and press Run. The first launch of a Personal Team app may need Settings > General > VPN & Device Management > your Apple ID > **Trust**.
+
+To prove it compiles for a device without signing (done in this repo): `xcodebuild ... -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build`.
+
+## Run it
+
+1. Open **Doublespeak** on the phone. First run shows the consent sheet; read it, continue. The connection screen shows the **pairing code** (for example `K7QM-4TXD`) and the exact command.
+2. On the Mac, with the phone plugged in and unlocked, in the repo root:
+   ```
+   python3 tools/ios/bridge.py --token K7QM-4TXD
+   ```
+   It prints the consent line, starts `iproxy`, connects, and the phone's pill turns to "Your computer". If `iproxy` or the phone is missing it says so loudly and tells you the fix. `--url`, `--origin`, `--udid` and `--port` exist; the engine URL must be loopback.
+3. Tap **Start listening** on the phone. The Listening bar shows a timer, level bars and a big Stop. Amber and red give a haptic; red takes over the screen with **Dismiss** (the bridge forwards it to the engine and `POST /live/dismiss`).
+4. The code changes every time the app launches. The iOS Simulator shares the Mac's loopback: use `--direct` instead of iproxy.
+
+## The speaker-mode call test (about 10 minutes)
+
+1. Bridge connected (pill says "Your computer").
+2. No call needed first: play `data/calls/qwen3tts/scam_bank_otp.wav` from the Mac at normal volume near the phone and tap Start listening. Expect "Listening" for several seconds, then human/unsure, amber, then the red takeover with a vibration.
+3. Real call: have someone call you, answer, **switch to speakerphone**, open Doublespeak, Start listening. Have them read a scripted scam ("this is your bank, read me the code you just received, don't tell anyone").
+4. Lock the screen for 5 minutes while listening (audio background mode): does it keep updating when you unlock?
+
+Write down: did the level bars move with the caller's voice on a real call or stay flat; did iOS interrupt the microphone when the call connected; time to first verdict; time to amber/red on the scripted call; screen-lock survival; haptics on amber and red; anything that said the wrong thing. Put it in the call-connection issue (`docs/call-connection/HANDS-ON-TESTS.md`, Test C).
+
+## Not yet verified
+
+* Installing and running on the real iPhone (no signing identity here).
+* A real phone call in speaker mode, the screen-locked capture, and iOS interrupting the microphone during a call.
+* `iproxy` delivering the connection to the app's loopback listener over a real cable (the app listens on 127.0.0.1 and ::1; iproxy was only checked to be installed). The bridge and the app were driven end to end in the simulator with `--direct`.
+
+## Limits worth knowing
+
+* One engine session at a time: "Another listening session is open" means a previous session has not timed out (about a minute) or a laptop listener is running.
+* The transcript on screen is the last words the engine returned, held in memory only; Stop leaves the last verdict until you tap Clear screen.
+* Debug builds accept launch arguments (`-DSInjectWAV`, `-DSDemo`, `-DSToken`, `-DSPort`, `-DSAutoStart`, `-DSResetConsent`) for testing; they are compiled out of Release.
+* The app icon and launch mark come from `design/logo` (the same mark as Android). The font is Outfit (OFL), converted to static TTFs; no network.
