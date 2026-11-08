@@ -16,6 +16,16 @@
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
   };
   var native = function () { return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.ListenService; };
+  /* Engine key = the engine's per-install API token. Entered once (typed with `make pair-android`, or pasted), or from a
+     pairing link's #token= fragment; kept in this app's own storage on the phone only. */
+  var TOKEN_KEY = "tell-api-token";
+  var TOKEN = (function () {
+    var t = X.tokenFromHash(location.hash);
+    if (/^#token=/.test(location.hash)) try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    if (t) store.set(TOKEN_KEY, t);
+    return t || X.cleanToken(store.get(TOKEN_KEY));
+  })();
+  var needKey = false;                    // the engine answered 401: no key, or a stale one
 
   var S = {
     mode: "boot",            // boot | offline | idle | starting | listening | ended
@@ -35,7 +45,8 @@
     var st = $("start"); st.disabled = m === "offline" || m === "boot";
     $("start-t").textContent = m === "offline" ? "Connect to your computer first" : "Start listening";
     $("dock-note").textContent = m === "offline" ? "Run the command above, then check again." : "Speaker mode. Put the call on speakerphone first.";
-    if (m === "offline") drawIdleHero("Offline", "", "Not connected to your computer", "The app opens, but the engine on your computer cannot be reached yet.");
+    if (m === "offline" && S.engine && needKey) drawIdleHero("Key", "", "Enter the engine key", "The engine is running but only answers apps that hold its key. Tap the key field below, then run make pair-android on your computer.");
+    else if (m === "offline") drawIdleHero("Offline", "", "Not connected to your computer", "The app opens, but the engine on your computer cannot be reached yet.");
     if (m === "idle") drawIdleHero("Ready", "", "Waiting for a call", "Put the call on speakerphone, then tap Start listening.");
   }
   function toast(t) { var e = $("toast"); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { e.hidden = true; }, 3200); }
@@ -79,8 +90,12 @@
       '<ul class="checks">' +
       '<li data-ok="1"><i></i><span>This app is on your phone<small>' + (native() ? "Installed app" : "Opened in the browser") + "</small></span></li>" +
       '<li data-ok="' + ok(up) + '"><i></i><span>' + (up ? "Engine reachable" : "Engine not reachable") + "<small>" + esc(API) + (up ? " answers" : " does not answer yet") + "</small></span></li>" +
-      (egress === null ? "" : '<li data-ok="1"><i></i><span>Caller audio sent outside your computer: ' + egress + ' bytes<small>Reported by the engine.</small></span></li>') +
+      (egress === null ? "" : '<li data-ok="1"><i></i><span>Caller audio blocked from leaving by code: ' + egress + ' bytes<small>0 by design. Reported by the engine.</small></span></li>') +
+      '<li data-ok="' + ok(up && !needKey && !!TOKEN) + '"><i></i><span>' + (needKey || !TOKEN ? "Engine key needed" : "Engine key saved") +
+      "<small>" + (needKey || !TOKEN ? "Tap the field below, then run make pair-android on your computer (or paste the key from make pair-url)." : "Kept on this phone only.") + "</small></span></li>" +
       "</ul>" +
+      '<div class="cmd"><input type="password" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Engine key" placeholder="Engine key" data-key>' +
+      '<button type="button" data-savekey>Save</button></div>' +
       '<div class="sheet-actions"><button class="btn primary" type="button" data-recheck>Check connection</button>' +
       (S.installEvt && !native() ? '<button class="btn ghost" type="button" data-install>Add to Home screen</button>' : "") + "</div>";
   }
@@ -90,6 +105,12 @@
     }; });
     root.querySelectorAll("[data-recheck]").forEach(function (b) { b.onclick = function () { b.textContent = "Checking..."; probe().then(function () { renderConnect(); }); }; });
     root.querySelectorAll("[data-install]").forEach(function (b) { b.onclick = function () { S.installEvt.prompt(); S.installEvt = null; renderConnect(); }; });
+    root.querySelectorAll("[data-savekey]").forEach(function (b) { b.onclick = function () {
+      var inp = b.parentNode.querySelector("[data-key]"), t = X.cleanToken(inp && inp.value);
+      if (!t) { toast("That is not an engine key. Run make pair-url on your computer to see it."); return; }
+      TOKEN = t; store.set(TOKEN_KEY, t); needKey = false; inp.value = "";
+      toast("Engine key saved"); probe().then(function () { clearTimeout(conn.timer); if (conn.es) try { conn.es.close(); } catch (e) {} feed(); });
+    }; });
   }
   function renderConnect() {
     $("pair").innerHTML = connectHtml(true); bindConnect($("pair"));
@@ -101,10 +122,13 @@
       clearTimeout(to); S.engine = !!j.ok; S.health = j;
       return fetch(API + "/thresholds", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (th) {
         if (th && th.P_AI_THRESHOLD > 0 && th.P_AI_THRESHOLD < 1) S.pAiThr = th.P_AI_THRESHOLD;
-      }).catch(function () {});
+      }).catch(function () {}).then(function () {
+        // a cheap protected read: 401 means this app has no (or a stale) engine key
+        return fetch(API + "/history/status", { cache: "no-store", headers: X.authHeaders(TOKEN) }).then(function (r) { needKey = r.status === 401; }, function () {});
+      });
     }).catch(function () { clearTimeout(to); S.engine = false; S.health = null; }).then(function () {
-      chip(S.engine ? "up" : "down", S.engine ? "Your computer" : "Not connected");
-      if (S.mode === "boot" || S.mode === "offline" || S.mode === "idle") setMode(S.engine ? "idle" : "offline");
+      chip(S.engine ? (needKey ? "down" : "up") : "down", S.engine ? (needKey ? "Engine key needed" : "Your computer") : "Not connected");
+      if (S.mode === "boot" || S.mode === "offline" || S.mode === "idle") setMode(S.engine && !needKey ? "idle" : "offline");
       renderConnect();
     });
   }
@@ -114,7 +138,7 @@
   function feed() {
     clearTimeout(conn.timer);
     if (typeof EventSource === "undefined") return;
-    var es; try { es = new EventSource(API + "/live/events"); } catch (e) { return retry(); }
+    var es; try { es = new EventSource(X.feedUrl(API, TOKEN)); } catch (e) { return retry(); }
     conn.es = es;
     es.onopen = function () { conn.tries = 0; if (!S.engine) probe(); };
     es.onmessage = function (m) { var e; try { e = JSON.parse(m.data); } catch (x) { return; } if (e && typeof e === "object") onEvent(e); };
@@ -214,7 +238,7 @@
   function dismissAlert() {
     S.dismissed = true; $("alert").hidden = true;
     if (S.ws && S.ws.readyState === 1) try { S.ws.send(JSON.stringify({ type: "dismiss" })); } catch (e) {}
-    fetch(API + "/live/dismiss", { method: "POST" }).catch(function () {});
+    fetch(API + "/live/dismiss", { method: "POST", headers: X.authHeaders(TOKEN) }).catch(function () {});
   }
 
   /* ---------- level meter ---------- */
@@ -275,13 +299,14 @@
       if (n === "NotAllowedError" || n === "SecurityError") fail("Microphone is blocked", "Allow the microphone for Tell in your phone's app settings (Permissions > Microphone), then tap Start listening again.");
       else if (n === "NotFoundError") fail("No microphone found", "This phone did not offer a microphone to the app.");
       else if (m === "origin") fail("The engine refused this page", "Start the engine with make api-android so it accepts the app, then try again.");
+      else if (m === "key") fail("The engine needs this app's key", "Open Connection, tap the key field, then run make pair-android on your computer.");
       else if (m === "busy") fail("Another listening session is open", "Stop it on your computer, or wait a minute, then try again.");
       else fail("Could not start listening", "Check the USB cable and that the engine is running on your computer. (" + (m || n || "unknown") + ")");
     });
   }
   function openSession() {
-    return fetch(API + "/session", { method: "POST" }).then(function (r) {
-      if (r.status === 403) throw new Error("origin"); if (r.status === 429) throw new Error("busy"); if (!r.ok) throw new Error("session " + r.status);
+    return fetch(API + "/session", { method: "POST", headers: X.authHeaders(TOKEN) }).then(function (r) {
+      if (r.status === 401) { needKey = true; throw new Error("key"); } if (r.status === 403) throw new Error("origin"); if (r.status === 429) throw new Error("busy"); if (!r.ok) throw new Error("session " + r.status);
       return r.json();
     }).then(function (j) {
       return new Promise(function (res, rej) {

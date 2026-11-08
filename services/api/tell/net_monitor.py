@@ -2,7 +2,8 @@
 
 privacy.py counts what *our code* says it sent, which is self-reported. This asks the operating system instead: which
 non-loopback remote endpoints do this process and its children hold connections to? During every analysis a short
-poll collects any that appear, and the verdict reports them next to our own counters.
+poll collects any that appear, and the verdict reports them next to our own counters. `Cumulative` does the same for
+the whole engine lifetime (one 250 ms poller from start) and feeds /health and /ready with counts only.
 
 It is a transparency check, not a firewall: polling can miss a connection that lives for less than the poll interval,
 unconnected UDP (e.g. a DNS lookup) has no remote endpoint to read, and separate programs we call (Ollama, VoiceStudio)
@@ -99,3 +100,71 @@ class watch:
 def snapshot_report() -> dict:
     r = outbound()
     return {"os_check": "unavailable" if r is None else "ok", "os_outbound_count": len(r or []), "os_outbound_seen": (r or [])[:20]}
+
+
+class Cumulative:
+    """Engine-lifetime watcher: polls `outbound()` every `interval_s` on one daemon thread from engine start and
+    remembers every non-loopback endpoint the engine process tree has held. /health and /ready report it, so the
+    number on screen covers everything since start, not a snapshot at request time. Same limits as `watch`
+    (sub-interval connections and unconnected UDP can be missed). Reports counts only, never the addresses."""
+
+    def __init__(self, interval_s: float = 0.25) -> None:
+        self.interval = interval_s
+        self.ok = psutil is not None
+        self.endpoints: set[str] = set()
+        self.first_seen: float | None = None
+        self.polls = 0
+        self.started_at: float | None = None
+        self._lock = threading.Lock()
+        self._stop = threading.Event()
+        self._t: threading.Thread | None = None
+
+    def poll(self) -> None:
+        r = outbound()
+        with self._lock:
+            if r is None:
+                self.ok = False
+                return
+            self.ok = True
+            self.polls += 1
+            if r and self.first_seen is None:
+                self.first_seen = time.time()
+            self.endpoints.update(r)
+
+    def _run(self) -> None:
+        while not self._stop.wait(self.interval):
+            self.poll()
+
+    def start(self) -> "Cumulative":
+        with self._lock:
+            if self._t is not None and self._t.is_alive():
+                return self
+            if self.started_at is None:
+                self.started_at = time.time()
+            self._stop.clear()
+            t = self._t = threading.Thread(target=self._run, name="net-watch", daemon=True)
+        self.poll()
+        if psutil is not None:
+            t.start()
+        return self
+
+    def stop(self) -> None:
+        self._stop.set()
+
+    def report(self) -> dict:
+        def iso(t: float | None) -> str | None:
+            return None if t is None else time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t))
+        with self._lock:
+            hosts = {e.rsplit(":", 1)[0] for e in self.endpoints}
+            return {"os_check": "ok" if self.ok else "unavailable", "scope": "since_engine_start",
+                    "since": iso(self.started_at), "os_outbound_count": len(self.endpoints),
+                    "os_remote_addresses": len(hosts), "os_first_seen": iso(self.first_seen),
+                    "os_polls": self.polls, "interval_s": self.interval}
+
+
+CUMULATIVE = Cumulative()
+
+
+def cumulative_report() -> dict:
+    """Counts since engine start (starts the watcher on first use, e.g. a test without the startup event)."""
+    return CUMULATIVE.start().report()

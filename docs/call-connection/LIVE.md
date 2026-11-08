@@ -12,13 +12,39 @@ call app audio --> tap_audio --stream --> tools/macos/listen.py --WS /ws/stream-
                                                                                          \--> GET /live/events (SSE) --> page
 ```
 
-* `tools/macos/listen.py` spawns `tap_audio --stream`, opens a session (`POST /session`, allowed Origin), does the
-  token hello (side `far`), pipes 100 ms PCM frames, prints one status line per verdict.
+* `tools/macos/listen.py` spawns `tap_audio --stream`, opens a session (`POST /session`, allowed Origin + the
+  engine's API token from `~/Library/Application Support/Tell/api_token`), does the per-session token hello (side
+  `far`), pipes 100 ms PCM frames, prints one status line per verdict.
 * The API keeps a 30 s RAM ring, analyses the last 10 s every 3 s of audio, and runs a `Stabiliser` over the tick
   verdicts. It changes only what the live stream DISPLAYS. The stored per-window tier, `scorer.py` and
   `thresholds.py` are untouched (golden eval identical).
 * `GET /live/events` is a read-only Server-Sent-Events feed for the page (schema in `tell/live.py` and
   `services/api/skills.md`). `POST /live/dismiss` or the WS message `{"type":"dismiss"}` acknowledges a red alert.
+
+## Auth: the per-install API token
+
+The feed carries the live window transcript, so loopback alone is not enough (any local process, another account on
+the Mac, malware or a package's install script can reach 127.0.0.1). Every data and control route needs the engine's
+token (`services/api/tell/api_token.py`; threat model in `docs/THREAT-MODEL.md`):
+
+| Client | How it gets the token |
+|---|---|
+| web page | `make pair-url` (also printed by `make demo` / `make web`) prints `http://localhost:5173/#token=...`. The page reads the fragment once, keeps it in this tab's `sessionStorage`, removes it from the address bar. Without it the page says "Pair this page". |
+| `tools/macos/listen.py` | reads the 0600 file (or `TELL_API_TOKEN_FILE` / `TELL_API_TOKEN`); a missing file prints its path |
+| `tools/ios/bridge.py` | same file, on the Mac; the iPhone never sees it (it only talks to the bridge) |
+| menu-bar app | same file; "Open Tell" opens the paired page link |
+| Android app | "Engine key" field on the Connection sheet: tap it, run `make pair-android` (types the key over adb), or paste it |
+
+Sent as `Authorization: Bearer <token>` or `X-Tell-Token`. Only `GET /live/events` also accepts `?token=` (EventSource
+cannot set headers); the engine strips it from the request before uvicorn's access log sees it. `/health`, `/ready` and
+`/thresholds` stay public and carry counts only. Emergency escape, OFF by default: `TELL_COMPANION_ALLOW=1` lets a
+request with an allowed browser Origin through without the token (the pre-token behaviour; any local process can forge
+an Origin, so turn it off again).
+
+```
+make demo          # prints the pairing link
+make pair-url      # print it again
+```
 
 ## Using it
 

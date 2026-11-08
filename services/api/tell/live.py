@@ -3,7 +3,8 @@
 The page only DISPLAYS. It cannot control a session and never sees audio, tokens or session ids. The stabiliser only
 changes what the live stream SHOWS; it never edits a stored tier and the scorer/thresholds are untouched.
 
-GET /live/events  (text/event-stream; loopback client + allowed Origin/Host only; max 4 subscribers -> 429)
+GET /live/events  (text/event-stream; loopback client + allowed Origin/Host + the API token, as a header or, for a
+  browser EventSource, `?token=` which limits.GuardMiddleware strips before logging; max 4 subscribers -> 429)
   Each frame is `data: <json>` followed by a blank line. Event schema (field names are a contract with the page):
 
   {"type":"state","active":bool,"source":str,"elapsed_s":num,"listening":bool}

@@ -11,6 +11,31 @@ struct ReadyInfo: Equatable {
     }
 }
 
+/// The engine's per-install API token (services/api/tell/api_token.py): a 0600 file the engine creates on first start.
+/// Every data route (the live feed included) needs it; /ready does not. Never logged or shown.
+enum APIToken {
+    static func path(env: [String: String] = ProcessInfo.processInfo.environment,
+                     home: URL = FileManager.default.homeDirectoryForCurrentUser) -> URL {
+        if let p = env["TELL_API_TOKEN_FILE"], !p.isEmpty { return URL(fileURLWithPath: (p as NSString).expandingTildeInPath) }
+        return home.appendingPathComponent("Library/Application Support/Tell/api_token")
+    }
+    static func load(env: [String: String] = ProcessInfo.processInfo.environment,
+                     home: URL = FileManager.default.homeDirectoryForCurrentUser) -> String? {
+        if let t = env["TELL_API_TOKEN"]?.trimmingCharacters(in: .whitespacesAndNewlines), !t.isEmpty { return t }
+        guard let s = try? String(contentsOf: path(env: env, home: home), encoding: .ascii) else { return nil }
+        let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+        return valid(t) ? t : nil
+    }
+    static func valid(_ t: String) -> Bool {
+        t.count >= 32 && t.count <= 128 && t.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }
+    }
+    /// The page's one-time pairing link: the token rides in the fragment, which the browser never sends to a server.
+    static func pairURL(origin: String, token: String?) -> URL {
+        guard let t = token, valid(t) else { return URL(string: origin)! }
+        return URL(string: origin + "/#token=" + t)!
+    }
+}
+
 /// The only network code in the app. Every URL is built from 127.0.0.1 (see StaticChecksTests).
 struct LocalAPI {
     var port: Int
@@ -46,6 +71,7 @@ struct LocalAPI {
         var req = URLRequest(url: base.appendingPathComponent("live/events"))
         req.setValue(Self.uiOrigin, forHTTPHeaderField: "Origin")
         req.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        if let t = APIToken.load() { req.setValue(t, forHTTPHeaderField: "X-Tell-Token") }
         req.timeoutInterval = 3600
         let cfg = URLSessionConfiguration.ephemeral
         cfg.timeoutIntervalForRequest = 3600

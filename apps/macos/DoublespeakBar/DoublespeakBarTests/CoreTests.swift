@@ -375,3 +375,34 @@ final class StaticChecksTests: XCTestCase {
         }
     }
 }
+
+// MARK: per-install API token (services/api/tell/api_token.py)
+
+final class APITokenTests: XCTestCase {
+    let tok = String(repeating: "a", count: 20) + "B_c-" + String(repeating: "9", count: 19)
+
+    func testReadsTheEngineFileUnderApplicationSupport() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let dir = home.appendingPathComponent("Library/Application Support/Tell")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try (tok + "\n").write(to: dir.appendingPathComponent("api_token"), atomically: true, encoding: .ascii)
+        XCTAssertEqual(APIToken.path(env: [:], home: home), dir.appendingPathComponent("api_token"))
+        XCTAssertEqual(APIToken.load(env: [:], home: home), tok)
+        XCTAssertNil(APIToken.load(env: [:], home: home.appendingPathComponent("nope")))
+    }
+
+    func testEnvOverridesAndBadTokensAreRefused() {
+        XCTAssertEqual(APIToken.load(env: ["TELL_API_TOKEN": tok], home: URL(fileURLWithPath: "/nonexistent")), tok)
+        XCTAssertFalse(APIToken.valid("short"))
+        XCTAssertFalse(APIToken.valid(tok + " x"))
+        XCTAssertTrue(APIToken.valid(tok))
+    }
+
+    func testPairURLPutsTheTokenInTheFragmentOnly() {
+        let u = APIToken.pairURL(origin: LocalAPI.uiOrigin, token: tok)
+        XCTAssertEqual(u.host, "localhost")
+        XCTAssertEqual(u.fragment, "token=" + tok)
+        XCTAssertNil(u.query)
+        XCTAssertEqual(APIToken.pairURL(origin: LocalAPI.uiOrigin, token: nil).absoluteString, LocalAPI.uiOrigin)
+    }
+}

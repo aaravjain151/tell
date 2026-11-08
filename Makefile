@@ -1,4 +1,4 @@
-.PHONY: setup lock test eval api web demo models redteam record wild audit
+.PHONY: setup lock test eval api web demo pair-url pair-android models redteam record wild audit
 PY=./.venv/bin/python
 VPY=$(CURDIR)/.venv/bin/python
 # uvicorn refuses a missing --env-file, so a fresh clone without .env must not pass one
@@ -30,7 +30,20 @@ eval:
 api:
 	cd services/api && $(VPY) -m uvicorn tell.main:app --reload --port 8000$(if $(ENVFILE), $(ENVFILE),)
 web:
+	@$(MAKE) --no-print-directory pair-url
 	cd apps/web && python3 -m http.server 5173 --bind 127.0.0.1
+# The engine's per-install API token (services/api/tell/api_token.py) is created on first use in a 0600 file. This prints
+# the one-time pairing link: the token is in the URL FRAGMENT (#token=...), which the browser never sends to any server.
+pair-url:
+	@test -x $(PY) || { echo "run 'make setup' first"; exit 2; }
+	@echo "Open this link once to pair the page with Tell (it stays paired until you close the tab):"
+	@cd services/api && $(VPY) -m tell.api_token --pair-url http://localhost:5173/
+# Android app: tap the "Engine key" field on the phone first. The key goes to `adb shell` on stdin (never in a command
+# line another local process could read with ps) and is typed into that field over the USB cable.
+pair-android:
+	@command -v adb >/dev/null 2>&1 || { echo "adb not found: install Android platform-tools"; exit 2; }
+	@F=$$(cd services/api && $(VPY) -m tell.api_token --path); test -s "$$F" || { echo "no token at $$F: start the engine once (make demo)"; exit 2; }; \
+	T=$$(cat "$$F"); printf 'input text %s\nexit\n' "$$T" | adb shell >/dev/null && echo "Typed the engine key into the focused field on the phone. Tap Save."
 # Android app (apps/android): the engine must accept the app's origins. http://localhost = the installed app (Capacitor),
 # :5173 = the PWA opened in Chrome on the phone. All loopback; the phone reaches it through `adb reverse` only.
 api-android:
@@ -46,7 +59,8 @@ models:
 # The stage setup: API + web on loopback, models forced offline (Wi-Fi can be off). Ctrl-C stops both.
 demo:
 	@test -x $(PY) || { echo "run 'make setup' first"; exit 2; }
-	@echo "Tell demo · UI http://localhost:5173 · API http://localhost:8000/health · offline models · Ctrl-C to stop"
+	@echo "Tell demo · API http://127.0.0.1:8000/health · offline models · Ctrl-C to stop"
+	@$(MAKE) --no-print-directory pair-url
 	@(cd services/api && TELL_OFFLINE=1 exec $(VPY) -m uvicorn tell.main:app --host 127.0.0.1 --port 8000$(if $(ENVFILE), $(ENVFILE),)) & API=$$!; \
 	(cd apps/web && exec python3 -m http.server 5173 --bind 127.0.0.1) & WEB=$$!; \
 	trap 'kill $$API $$WEB 2>/dev/null; wait' INT TERM EXIT; \

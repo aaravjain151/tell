@@ -34,6 +34,13 @@ make api-android                             # the engine, accepting the app's o
 2. Plug in the cable, accept "Allow USB debugging" on the phone.
 3. `adb devices` must list the phone as `device` (not `unauthorized`).
 4. `adb reverse tcp:8000 tcp:8000` (this is the only network path: the phone's own `localhost:8000` is the laptop's engine).
+5. Engine key (once per phone): the engine needs its per-install API token (`docs/THREAT-MODEL.md`). Open the app's
+   Connection sheet, tap the **Engine key** field, then on the laptop run `make pair-android`: it types the key into that
+   field over adb (the key goes to `adb shell` on stdin, never on a command line), then tap **Save**. Or paste the key
+   from `make pair-url` (the part after `#token=`). The PWA also accepts a `#token=` link. The key stays in the app's
+   own storage; clear app data to remove it. Without it the app shows "Enter the engine key" instead of Start.
+   Emergency only: `TELL_COMPANION_ALLOW=1 make api-android` lets the app in without a key (OFF by default; any local
+   process can then reach the engine by sending the app's Origin).
 
 ### Installed app
 

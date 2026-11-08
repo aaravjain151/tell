@@ -14,7 +14,8 @@ Flow
   phone  <- {"type":"auth","token":...}            this bridge, first message (the phone refuses a wrong token)
   phone  -> {"type":"ready"}
   phone  -> {"type":"started"} + binary PCM16 16 kHz mono 100 ms frames   (the user tapped Start listening)
-  engine <- POST /session (allowed Origin), WS /ws/stream hello {side:"mix", source:"iphone"}, frames as they arrive
+  engine <- POST /session (allowed Origin + the engine's API token read from its 0600 file on THIS Mac, see
+            services/api/tell/api_token.py; the phone never sees it), WS /ws/stream hello {side:"mix", source:"iphone"}, frames as they arrive
   engine -> verdict messages on THIS session's own WS (full verdict + stable) -> phone {"type":"tick",...}
             (never the global /live/events feed: it carries every session, e.g. a Mac listener's transcript)
   phone  -> {"type":"dismiss"}  -> this session's WS {"type":"dismiss"} (never POST /live/dismiss, which hits all sessions)
@@ -28,6 +29,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import shutil
 import signal
 import socket
@@ -35,6 +37,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 from urllib.parse import urlparse
 
 LOOPBACK = {"127.0.0.1", "localhost", "::1"}
@@ -103,20 +106,52 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 _OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
 
-def _local(url: str, data: bytes | None, origin: str | None, timeout: float) -> bytes:
+def _local(url: str, data: bytes | None, origin: str | None, timeout: float, api_token: str | None = None) -> bytes:
     """Every request is re-checked (not only the --url at startup): loopback host, no proxy, no redirects."""
     if not is_loopback_url(url):
         raise NotLoopback(f"refusing non-loopback URL {url!r}")
     headers = {"Content-Type": "application/json"}
     if origin:
         headers["Origin"] = origin
+    if api_token:
+        headers["X-Tell-Token"] = api_token
     req = urllib.request.Request(url, data=data, method="POST" if data is not None else "GET", headers=headers)
     with _OPENER.open(req, timeout=timeout) as r:
         return r.read()
 
 
-def create_session(base: str, origin: str) -> dict:
-    return json.loads(_local(base.rstrip("/") + "/session", b"{}", origin, 10))
+class TokenMissing(RuntimeError):
+    pass
+
+
+def api_token_path() -> Path:
+    """Same place the engine writes it (services/api/tell/api_token.py): TELL_API_TOKEN_FILE, else per-user app support."""
+    override = os.environ.get("TELL_API_TOKEN_FILE")
+    if override:
+        return Path(override).expanduser()
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "Tell" / "api_token"
+    return Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "tell" / "api_token"
+
+
+def load_api_token() -> str:
+    """The ENGINE's API token (not the phone's pairing code): TELL_API_TOKEN, else its 0600 file. Never printed and never
+    sent to the phone: the phone only ever talks to this bridge."""
+    env = (os.environ.get("TELL_API_TOKEN") or "").strip()
+    if env:
+        return env
+    p = api_token_path()
+    try:
+        tok = p.read_text(encoding="ascii").strip()
+    except (OSError, UnicodeDecodeError):
+        tok = ""
+    if not tok:
+        raise TokenMissing(f"no Tell API token at {p}. Start the engine once (make demo or make api) to create it.")
+    return tok
+
+
+def create_session(base: str, origin: str, api_token: str | None = None) -> dict:
+    return json.loads(_local(base.rstrip("/") + "/session", b"{}", origin, 10, api_token))
 
 
 def engine_up(base: str) -> bool:
@@ -144,7 +179,7 @@ class Engine:
         b = self.b
         loop = asyncio.get_running_loop()
         try:
-            info = await loop.run_in_executor(None, create_session, b.engine_url, b.origin)
+            info = await loop.run_in_executor(None, create_session, b.engine_url, b.origin, b.api_token)
         except urllib.error.HTTPError as e:
             return "busy" if e.code == 429 else "refused" if e.code in (403, 401) else "down"
         except Exception:  # noqa: BLE001 — includes NotLoopback and refused redirects
@@ -234,9 +269,11 @@ class Engine:
 
 
 class Bridge:
-    def __init__(self, phone_url: str, engine_url: str, origin: str, token: str, retry_s: float = 1.5) -> None:
+    def __init__(self, phone_url: str, engine_url: str, origin: str, token: str, retry_s: float = 1.5,
+                 api_token: str | None = None) -> None:
         self.phone_url, self.engine_url, self.origin = phone_url, engine_url, origin
-        self.token, self.retry_s = token, retry_s
+        self.token, self.retry_s = token, retry_s           # token = the PHONE's pairing code
+        self.api_token = api_token                          # the ENGINE's per-install API token (never sent to the phone)
         self.phone = None
         self.engine: Engine | None = None
         self.paired = asyncio.Event()
@@ -422,6 +459,11 @@ async def amain(a: argparse.Namespace) -> int:
     if not is_loopback_url(a.url):
         loud([f"Refusing --url {a.url}: the engine must be on this computer (loopback)."])
         return 2
+    try:
+        api_token = load_api_token()
+    except TokenMissing as e:
+        loud([str(e)])
+        return 2
     say(CONSENT)
     if not a.i_understand:
         if not sys.stdin.isatty():
@@ -464,7 +506,7 @@ async def amain(a: argparse.Namespace) -> int:
             loop.add_signal_handler(sig, stop.set)
         except (NotImplementedError, RuntimeError):
             pass
-    bridge = Bridge(f"ws://127.0.0.1:{a.port}", a.url, a.origin, a.token)
+    bridge = Bridge(f"ws://127.0.0.1:{a.port}", a.url, a.origin, a.token, api_token=api_token)
     try:
         reason = await bridge.run(stop)
     finally:

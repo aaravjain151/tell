@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from fastapi import FastAPI, UploadFile
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 
 from tell import llm, pipeline, speak, uploads
 from tell.types import Tell
@@ -37,7 +38,7 @@ def _app_reporting_rollover():
     async def u(f: UploadFile):
         await f.read()
         return {"rolled_to_disk": bool(getattr(f.file, "_rolled", False))}
-    return TestClient(app)
+    return TestClient(app, headers=AUTH)
 
 
 def test_large_uploads_stay_in_memory(monkeypatch):
@@ -81,7 +82,7 @@ def test_the_route_sends_only_fixed_wording_to_the_tts_cli(monkeypatch):
     monkeypatch.setattr(speak.shutil, "which", lambda n: "/usr/bin/uvx")
     monkeypatch.setattr(speak.subprocess, "run", fake_run)
     from tell.main import app
-    c = TestClient(app)
+    c = TestClient(app, headers=AUTH)
     c.post("/speak", data={"headline": "Scam pattern", "evidence": "secrecy: “don't tell mom”"})
     assert seen["cmd"][3] == "Heads up. Scam pattern." and "mom" not in " ".join(seen["cmd"])
     assert c.post("/speak", data={"headline": "Please send gift cards to grandma"}).status_code == 400

@@ -111,7 +111,7 @@ final class AppModel: ObservableObject {
     func openTell() {
         Task {
             if !(await LocalAPI.pageIsUp()) { await ensurePage() }
-            NSWorkspace.shared.open(uiURL)
+            NSWorkspace.shared.open(APIToken.pairURL(origin: LocalAPI.uiOrigin, token: APIToken.load()))   // paired page
         }
     }
 

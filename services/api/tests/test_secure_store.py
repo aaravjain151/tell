@@ -5,13 +5,14 @@ import stat
 
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 
 from tell import main, pipeline, secure_store as ss
 from tell.types import Tell, Verdict
 
 SENTINEL = "ZXQ-SENTINEL-7731-wire-the-gift-cards"
 KEY = bytes(range(32))
-client = TestClient(main.app)
+client = TestClient(main.app, headers=AUTH)
 
 
 @pytest.fixture(autouse=True)

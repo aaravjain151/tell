@@ -26,6 +26,7 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket  # noqa: E402
 
 ORIGIN = "http://localhost:5173"
 TOKEN = "K7QM-4TXD"
+ENGINE_KEY = "engine-key-0123456789abcdefghijklmnopqrstuv"     # the ENGINE's API token (the phone never sees it)
 
 
 def verdict_msg(seq, tag, alert="red"):
@@ -46,7 +47,7 @@ class FakeEngine:
 
     def __init__(self, busy=False, bad_origin=False, end_after=None, end_reason="panic") -> None:
         self.busy, self.bad_origin = busy, bad_origin
-        self.log: dict = {"origins": [], "hellos": [], "frames": {}, "dismiss": {}, "stopped": [], "sessions": 0,
+        self.log: dict = {"origins": [], "api_tokens": [], "hellos": [], "frames": {}, "dismiss": {}, "stopped": [], "sessions": 0,
                           "live_events_hits": 0, "live_dismiss_hits": 0}
         app = FastAPI()
         log = self.log
@@ -58,6 +59,7 @@ class FakeEngine:
         @app.post("/session")
         async def session(request: Request):
             log["origins"].append(request.headers.get("origin"))
+            log["api_tokens"].append(request.headers.get("x-tell-token"))
             if self.bad_origin:
                 raise HTTPException(403, "origin not allowed")
             if self.busy:
@@ -164,7 +166,7 @@ async def collect(ws, got, until, timeout=5.0):
 
 
 async def run_bridge(port, engine_url, stop_after, retry_s=0.2):
-    b = bridge.Bridge(f"ws://127.0.0.1:{port}", engine_url, ORIGIN, TOKEN, retry_s=retry_s)
+    b = bridge.Bridge(f"ws://127.0.0.1:{port}", engine_url, ORIGIN, TOKEN, retry_s=retry_s, api_token=ENGINE_KEY)
     stop = asyncio.Event()
     task = asyncio.ensure_future(b.run(stop))
     await asyncio.sleep(stop_after)
@@ -200,6 +202,8 @@ def test_full_flow_frames_ticks_dismiss_stop_over_its_own_session_only():
         inbox, got = asyncio.run(go(eng))
     assert inbox[0] == {"type": "auth", "token": TOKEN}
     assert set(eng.log["origins"]) == {ORIGIN}
+    assert set(eng.log["api_tokens"]) == {ENGINE_KEY}           # POST /session carried the engine's API token
+    assert all(ENGINE_KEY not in json.dumps(m) for m in got)  # and the phone never received it
     h = eng.log["hellos"][0]
     assert h["side"] == "mix" and h["source"] == "iphone" and h["sample_rate"] == 16000 and h["format"] == "pcm_s16le"
     assert eng.log["frames"]["tok1"] == 3
@@ -438,3 +442,23 @@ def test_refuses_non_loopback_engine_and_never_uses_network_iproxy(capsys):
     src = (ROOT / "tools" / "ios" / "bridge.py").read_text()
     assert '"-n"' not in src and "'-n'" not in src and "--network" not in src
     assert '"-s", "127.0.0.1"' in src
+
+
+def test_api_token_is_read_from_the_engine_file_and_missing_file_names_the_path(monkeypatch, tmp_path):
+    f = tmp_path / "api_token"
+    monkeypatch.delenv("TELL_API_TOKEN", raising=False)
+    monkeypatch.setenv("TELL_API_TOKEN_FILE", str(f))
+    with pytest.raises(bridge.TokenMissing) as e:
+        bridge.load_api_token()
+    assert str(f) in str(e.value)
+    f.write_text(ENGINE_KEY + "\n")
+    assert bridge.load_api_token() == ENGINE_KEY
+    monkeypatch.setenv("TELL_API_TOKEN", "from-env-0123456789abcdefghijklmnopqrstuvw")
+    assert bridge.load_api_token() == "from-env-0123456789abcdefghijklmnopqrstuvw"
+
+
+def test_main_refuses_loudly_without_a_token(monkeypatch, tmp_path, capsys):
+    monkeypatch.delenv("TELL_API_TOKEN", raising=False)
+    monkeypatch.setenv("TELL_API_TOKEN_FILE", str(tmp_path / "missing"))
+    assert bridge.main(["--token", TOKEN, "--direct", "--i-understand"]) == 2
+    assert str(tmp_path / "missing") in capsys.readouterr().err

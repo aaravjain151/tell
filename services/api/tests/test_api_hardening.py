@@ -6,12 +6,13 @@ import threading
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import AUTH
 
 from tell import limits, pipeline
 from tell.main import app
 from tests.synth import make_call, to_wav_bytes
 
-client = TestClient(app)
+client = TestClient(app, headers=AUTH)
 
 
 class _V:
@@ -75,7 +76,8 @@ def _run_asgi(path, chunk):
             state["status"] = m["status"]
 
     scope = {"type": "http", "method": "POST", "path": path, "raw_path": path.encode(), "query_string": b"",
-             "headers": [(b"host", b"localhost"), (b"content-type", b"multipart/form-data; boundary=b")],
+             "headers": [(b"host", b"localhost"), (b"content-type", b"multipart/form-data; boundary=b"),
+                         (b"x-tell-token", AUTH["X-Tell-Token"].encode())],
              "scheme": "http", "server": ("localhost", 8000), "client": ("127.0.0.1", 1), "http_version": "1.1"}
     asyncio.run(app(scope, receive, send))
     return state["status"], state["n"]
@@ -121,7 +123,7 @@ def test_corrupt_wav_is_415_not_500(monkeypatch):
 
 
 def _aclient():
-    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://localhost")
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://localhost", headers=AUTH)
 
 
 def _slow(started, release):
