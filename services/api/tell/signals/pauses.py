@@ -15,6 +15,9 @@ from __future__ import annotations
 
 import numpy as np
 
+from .. import env as _env
+from .. import thresholds as T
+from ..types import Tell
 from .shadow import _frame_db, _runs, _speech_mask
 
 SR = 16_000
@@ -73,3 +76,37 @@ def describe(f: dict[str, float]) -> str:
         return "pauses: not enough speech to measure"
     s = f"pauses: {lp:.0f} long pause{'s' if round(lp) != 1 else ''}/min"
     return s + (f", typical {med:.0f} ms" if np.isfinite(med) else "")
+
+
+# ---------------------------------------------------------------- the few_pauses voter (active; TELL_PAUSE_TELL=0 removes it)
+def enabled() -> bool:
+    return _env.get("TELL_PAUSE_TELL", "").strip().lower() not in ("0", "false", "off", "no")
+
+
+def few_pauses(x16k: np.ndarray) -> Tell | None:
+    """Acoustic voter: fires only when long pauses are rare, else abstains (applicable=False, so it never pulls toward human).
+    None when switched off, so the verdict is bit-identical to the engine without it."""
+    if not enabled():
+        return None
+    w = T.ACOUSTIC_WEIGHTS.get("few_pauses", 0.0)
+    runs = speech_runs(x16k)
+    f = pause_stats(runs)
+    span = (runs[-1][1] - runs[0][0]) * HOP_MS / 1000 if runs else 0.0
+    rate = f["long_pause_per_min"]
+    detail = {"pauses": _round(f), "span_s": round(span, 1)}
+    if span < T.PAUSE_MIN_SPAN_S or not np.isfinite(rate):
+        return Tell("few_pauses", "acoustic", 0.5, w, f"pauses: need {T.PAUSE_MIN_SPAN_S:.0f} s of speech to judge "
+                    f"(have {span:.0f} s)", applicable=False, detail=detail)
+    if rate > T.PAUSE_RATE_SUSPECT:
+        return Tell("few_pauses", "acoustic", 0.5, w, f"{describe(f)}: a normal amount (AI voices often leave far fewer)",
+                    applicable=False, detail=detail)
+    t = (T.PAUSE_RATE_SUSPECT - rate) / (T.PAUSE_RATE_SUSPECT - T.PAUSE_RATE_TTS)
+    # 0.8..1.0: a vote is evidence FOR AI, so it must sit above any clip's voice mean; a 0.6 vote dragged an already-AI
+    # clip down (stolen_package clean 0.66 -> 0.65, ai_undisclosed -> unsure in the local A/B)
+    score = float(T.PAUSE_VOTE_MIN + (1.0 - T.PAUSE_VOTE_MIN) * min(1.0, max(0.0, t)))
+    return Tell("few_pauses", "acoustic", score, w, f"{describe(f)} over {span:.0f} s: very few for a person "
+                f"(people usually ~15-25/min; cloned voices often ~10)", detail=detail)
+
+
+def _round(f: dict[str, float]) -> dict:
+    return {k: (round(v, 3) if np.isfinite(v) else None) for k, v in f.items()}

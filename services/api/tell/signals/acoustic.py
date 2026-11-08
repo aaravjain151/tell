@@ -13,6 +13,7 @@ import numpy as np
 
 from .. import thresholds as T
 from ..types import Tell
+from . import pauses
 
 SR = 16_000
 FRAME = int(0.025 * SR)   # 25 ms
@@ -209,6 +210,9 @@ def analyze(x: np.ndarray, dur_ms: int) -> tuple[list[Tell], dict]:
         pitch_stability(fr, mask),
         noise_floor(db, mask, floor),
     ]
+    fp = pauses.few_pauses(x)
+    if fp is not None:
+        tells.append(fp)
     if bl:
         tells.append(Tell("band_limited", "acoustic", 0.5, 0.0,
                           f"phone-band audio (5-7.5 kHz is {rel_db:.0f} dB below 1-4 kHz, as after a phone codec): "

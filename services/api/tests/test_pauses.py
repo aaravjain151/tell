@@ -137,3 +137,42 @@ def test_training_export_block_is_accepted_by_the_runtime():
     f = PZ.call_pause_features(x)
     ref = s.decision(np.array([0.7]), np.array([[f[k] for k in PZ.PAUSE_FEATURES]]))[0]
     assert rt == pytest.approx(ref, abs=1e-4)                       # runtime == training decision (6-dp rounding)
+
+
+# ---------------------------------------------------------------- the few_pauses voter (active)
+from tell import thresholds as T  # noqa: E402
+
+
+def test_voter_abstains_when_pauses_look_human(monkeypatch):
+    monkeypatch.delenv("TELL_PAUSE_TELL", raising=False)
+    t = PZ.few_pauses(speech([600, 200, 500, 250, 700, 200, 450, 200, 650, 300, 500, 200, 600, 250] * 2))
+    assert t is not None and not t.applicable and "normal amount" in t.evidence
+
+
+def test_voter_fires_on_rare_long_pauses_and_never_scores_low(monkeypatch):
+    monkeypatch.delenv("TELL_PAUSE_TELL", raising=False)
+    t = PZ.few_pauses(speech([200] * 14 + [400], run_s=1.2))        # ~18 s of speech, one long pause
+    assert t.applicable and t.name == "few_pauses" and t.weight == T.ACOUSTIC_WEIGHTS["few_pauses"]
+    assert T.PAUSE_VOTE_MIN <= t.score <= 1.0 and "very few" in t.evidence
+
+
+def test_voter_abstains_on_short_speech(monkeypatch):
+    monkeypatch.delenv("TELL_PAUSE_TELL", raising=False)
+    t = PZ.few_pauses(speech([200] * 6))                            # ~8 s: too few pauses to estimate a rate
+    assert not t.applicable and "need" in t.evidence
+
+
+def test_voter_off_switch_returns_nothing(monkeypatch):
+    monkeypatch.setenv("TELL_PAUSE_TELL", "0")
+    assert PZ.few_pauses(speech([200] * 14 + [400], run_s=1.2)) is None
+
+
+def test_a_vote_never_lowers_p_ai(monkeypatch):
+    """A firing vote is evidence for AI: weighted into any acoustic mean, it can only raise it."""
+    from tell import scorer
+    from tell.types import Tell
+    monkeypatch.delenv("TELL_PAUSE_TELL", raising=False)
+    vote = PZ.few_pauses(speech([200] * 14 + [400], run_s=1.2))
+    for mean in (0.1, 0.5, 0.79):
+        base = [Tell("x", "acoustic", mean, 10.0, "")]
+        assert scorer._wmean(base + [vote]) >= scorer._wmean(base)

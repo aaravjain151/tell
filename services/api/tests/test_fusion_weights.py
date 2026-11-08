@@ -10,7 +10,7 @@ from tell.types import Tell  # noqa: E402
 
 
 def test_weights_come_from_the_documented_places():
-    assert T.THRESHOLDS_VERSION == "2026-11-08.1"           # learned_tells + breath 0 + Pellav2 all windows (docs/LEARNED-TELLS.md)
+    assert T.THRESHOLDS_VERSION == "2026-11-08.2"           # .2 few_pauses voter; .1 learned_tells + breath 0 + Pellav2 all windows
     assert T.ACOUSTIC_SHARE == 0.8 and T.P_AI_THRESHOLD == 0.60
     assert pella.W_PELLA == 4.0 and neural.W_HF == 0.7
     # the Tell a voter emits carries the module weight (fusion reads it from the Tell, nowhere else)

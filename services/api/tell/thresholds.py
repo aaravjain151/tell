@@ -3,7 +3,8 @@
 Scores are in [0, 1]. Acoustic/script scores point *toward AI*; intent scores point *toward scam*.
 """
 
-THRESHOLDS_VERSION = "2026-11-08.1"   # .1 = learned_tells voter (W 8), breath_proxy 1.2 -> 0, Pellav2 all windows +
+THRESHOLDS_VERSION = "2026-11-08.2"   # .2 = few_pauses voter (abstains unless long pauses are rare; signals/pauses.py).
+                                      # .1 = learned_tells voter (W 8), breath_proxy 1.2 -> 0, Pellav2 all windows +
                                       #      logit mean, band_limited re-defined (docs/LEARNED-TELLS.md). 2026-11-07.3 before.
 
 # --- fusion weights (normalised at runtime over the signals that actually ran) ---
@@ -17,7 +18,16 @@ ACOUSTIC_WEIGHTS = {
     # at least as much as the 2026-11-07.3 engine at 0 human false alarms, and it halves the false alarms on lossy paths
     # (chain_pstn_voip 156 -> 73 of 435 real voices). 12 lost held-out Qwen opus8k catch. See docs/LEARNED-TELLS.md.
     "learned_tells": 8.0,
+    # 2026-11-08.2: few_pauses (signals/pauses.py). Votes ONLY when long pauses (>= 300 ms) are rare over >= 15 s of speech,
+    # otherwise abstains, so it can push toward AI but never pulls an engine that pauses naturally toward human. Qwen3-TTS
+    # clones leave about half the long pauses of the same speaker (cue study 18 pairs, AUC 0.76-0.80; local pairs 5-6/7).
+    "few_pauses": 3.0,
 }
+# few_pauses: long pauses per minute of speech span. Humans ~15-25 (local memos: median 19 clean, 15 replay), Qwen ~10.
+PAUSE_RATE_SUSPECT = 12.0    # at or below -> the voter fires (score PAUSE_VOTE_MIN at this rate)
+PAUSE_VOTE_MIN = 0.8         # lowest score of a vote: above any clip's voice mean, so a vote never lowers p_ai
+PAUSE_RATE_TTS = 5.0         # at or below -> score 1.0
+PAUSE_MIN_SPAN_S = 15.0      # fewer seconds of speech -> abstain (a 10 s live tick holds too few pauses to estimate a rate)
 SCRIPT_WEIGHTS = {
     "llm_isms": 1.2,
     "disfluency": 1.0,
