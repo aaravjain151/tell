@@ -190,6 +190,16 @@ def test_shipped_model_runs_on_a_real_shaped_input(monkeypatch):
     assert 0.0 <= t.score <= 1.0 and len(t.detail["windows"]) == len(ws)
 
 
+def test_features_computed_once_per_window(pinned, monkeypatch):
+    pinned(_weights())
+    calls = []
+    real = TF.window_features
+    monkeypatch.setattr(TF, "window_features", lambda w: calls.append(1) or real(w))
+    x = tone(10)
+    learned.learned_vote(x, _extras(x, first=1.0))
+    assert len(calls) == 4                                           # an earlier draft recomputed per feature: 28x slower
+
+
 # ---------------------------------------------------------------- the off switch
 def test_off_adds_nothing_and_verdict_is_bit_identical(monkeypatch):
     monkeypatch.setenv("TELL_LEARNED_TELLS", "0")

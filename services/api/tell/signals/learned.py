@@ -167,8 +167,8 @@ def learned_vote(x16k: np.ndarray, pella_extras: dict | None = None) -> Tell | N
         return _na("learned tells: embedding and windows do not line up")
     x = np.asarray(x16k, dtype=np.float32)
     try:
-        F = np.array([[TF.window_features(x[int(round(t * SR)):int(round(t * SR)) + 4 * SR])[n] for n in TF.FEATURE_NAMES]
-                      for t in ts], dtype=np.float64)
+        feats = [TF.window_features(x[int(round(t * SR)):int(round(t * SR)) + 4 * SR]) for t in ts]   # once per window
+        F = np.array([[f[n] for n in TF.FEATURE_NAMES] for f in feats], dtype=np.float64)
         P = np.asarray(pella_extras.get("p", []), dtype=np.float64) if "neural" in full else None
         lg, _ = window_logits(full, F, emb, P)
         _, zi = window_logits(w["models"]["interp"], F, None)
