@@ -35,3 +35,17 @@ council/sessions/*
 .claude/worktrees/
 .venv
 data/history/
+
+# Android native build outputs (never commit APKs, keystores or SDK state)
+apps/android/native/node_modules/
+apps/android/native/android/.gradle/
+apps/android/native/android/build/
+apps/android/native/android/app/build/
+apps/android/native/android/local.properties
+apps/android/native/android/app/src/main/assets/public/
+apps/android/native/android/capacitor-cordova-android-plugins/
+apps/android/native/*.apk
+*.apk
+*.aab
+*.jks
+*.keystore

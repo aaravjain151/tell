@@ -31,6 +31,12 @@ api:
 	cd services/api && $(VPY) -m uvicorn doublespeak.main:app --reload --port 8000$(if $(ENVFILE), $(ENVFILE),)
 web:
 	cd apps/web && python3 -m http.server 5173 --bind 127.0.0.1
+# Android app (apps/android): the engine must accept the app's origins. http://localhost = the installed app (Capacitor),
+# :5173 = the PWA opened in Chrome on the phone. All loopback; the phone reaches it through `adb reverse` only.
+api-android:
+	cd services/api && DOUBLESPEAK_CORS_ORIGINS=http://localhost,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000 $(VPY) -m uvicorn doublespeak.main:app --port 8000$(if $(ENVFILE), $(ENVFILE),)
+android-pwa:
+	cd apps/android && python3 -m http.server 5173 --bind 127.0.0.1
 
 # Heavy local voters: install their pinned packages, then download weights once (online). Then set DOUBLESPEAK_OFFLINE=1.
 models:
