@@ -2414,5 +2414,99 @@
    "sha256": "7daadcc3d35598812c19845207bc97fae41e56934829734961e05920f1fa2b6e",
    "role": "clone_reference"
   }
- ]
+ ],
+ "humans_new_2026_11_07": {
+  "what": "12 real human recordings, iPhone Voice Memos (.m4a) recorded in quiet rooms: phone voice memos, NOT phone calls",
+  "source_dir": "~/Downloads/human_recordings (read-only, never committed); converted with ffmpeg to 16 kHz mono 16-bit WAV in the gitignored data/finetune/humans_new/",
+  "consent": "Relayed by the owner (Aarav Jain) on 2026-11-07 in consent.txt: all speakers are the owner's friends and 'we all consent' to being recorded and to the recordings being used to test and train the Tell detector. Not signed by each speaker individually; per-speaker consent lines are still pending.",
+  "speakers": "identities and number NOT known. Groups = recording location from the file name (Northeastern University x8 -> 'neu', Huntington Ave x4 -> 'hunt'). The speaker count is an embedding-clustering ESTIMATE, see docs/HEAD-FINETUNE.md.",
+  "content": "owner's script: a casual 'train cancelled' message, free speech about the speaker's morning, a scam script read by a human",
+  "label": "real",
+  "files": [
+   {
+    "file": "Huntington Ave 2.m4a",
+    "id": "hunt_2",
+    "group": "hunt",
+    "duration_s": 14.93,
+    "sha256": "6a34645a2aa4da3964871c6ad265137024943b23c0f2da34c37f0085dd829e69"
+   },
+   {
+    "file": "Huntington Ave 3.m4a",
+    "id": "hunt_3",
+    "group": "hunt",
+    "duration_s": 12.03,
+    "sha256": "3a2cde589a74d5ae9b02c9e1225812d1a921cb453bce4f13a99fd9f0dd87b607"
+   },
+   {
+    "file": "Huntington Ave 4.m4a",
+    "id": "hunt_4",
+    "group": "hunt",
+    "duration_s": 10.92,
+    "sha256": "e0218b231d55c71b6353ef2baa51186fb533ed62f55b76b1c8219834874fb41e"
+   },
+   {
+    "file": "Huntington Ave 5.m4a",
+    "id": "hunt_5",
+    "group": "hunt",
+    "duration_s": 11.18,
+    "sha256": "3318a9c5b6f26c3541602cb31521b104e926beee2b24f63b5c95432dddfa8bbb"
+   },
+   {
+    "file": "Northeastern University 2.m4a",
+    "id": "neu_2",
+    "group": "neu",
+    "duration_s": 19.11,
+    "sha256": "92b6a04e20685abafe48ae71e59590d709bf744245293c53714cfe44ed56eb94"
+   },
+   {
+    "file": "Northeastern University 3.m4a",
+    "id": "neu_3",
+    "group": "neu",
+    "duration_s": 15.87,
+    "sha256": "94961c5c7344224d12d08ba45c9509a20dd227edc81ce9f92fdc99355647c27a"
+   },
+   {
+    "file": "Northeastern University 4.m4a",
+    "id": "neu_4",
+    "group": "neu",
+    "duration_s": 12.54,
+    "sha256": "1547e2f7db05789bf368dcde1c6fbbe287ec32de55f056607e3eab275f26bffe"
+   },
+   {
+    "file": "Northeastern University 5.m4a",
+    "id": "neu_5",
+    "group": "neu",
+    "duration_s": 15.36,
+    "sha256": "3c082cfb573f1c604da7fe230e44ba0dbda15b1255e872cdfdbeb06acce07718"
+   },
+   {
+    "file": "Northeastern University 6.m4a",
+    "id": "neu_6",
+    "group": "neu",
+    "duration_s": 11.01,
+    "sha256": "987a1c59026fb3735e14302209103aba8ff7a900b5bc1aefec1a9dd1fa515f17"
+   },
+   {
+    "file": "Northeastern University 7.m4a",
+    "id": "neu_7",
+    "group": "neu",
+    "duration_s": 13.82,
+    "sha256": "49ee5f0e2c69599cecd826dc8c4623f8444e5f1d32390bffb82490b006c43ac9"
+   },
+   {
+    "file": "Northeastern University 8.m4a",
+    "id": "neu_8",
+    "group": "neu",
+    "duration_s": 13.99,
+    "sha256": "f499c6e875e048270bc0713f5439de6727bc32bd7d107e243f59c34e602e09fd"
+   },
+   {
+    "file": "Northeastern University.m4a",
+    "id": "neu_1",
+    "group": "neu",
+    "duration_s": 20.05,
+    "sha256": "b78c72172566bce0595d3e85b8e49af27d64355a2fe07ef0a89332f9b64cbde0"
+   }
+  ]
+ }
 }
