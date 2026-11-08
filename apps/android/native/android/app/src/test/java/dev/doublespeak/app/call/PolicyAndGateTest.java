@@ -42,6 +42,18 @@ public class PolicyAndGateTest {
         assertEquals("Tell is listening to this call", Wording.LISTENING_TITLE);
     }
 
+    @Test public void micBlockedWordingIsHonestAndDistinctFromTheCableMessage() {
+        assertEquals("Your phone is blocking the microphone during the call. On this phone, apps can't hear a call even on speaker.", Wording.MIC_BLOCKED_TEXT);
+        assertEquals("Use Tell on your Mac for live calls (answer the call on your Mac).", Wording.MIC_BLOCKED_SUB);
+        // the silenced-mic message must never blame the cable, and the cable message must never claim the mic is blocked
+        assertFalse(Wording.MIC_BLOCKED_TEXT.toLowerCase().contains("cable"));
+        assertFalse(Wording.NOT_CONNECTED_TEXT.toLowerCase().contains("microphone"));
+        assertFalse(Wording.LOST_TEXT.toLowerCase().contains("microphone"));
+        assertEquals(Wording.MIC_BLOCKED_TEXT, CallSession.textFor(CallSession.Outcome.MIC_SILENCED));
+        assertEquals(Wording.LOST_TEXT, CallSession.textFor(CallSession.Outcome.LOST));
+        assertEquals("Listening stopped.", CallSession.textFor(CallSession.Outcome.DROPPED));
+    }
+
     @Test public void silenceWatchFiresOnceAfterEightSeconds() {
         SilenceWatch w = new SilenceWatch();
         assertFalse(w.feed(0.0005, 1000));

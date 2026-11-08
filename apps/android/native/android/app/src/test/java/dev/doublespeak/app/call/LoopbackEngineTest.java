@@ -2,6 +2,7 @@ package dev.doublespeak.app.call;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -66,6 +67,25 @@ public class LoopbackEngineTest {
         } catch (CallSession.EngineError e) {
             assertEquals(CallSession.Outcome.NOT_CONNECTED, e.outcome);
             assertEquals(Wording.NOT_CONNECTED_TEXT, CallSession.textFor(e.outcome));
+        }
+    }
+
+    @Test public void reachableIsTrueOnlyWhenHealthAnswersOk() throws Exception {
+        int dead;
+        try (ServerSocket s = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) { dead = s.getLocalPort(); }
+        assertFalse(new LoopbackEngine(dead, 400).reachable());               // nothing listening = the cable is gone
+        try (ServerSocket ss = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
+            Thread t = new Thread(() -> {
+                try (Socket c = ss.accept()) {
+                    String head = LoopbackEngine.readHead(c.getInputStream());
+                    assertTrue(head.startsWith("GET /health"));
+                    String body = "{\"ok\": true}";
+                    c.getOutputStream().write(("HTTP/1.1 200 OK\r\nContent-Length: " + body.length() + "\r\nConnection: close\r\n\r\n" + body).getBytes(StandardCharsets.US_ASCII));
+                } catch (IOException ignored) {}
+            });
+            t.start();
+            assertTrue(new LoopbackEngine(ss.getLocalPort(), 1000).reachable());   // engine answers = not the cable
+            t.join(2000);
         }
     }
 

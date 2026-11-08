@@ -130,6 +130,30 @@ test("auto-listen end reasons: the not-connected path says plug in the cable", (
   assert.equal(AL.endedText("ended:not_connected"), "Tell could not reach your computer; plug in the USB cable.");
   assert.match(AL.endedText("ended:refused"), /make api-android/);
   assert.equal(AL.endedText("ended:stopped"), "");
+  assert.equal(AL.endedText("ended:dropped"), "");                 // engine reachable, clean end: never blame the cable
+});
+
+test("silenced mic has its own honest message, separate from the cable message", () => {
+  assert.equal(AL.MIC_BLOCKED.line, "Your phone is blocking the microphone during the call. On this phone, apps can't hear a call even on speaker.");
+  assert.equal(AL.MIC_BLOCKED.sub, "Use Tell on your Mac for live calls (answer the call on your Mac).");
+  assert.equal(AL.endedText("ended:mic_silenced"), AL.MIC_BLOCKED.line);
+  assert.equal(AL.outcome("ended:mic_silenced"), "mic_silenced");
+  // the two failure messages must not be confused with each other
+  assert.ok(!/cable|USB/i.test(AL.MIC_BLOCKED.line));
+  assert.ok(!/microphone|mic\b/i.test(AL.endedText("ended:lost")));
+  // the page separates the states in code: a /health probe gates the cable message, and a distinct blocked card exists
+  const js = readFileSync(join(root, "app.js"), "utf8");
+  assert.match(js, /function reachable\(/);
+  assert.match(js, /function micBlocked\(/);
+  assert.match(js, /function endConnection\(/);
+  assert.match(js, /card err blocked/);
+});
+
+test("app.js no longer blames the USB cable on a mere SSE drop, and clears the teardown rejection", () => {
+  const js = readFileSync(join(root, "app.js"), "utf8");
+  assert.ok(!/function lostNote/.test(js), "the unconditional 'check the USB cable' SSE note is gone");
+  assert.ok(!/es\.onerror = function \(\) \{ es\.close\(\); if \(S\.mode === "listening"\) lostNote/.test(js));
+  assert.match(js, /release\(\);.*catch/s);                         // wake release promise rejection is swallowed
 });
 
 test("auto-listen stays within Play policy: no hidden APIs, accessibility, overlays, call log, recording to storage", () => {

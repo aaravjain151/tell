@@ -79,15 +79,38 @@ async def analyze(audio: UploadFile | None = File(default=None), transcript: str
 
 
 @app.post("/speak")
-async def speak_verdict(headline: str = Form(...), evidence: str = Form(default="")) -> Response:
-    """Spoken verdict via Gradium TTS. Only the verdict *text* leaves the device, never audio."""
+async def speak_verdict(headline: str = Form(default=""), tier: str = Form(default=""),
+                        evidence: str = Form(default=""), mode: str = Form(default="auto")) -> Response:
+    """Spoken verdict. Only Tell's own fixed verdict wording is ever voiced, never caller audio or words.
+
+    mode=auto (default): serve the PRE-RENDERED cached WAV for the tier if present (no network, no egress), else
+    fall back to the live Gradium path. mode=prerendered: cached only (503 if missing). mode=live: force Gradium.
+    The `X-Tell-Speak-Source` response header says which path served it ("prerendered" or "live")."""
+    want_tier = tier or speak.tier_for_headline(headline)
+    # Pre-rendered first (unless the caller forced live). This path touches no network and records no egress.
+    if mode in ("auto", "prerendered") and want_tier:
+        try:
+            wav = speak.prerendered_wav(want_tier)
+            return Response(content=wav, media_type="audio/wav", headers={"X-Tell-Speak-Source": "prerendered"})
+        except ValueError as e:
+            raise HTTPException(400, str(e)) from e
+        except speak.SpeakUnavailable as e:
+            if mode == "prerendered":
+                raise HTTPException(503, str(e)) from e
+            # mode=auto: fall through to the live path below.
+    if mode == "prerendered":
+        raise HTTPException(400, "mode=prerendered needs a known tier or headline")
+    # Live Gradium fallback. Needs a headline; derive it from the tier if only a tier was sent.
+    if not headline and want_tier:
+        from .scorer import COPY
+        headline = COPY[want_tier][0]
     try:
         wav = speak.verdict_wav(headline, evidence)
     except speak.SpeakUnavailable as e:
         raise HTTPException(503, str(e)) from e
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
-    return Response(content=wav, media_type="audio/wav")
+    return Response(content=wav, media_type="audio/wav", headers={"X-Tell-Speak-Source": "live"})
 
 
 @app.get("/history/status")
