@@ -1,6 +1,6 @@
 # Doublespeak for Android
 
-A thin client. The phone listens through its microphone and sends the audio to the Doublespeak engine on your computer over the USB cable. The engine does the analysis; the phone only shows the verdict. Nothing is recorded or stored, there is no LAN, cloud, relay or analytics, and the app never speaks to the caller (D-003, D-004, D-009, D-011).
+A thin client. The phone listens through its microphone and sends the audio to the Doublespeak engine on your computer over the USB cable. The engine does the analysis; the phone only shows the verdict. The audio stays on your own devices: it goes from the phone only to your own computer over the USB cable (it does leave the phone), is analysed in memory there, and nothing is recorded or stored. There is no LAN, Wi-Fi, cloud, relay or analytics, and the app never speaks to the caller (D-003, D-009, D-011; the phone-to-computer cable is the PROPOSED exception D-012 to D-004's "never leaves the device").
 
 ## What it can and cannot do (read this first)
 
