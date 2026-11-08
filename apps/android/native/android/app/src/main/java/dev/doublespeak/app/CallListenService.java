@@ -78,7 +78,12 @@ public class CallListenService extends Service {
             }
             @Override public void onVerdict(String json) {}       // the page shows verdicts from the engine's own feed
             @Override public void onEnded(CallSession.Outcome o, String text) {
-                if (o != CallSession.Outcome.STOPPED) Notices.notice(CallListenService.this, text);
+                // STOPPED and DROPPED are clean ends (no scary notice). MIC_SILENCED gets the honest "can't hear this call"
+                // notice; the engine-unreachable outcomes get the "plug in the USB cable" notice.
+                if (o == CallSession.Outcome.MIC_SILENCED)
+                    Notices.blocked(CallListenService.this);
+                else if (o != CallSession.Outcome.STOPPED && o != CallSession.Outcome.DROPPED)
+                    Notices.notice(CallListenService.this, text);
                 CallMonitor.get(CallListenService.this).onSessionEnded();
                 AutoListenBus.emit("state", "ended:" + o.name().toLowerCase(java.util.Locale.ROOT), 0);
                 end();

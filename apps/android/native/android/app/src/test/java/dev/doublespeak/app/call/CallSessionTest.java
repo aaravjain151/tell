@@ -22,16 +22,18 @@ public class CallSessionTest {
     }
 
     static final class FakeEngine implements CallSession.Engine {
-        final FakeLink link = new FakeLink(); CallSession.EngineError err;
+        final FakeLink link = new FakeLink(); CallSession.EngineError err; boolean reachable;
         @Override public CallSession.Link open(CallSession.LinkListener l) throws CallSession.EngineError {
             if (err != null) throw err;
             link.l = l; return link;
         }
+        @Override public boolean reachable() { return reachable; }
     }
 
-    /** Each read returns one 100 ms frame and advances the fake clock by 100 ms; stops the session after maxFrames. */
+    /** Each read returns one 100 ms frame and advances the fake clock by 100 ms; stops the session after maxFrames.
+        value is the constant sample (3000 = audible, 0 = digital silence); failAt makes a read return -1. */
     static final class FakeMic implements CallSession.Mic {
-        boolean startOk = true, released; short value; int reads, maxFrames = 50, failAt = -1;
+        boolean startOk = true, released; short value = 3000; int reads, maxFrames = 50, failAt = -1;
         CallSession session; long[] clock; Runnable onRead;
         @Override public boolean start() { return startOk; }
         @Override public int read(short[] buf) {
@@ -98,16 +100,31 @@ public class CallSessionTest {
         assertTrue(mic.released);
     }
 
-    @Test public void cablePulledMidCallIsLost() {
+    @Test public void cablePulledMidCallWithEngineGoneIsLost() {
         engine.link.failAfter = 20;
+        engine.reachable = false;                 // /health also fails: it really is the cable
         assertEquals(CallSession.Outcome.LOST, s.run());
         assertEquals(Wording.LOST_TEXT, ui.endedText);
         assertTrue(mic.released);
     }
 
-    @Test public void serverClosingIsLostButFinalIsAStop() {
+    @Test public void sendFailsButEngineStillReachableIsDroppedNotCable() {
+        engine.link.failAfter = 20;
+        engine.reachable = true;                  // /health answers: do NOT blame the USB cable
+        assertEquals(CallSession.Outcome.DROPPED, s.run());
+        assertEquals(Wording.DROPPED_TEXT, ui.endedText);
+    }
+
+    @Test public void serverClosingProbesHealth() {
+        engine.reachable = false;
         mic.onRead = () -> { if (mic.reads == 10) engine.link.l.onServerClosed("heartbeat_timeout"); };
         assertEquals(CallSession.Outcome.LOST, s.run());
+    }
+
+    @Test public void serverClosingWithEngineUpIsDropped() {
+        engine.reachable = true;
+        mic.onRead = () -> { if (mic.reads == 10) engine.link.l.onServerClosed("disconnect"); };
+        assertEquals(CallSession.Outcome.DROPPED, s.run());
     }
 
     @Test public void serverFinalIsAStop() {
@@ -115,12 +132,34 @@ public class CallSessionTest {
         assertEquals(CallSession.Outcome.STOPPED, s.run());
     }
 
-    @Test public void silentMicIsReportedOnceAndListeningContinues() {
-        mic.value = 0;
-        mic.maxFrames = 120;
+    @Test public void silencedMicDuringCallStopsCleanlyWithTheHonestMessage() {
+        mic.value = 0;                             // the OS gives the mic only digital silence (S20 FE during a call)
+        mic.maxFrames = 300;
+        assertEquals(CallSession.Outcome.MIC_SILENCED, s.run());
+        assertEquals(Wording.MIC_BLOCKED_TEXT, ui.endedText);
+        assertTrue(ui.endedText.contains("blocking the microphone"));
+        assertTrue(clock[0] <= CallSession.BLOCKED_SILENCE_MS + 200);   // stops at ~4 s, does not spin to 300 frames
+        assertTrue(mic.released);
+        assertTrue(engine.link.closed);
+    }
+
+    @Test public void audioRecordReturningMinusOneAfterStartIsSilencedNotFailed() {
+        mic.failAt = 5;                            // AudioRecord read() returns -1 after a good start = OS silenced it
+        assertEquals(CallSession.Outcome.MIC_SILENCED, s.run());
+        assertEquals(Wording.MIC_BLOCKED_TEXT, ui.endedText);
+    }
+
+    @Test public void micThatNeverStartsIsFailedNotSilenced() {
+        mic.startOk = false;
+        assertEquals(CallSession.Outcome.MIC_FAILED, s.run());
+        assertEquals(Wording.MIC_TEXT, ui.endedText);
+    }
+
+    @Test public void audibleAudioIsNeverCalledSilenced() {
+        mic.value = 3000;                          // real sound: must run to the end as STOPPED
+        mic.maxFrames = 100;                       // 10 s, well past the 4 s silence window
         assertEquals(CallSession.Outcome.STOPPED, s.run());
-        assertEquals(1, ui.log.stream().filter("silent"::equals).count());
-        assertEquals(120, engine.link.audioFrames);
+        assertEquals(100, engine.link.audioFrames);
     }
 
     @Test public void stopBeforeMicOpensClosesLink() {
@@ -134,10 +173,5 @@ public class CallSessionTest {
         mic.onRead = () -> { if (mic.reads == 2) { engine.link.l.onServerMessage("verdict", "{}"); engine.link.l.onServerMessage("pong", "{}"); } };
         s.run();
         assertEquals(1, ui.log.stream().filter("verdict"::equals).count());
-    }
-
-    @Test public void micReadErrorEnds() {
-        mic.failAt = 5;
-        assertEquals(CallSession.Outcome.MIC_FAILED, s.run());
     }
 }
