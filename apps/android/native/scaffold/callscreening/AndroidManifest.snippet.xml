@@ -1,0 +1,15 @@
+<!-- Add inside <application> in android/app/src/main/AndroidManifest.xml when wiring in BlockScreeningService. -->
+<service
+    android:name=".BlockScreeningService"
+    android:permission="android.permission.BIND_SCREENING_SERVICE"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="android.telecom.CallScreeningService" />
+    </intent-filter>
+</service>
+
+<!-- Role request (Android 10+, API 29): from an Activity or a Capacitor plugin method:
+       RoleManager rm = getSystemService(RoleManager.class);
+       if (rm.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING) && !rm.isRoleHeld(RoleManager.ROLE_CALL_SCREENING))
+           startActivityForResult(rm.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING), REQ_ROLE);
+     The user must approve the system dialog. No extra runtime permission is needed to screen. -->
