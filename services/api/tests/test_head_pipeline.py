@@ -52,3 +52,12 @@ def test_speaker_folds_are_disjoint_and_cover_all():
     f = h.folds_for(meta)
     assert f["owner"] == -1
     assert {f[f"s{i}"] for i in range(17)} == set(range(h.K_FOLDS))
+
+
+def test_new_human_groups_get_their_own_held_out_folds():
+    """--extra-humans: the old speakers keep the 2026-11-07 fold assignment; each new speaker group is a separate fold."""
+    old = [{"speaker": f"s{i % 17}", "owner": "0", "split": "dev-clean"} for i in range(200)] + [{"speaker": "owner", "owner": "1"}]
+    new = [{"speaker": g, "owner": "0", "split": "humans_new"} for g in ("new_neu", "new_hunt", "new_neu")]
+    f_old, f_new = h.folds_for(old), h.folds_for(old + new)
+    assert all(f_old[f"s{i}"] == f_new[f"s{i}"] for i in range(17))
+    assert {f_new["new_hunt"], f_new["new_neu"]} == {h.K_FOLDS, h.K_FOLDS + 1}
