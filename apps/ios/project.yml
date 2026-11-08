@@ -70,7 +70,7 @@ targets:
     info:
       path: CallBlocker/Info.plist
       properties:
-        CFBundleDisplayName: Doublespeak Call Blocker
+        CFBundleDisplayName: Tell Call Blocker
         DSAppGroup: group.dev.doublespeak.app.ios
         DSKeychainGroup: $(AppIdentifierPrefix)dev.doublespeak.shared
         NSExtension:

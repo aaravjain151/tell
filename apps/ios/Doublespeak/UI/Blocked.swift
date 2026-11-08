@@ -75,7 +75,7 @@ struct BlockedSheet: View {
                 }
             }.padding(.top, 24)
 
-            Text("Doublespeak has no database of known spam numbers and sends nothing anywhere, so it can only block numbers you add. Calls from hidden numbers cannot be matched.")
+            Text("Tell has no database of known spam numbers and sends nothing anywhere, so it can only block numbers you add. Calls from hidden numbers cannot be matched.")
                 .font(.ds(13, .regular, relativeTo: .footnote)).foregroundStyle(Theme.muted).padding(.top, 18)
             Button("Close") { c.sheet = nil }.buttonStyle(DSButtonStyle(kind: .ghost, height: 52)).padding(.top, 18)
         }
@@ -93,7 +93,7 @@ struct BlockedSheet: View {
                 Text("Numbers on this list will not ring.").font(.ds(14, .regular, relativeTo: .subheadline)).foregroundStyle(Theme.muted)
             } else {
                 Text("Turn on call blocking").font(.ds(17, .medium, relativeTo: .headline)).foregroundStyle(Theme.ink)
-                Text("Open Settings > Phone > Call Blocking & Identification and switch on Doublespeak. iOS only blocks once you do this, and only the app can ask.")
+                Text("Open Settings > Phone > Call Blocking & Identification and switch on Tell Call Blocker. iOS only blocks once you do this, and only the app can ask.")
                     .font(.ds(14, .regular, relativeTo: .subheadline)).foregroundStyle(Theme.muted)
                 Button("Open Settings") { b.openSettings() }.buttonStyle(DSButtonStyle(kind: .ghost, height: 48)).padding(.top, 4)
             }
