@@ -1735,8 +1735,8 @@ function feedDown(){
 async function stopLive(){
   if (L.ended){ clearSession(); return; }
   if (recorder && recorder.state === "recording"){ recorder.stop(); return; }
-  try{ const r = await api("/live/stop", {method:"POST"}); if (!r.ok) throw new Error(String(r.status)); }
-  catch(x){ barNote = "Could not stop from here. End it where it was started."; drawBar(); setTimeout(() => { barNote = ""; drawBar(); }, 6000); }
+  // A call heard by the listener on this computer ends when the call ends (or Ctrl-C in the listener); the engine has no stop route.
+  barNote = "Listening ends when you hang up, or press Ctrl-C in the listener."; drawBar(); setTimeout(() => { barNote = ""; drawBar(); }, 6000);
 }
 async function dismissAlert(){
   L.dismissed = true; $("redbar").hidden = true; HTML.dataset.banner = "0";

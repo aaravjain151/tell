@@ -267,7 +267,7 @@ def test_dismiss_over_ws_clears_latch(monkeypatch):
 
 def test_sse_route_cap_and_origin(monkeypatch):
     with tc() as c:
-        for _ in range(4):
+        for _ in range(live.MAX_SUBSCRIBERS):
             assert live.HUB.subscribe() is not None
         assert c.get("/live/events").status_code == 429
         live.HUB.reset()
