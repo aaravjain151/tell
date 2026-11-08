@@ -1,5 +1,7 @@
 # Presentation outline — Sunday 11:00
 
+> **Superseded for Sunday by `DEMO-SCRIPT.md`** (4 minutes, phones-first positioning, the voice-talk TEST ATTACKER, owner-by-owner how-it-works). This Mac-first deck draft stays for detail. Do not use its "Mac: live" / "Mac today" framing or the "9 of about 10 clips" line (no source in the repo); `DEMO-SCRIPT.md` segment 7 uses the audited counts.
+
 Twelve slides. One line on the slide. The speaker notes are the words. Dark theme. The live demo slide is a cut to the Mac, run from `docs/demo/RUN-OF-SHOW.md`.
 
 ## Slide 1 — Tell

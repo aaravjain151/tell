@@ -1,5 +1,7 @@
 # Run of show — Sunday 11:00 (5:00)
 
+> **Superseded for Sunday by `DEMO-SCRIPT.md`** (4 minutes, phones-first positioning, the voice-talk TEST ATTACKER, owner-by-owner how-it-works). This 5-minute Mac-first draft stays for detail. Do not use its "Mac: live" / "Mac today" framing or the "9 of about 10 clips" line (no source in the repo); `DEMO-SCRIPT.md` segment 7 uses the audited counts.
+
 Live demo on the Mac. One speaker. One operator. One teammate offstage with a phone. The page the room sees is `http://127.0.0.1:5173`. The engine stays on this laptop.
 
 Leave Wi-Fi on so Calls on Other Devices can ring the Mac. The detector is the loopback engine (`make demo` forces offline models). Do not click **Speak verdict**. Do not click **Start listening now** (that records the laptop mic for 30 seconds; the call path is the terminal listener).
