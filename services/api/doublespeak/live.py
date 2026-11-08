@@ -37,6 +37,7 @@ from typing import Any, AsyncIterator, Callable
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
+from .signals import shadow
 from .stabiliser import INTENT_FAMILIES, RawTick, Stabiliser
 
 router = APIRouter()
@@ -82,6 +83,26 @@ class StableTracker:
         self._key: tuple | None = None
         self._since_t = 0.0
         self.last: dict | None = None
+        self._persist: dict[str, list[float]] = {"pella": [], "hf": []}   # SHADOW: neural scores over the call, never fed back
+
+    def _shadow_persistence(self, d: dict) -> None:
+        """SHADOW only: call-level persistence of the per-window neural scores, attached to this tick's egress.context.shadow.
+        Runs after the stabiliser has consumed the tick; nothing here is read by it or by any tier/score."""
+        try:
+            ctx = (d.get("egress") or {}).get("context")
+            if not isinstance(ctx, dict):
+                return
+            for w in ctx.get("voice_windows") or []:
+                for voter, buf in self._persist.items():
+                    if voter in w:
+                        buf.append(float(w[voter]))
+                        del buf[:-200]
+            sh = ctx.setdefault("shadow", {})
+            for voter, buf in self._persist.items():
+                for k, (v, ev) in shadow.persistence(buf).items():
+                    sh[f"call_persist_{voter}_{k}"] = shadow._pack(v, ev)
+        except Exception:  # noqa: BLE001  shadow must never break a tick
+            pass
 
     def observe(self, d: dict, t0: float, t1: float) -> dict:
         sv = self.stab.update(raw_tick(d, t1, t1 - t0))
@@ -105,6 +126,7 @@ class StableTracker:
                 reasons.append(r)
         self.last = {"tier": sv.shown_tier, "state": state, "alert": alert,
                      "since_s": round(max(0.0, t1 - self._since_t), 2), "reasons": reasons[:4]}
+        self._shadow_persistence(d)
         return self.last
 
     def dismiss(self) -> bool:
@@ -113,6 +135,7 @@ class StableTracker:
     def wipe(self) -> None:
         self.stab.reset()
         self._key, self.last = None, None
+        self._persist = {"pella": [], "hf": []}
 
 
 class Hub:

@@ -119,3 +119,32 @@ def test_verdict_bit_identical_with_shadow_on_or_off(monkeypatch):
     d_on, d_off = on.to_dict(), off.to_dict()
     for k in ("scores", "quadrant", "reasons", "tells"):
         assert d_on[k] == d_off[k], k
+
+
+def test_live_tick_gets_call_persistence_and_stable_is_unchanged(monkeypatch):
+    from doublespeak import live
+
+    def tick(i):
+        return {"tier": "human", "p_ai": 0.3, "p_scam": 0.0, "confidence": 0.5, "disclosed_ai": False, "tells": [],
+                "transcript": "hello there", "reasons": [],
+                "egress": {"context": {"voice_windows": [{"t": 0.0, "pella": 0.3 + 0.01 * i, "hf": 0.4}]}}}
+
+    def run():
+        tr, outs, ds = live.StableTracker(), [], []
+        for i in range(5):
+            d = tick(i)
+            outs.append(tr.observe(d, 3.0 * i, 3.0 * i + 3.0))
+            ds.append(d)
+        return outs, ds
+
+    outs_on, ds = run()
+    sh = ds[-1]["egress"]["context"]["shadow"]
+    assert sh["call_persist_pella_longest_run_0_2_0_6"]["value"] == 5
+    assert sh["call_persist_hf_frac_gt_0_5"]["value"] == 0.0
+
+    def boom(_):
+        raise RuntimeError("shadow off")
+    monkeypatch.setattr(live.shadow, "persistence", boom)
+    outs_off, ds_off = run()
+    assert outs_on == outs_off                                  # the displayed stable answer cannot depend on shadow
+    assert "shadow" not in ds_off[-1]["egress"]["context"] or not ds_off[-1]["egress"]["context"]["shadow"]
