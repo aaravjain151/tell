@@ -54,6 +54,7 @@ SAVE_BANNER = "!!! SAVING AUDIO TO DISK (labelled capture) !!!"
 SAVE_TAG = " | SAVING AUDIO TO DISK"
 NETWORK_FS = ("smbfs", "nfs", "afpfs", "webdav", "cifs", "ftp", "fuse", "osxfuse", "macfuse", "sshfs", "9p", "ncpfs", "davfs")
 END_POLLS = 3                          # consecutive polls without the call app before we call the call over
+STOP_WAIT_S = 12.0                     # after `stop`: the API's final flush is bounded at 6 s (+ an in-flight tick)
 
 
 # ---------------------------------------------------------------------------------------------- pure helpers
@@ -165,6 +166,20 @@ def status_line(m: dict, latency: float | None, saving: bool = False) -> str:
     lat = f" lat={latency:.1f}s" if latency is not None else ""
     return (f"LISTENING{SAVE_TAG if saving else ''} | {m.get('t', 0):6.1f}s  shown={st.get('tier', '?'):<14} {st.get('state', '?'):<9} "
             f"alert={st.get('alert', '?'):<5}| raw={m.get('tier')} p_scam={m.get('p_scam')} p_ai={m.get('p_ai')}{lat}")
+
+
+TAIL_TEXT = {"scored": "last seconds scored", "covered": "last seconds already covered",
+             "no_new_audio": "no unscored audio", "silence": "last seconds were silence",
+             "timeout": "last seconds NOT scored (engine too slow)", "failed": "last seconds NOT scored (analysis failed)",
+             "closed": "last seconds NOT scored (session wiped)"}
+
+
+def final_line(final: dict, stable: dict | None) -> str:
+    """One line after the session ends: the final stable answer and what happened to the unscored tail."""
+    st = stable or {}
+    tail = TAIL_TEXT.get(final.get("tail") or "", "tail not reported")
+    return (f"FINAL | shown={st.get('tier', 'none')} {st.get('state', '-')} alert={st.get('alert', 'none')} | "
+            f"{final.get('ticks', 0)} verdicts | {tail}")
 
 
 def notify(text: str, sound: bool) -> None:
@@ -364,7 +379,7 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
         loop = asyncio.get_running_loop()
         t_start = loop.time()
         sent_at: list[float] = []                       # wall time at which each whole second of audio was sent
-        state = {"alert": "none", "sent": 0}
+        state = {"alert": "none", "sent": 0, "stable": None}
 
         async def reader() -> None:
             async for raw in ws:
@@ -373,7 +388,9 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
                     end = m.get("window", [0, 0])[1]
                     idx = int(end) - 1
                     lat = loop.time() - sent_at[idx] if 0 <= idx < len(sent_at) else None
-                    say(status_line(m, lat, saving))
+                    line = status_line(m, lat, saving)
+                    say(line.replace("LISTENING", "LAST WORDS", 1) if m.get("tail") else line)
+                    state["stable"] = m.get("stable")
                     if saver:
                         saver.tick(m)
                     new = (m.get("stable") or {}).get("alert", "none")
@@ -386,6 +403,7 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
                     if m.get("type") == "error":
                         return
                 elif m.get("type") == "final":
+                    say(final_line(m, state["stable"]))
                     return
 
         rd = asyncio.ensure_future(reader())
@@ -429,12 +447,14 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
         finally:
             if not rd.done():
                 try:
-                    if reason == "call ended":
-                        await asyncio.sleep(2.0)       # let the last tick finish
+                    # stop is a graceful end: the API lets the in-flight tick land, scores the unscored tail once
+                    # (bounded by its final_flush_s, 6 s by default) and only then sends `final`. Wait for it.
+                    say("finishing: scoring the last seconds ...")
                     await ws.send(json.dumps({"type": "stop"}))
-                    await asyncio.wait_for(rd, 8)
+                    await asyncio.wait_for(rd, STOP_WAIT_S)
                 except Exception:  # noqa: BLE001 — closing anyway; the server wipes on disconnect
                     rd.cancel()
+                    say("FINAL | no final answer from the API in time (it wipes the session anyway)")
             banner(False)
             if saver:
                 saver.close()
@@ -501,7 +521,7 @@ async def watch(args: argparse.Namespace, stop: asyncio.Event) -> int:
     if task is not None:
         sess_stop.set()
         try:
-            await asyncio.wait_for(task, 12)
+            await asyncio.wait_for(task, STOP_WAIT_S + 4)
         except Exception:  # noqa: BLE001
             task.cancel()
     return 0

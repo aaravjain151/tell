@@ -1,4 +1,4 @@
-/* Recorded demo: a scripted call replayed on a loop. Words and stage changes follow apps/web/mock_live.py,
+/* Illustration of the live card: a scripted animation on a loop. Words and stage changes follow apps/web/mock_live.py,
    the same script used to test the real app screens. It is labelled as a recording on the page. */
 (function () {
   "use strict";
@@ -42,7 +42,7 @@
     $("demo-tx").innerHTML = mark(said);
     var q = $("demo-q"), quad = $("demo-quad"), on = quad.querySelectorAll("i");
     on.forEach(function (c) { c.className = ""; });
-    if (st.warm) q.innerHTML = "Gathering the first seconds before judging.<small>It does not guess early.</small>";
+    if (st.warm) q.innerHTML = "Gathering a few seconds before judging.<small>It does not guess early.</small>";
     else if (st.tier === "scam") { on[1].className = "on"; quad.style.setProperty("--c", "var(--red)"); q.innerHTML = "Human voice, but scam pattern in what was said.<small>Two separate answers.</small>"; }
     else if (st.tier === "human") { on[0].className = "on"; quad.style.setProperty("--c", "var(--teal)"); q.innerHTML = "Human voice, nothing in the words stood out.<small>Two separate answers.</small>"; }
     else q.innerHTML = "Something in the words is off.<small>Keeping an eye on it.</small>";
