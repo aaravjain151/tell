@@ -34,7 +34,7 @@ struct MenuView: View {
             footerNotes
             Divider().padding(.vertical, 6)
             MenuRow(title: "Settings", systemImage: "gearshape") { windows.showSettings() }
-            MenuRow(title: "Quit Doublespeak", systemImage: "xmark.circle") { model.quit() }
+            MenuRow(title: "Quit Tell", systemImage: "xmark.circle") { model.quit() }
         }
         .padding(8)
         .frame(width: 312)
@@ -73,7 +73,7 @@ struct MenuView: View {
         if model.needsOnboarding {
             MenuRow(title: "Finish setup", systemImage: "checkmark.circle") { windows.showWelcome() }
         } else {
-            MenuRow(title: "Open Doublespeak", systemImage: "safari") { model.openDoublespeak() }
+            MenuRow(title: "Open Tell", systemImage: "safari") { model.openTell() }
             if s == .paused {
                 MenuRow(title: "Resume", systemImage: "play.circle") { model.resume() }
             } else if model.enabled {

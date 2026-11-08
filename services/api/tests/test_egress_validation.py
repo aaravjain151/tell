@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from doublespeak import privacy
+from tell import privacy
 
 
 @pytest.mark.parametrize("kind", ["text", "verdict_tts"])
@@ -42,7 +42,7 @@ def test_bad_byte_counts_raise_and_do_not_count(n):
 
 
 def test_allowed_kinds_cover_real_callers():
-    root = Path(__file__).resolve().parents[1] / "doublespeak"
+    root = Path(__file__).resolve().parents[1] / "tell"
     used = set()
     for p in root.rglob("*.py"):
         used |= set(re.findall(r'record_egress\(\s*"([^"]+)"', p.read_text()))

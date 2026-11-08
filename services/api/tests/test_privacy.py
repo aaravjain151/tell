@@ -1,6 +1,6 @@
 """The privacy guarantee is a test, not a promise.
 
-1. No module under doublespeak/ imports a network library outside the allowlist (test_import_scan.py).
+1. No module under tell/ imports a network library outside the allowlist (test_import_scan.py).
 2. The egress recorder refuses audio by construction.
 3. Verdict signatures verify and are bound to the clip fingerprint.
 """
@@ -10,7 +10,7 @@ import types
 
 import pytest
 
-from doublespeak import localhost, privacy, pipeline, stt
+from tell import localhost, privacy, pipeline, stt
 from tests.synth import make_call, to_wav_bytes
 
 # The network-import scan is AST based and lives in tests/test_import_scan.py; the runtime guard is tests/test_network_guard.py.
@@ -69,7 +69,7 @@ def test_multipart_shape():
 
 
 def test_voicestudio_stt_used_when_it_answers(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STT", "voicestudio")
+    monkeypatch.setenv("TELL_STT", "voicestudio")
     privacy.reset()
     op = FakeOpener({"text": "  this is the voicestudio transcript  "})
     monkeypatch.setattr(localhost, "_OPENER", types.SimpleNamespace(open=op))
@@ -83,7 +83,7 @@ def test_voicestudio_stt_used_when_it_answers(monkeypatch):
 
 
 def test_voicestudio_unreachable_falls_back_silently(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STT", "auto")
+    monkeypatch.setenv("TELL_STT", "auto")
     monkeypatch.setattr(stt, "available", lambda: False)
     monkeypatch.setattr(localhost, "_OPENER", types.SimpleNamespace(open=FakeOpener(exc=ConnectionRefusedError("down"))))
     v = pipeline.analyze(to_wav_bytes(make_call("human", seed=5)), None)
@@ -92,14 +92,14 @@ def test_voicestudio_unreachable_falls_back_silently(monkeypatch):
 
 
 def test_voicestudio_bad_response_falls_back(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STT", "auto")
+    monkeypatch.setenv("TELL_STT", "auto")
     monkeypatch.setattr(stt, "available", lambda: False)
     monkeypatch.setattr(localhost, "_OPENER", types.SimpleNamespace(open=FakeOpener({"error": "x"})))
     assert stt.transcribe_with_source(make_call("human", seed=5)) == (None, None)
 
 
 def test_stt_whisper_mode_never_contacts_voicestudio(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STT", "whisper")
+    monkeypatch.setenv("TELL_STT", "whisper")
     op = FakeOpener({"text": "x"})
     monkeypatch.setattr(localhost, "_OPENER", types.SimpleNamespace(open=op))
     monkeypatch.setattr(stt, "available", lambda: False)
@@ -114,7 +114,7 @@ def test_to_wav_roundtrips():
 
 
 def test_ollama_non_loopback_refused(monkeypatch):
-    from doublespeak import llm
+    from tell import llm
     monkeypatch.setenv("OLLAMA_URL", "http://10.0.0.5:11434")
     privacy.reset()
     tells, cost = llm._ollama("hello there")

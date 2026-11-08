@@ -9,8 +9,8 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from doublespeak import live, personal as pe, secure_store as ss
-from doublespeak.main import app
+from tell import live, personal as pe, secure_store as ss
+from tell.main import app
 
 KEY = bytes(range(32))
 ORIGIN = {"Origin": "http://localhost:5173"}
@@ -31,8 +31,8 @@ def feats(**kw) -> pe.CallFeatures:
 
 @pytest.fixture
 def layer(tmp_path, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_DATA_DIR", str(tmp_path / "d"))
-    monkeypatch.setenv("DOUBLESPEAK_PERSONAL", "1")
+    monkeypatch.setenv("TELL_DATA_DIR", str(tmp_path / "d"))
+    monkeypatch.setenv("TELL_PERSONAL", "1")
     monkeypatch.setattr(ss, "keyring_key_provider", lambda: KEY)
     return pe.PersonalLayer(seed=3)
 
@@ -199,8 +199,8 @@ def test_feedback_adapter_is_inert_until_the_real_module_exists():
 
 # ---------------------------------------------------------------- opt-in, encryption at rest, wipe
 def test_off_by_default_nothing_is_read_or_written(tmp_path, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_DATA_DIR", str(tmp_path / "d"))
-    monkeypatch.delenv("DOUBLESPEAK_PERSONAL", raising=False)
+    monkeypatch.setenv("TELL_DATA_DIR", str(tmp_path / "d"))
+    monkeypatch.delenv("TELL_PERSONAL", raising=False)
     monkeypatch.setattr(ss, "keyring_key_provider", lambda: (_ for _ in ()).throw(AssertionError("keychain touched")))
     lay = pe.PersonalLayer()
     assert lay.active() is False
@@ -247,8 +247,8 @@ def test_tampered_state_is_ignored_not_trusted(layer):
 
 
 def test_unavailable_keychain_fails_closed(tmp_path, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_DATA_DIR", str(tmp_path / "d"))
-    monkeypatch.setenv("DOUBLESPEAK_PERSONAL", "1")
+    monkeypatch.setenv("TELL_DATA_DIR", str(tmp_path / "d"))
+    monkeypatch.setenv("TELL_PERSONAL", "1")
 
     def locked():
         raise ss.HistoryUnavailable("keychain locked")
@@ -272,10 +272,10 @@ def run_tracker():
 
 
 def test_stable_view_is_bit_identical_with_personal_off_and_on(layer, monkeypatch):
-    monkeypatch.delenv("DOUBLESPEAK_PERSONAL", raising=False)
+    monkeypatch.delenv("TELL_PERSONAL", raising=False)
     off, pa_off = run_tracker()
     assert set(pa_off) == {None}
-    monkeypatch.setenv("DOUBLESPEAK_PERSONAL", "1")
+    monkeypatch.setenv("TELL_PERSONAL", "1")
     monkeypatch.setattr(pe, "LAYER", layer)
     layer.set_enabled(True)
     p = layer._load()

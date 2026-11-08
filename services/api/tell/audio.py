@@ -28,7 +28,7 @@ class AudioTooLong(AudioDecodeError):
 
 
 def _max_audio_s() -> float:
-    from .limits import max_audio_s   # same DOUBLESPEAK_MAX_AUDIO_S setting and tolerant parsing as the API cap
+    from .limits import max_audio_s   # same TELL_MAX_AUDIO_S setting and tolerant parsing as the API cap
     return max_audio_s()
 
 

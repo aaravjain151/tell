@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 from typing import Callable
 
+from . import env as _env
 from . import localhost, net_monitor, offline_guard, stt, thresholds
 from .signals import neural
 
@@ -36,12 +37,12 @@ def _model(name: str, loaded: bool, filenames: tuple[str, ...]) -> dict:
 
 
 def _stt() -> dict:
-    mode = os.environ.get("DOUBLESPEAK_STT", "").lower()
-    name = os.environ.get("DOUBLESPEAK_WHISPER_MODEL", "")
+    mode = _env.get("TELL_STT", "").lower()
+    name = _env.get("TELL_WHISPER_MODEL", "")
     if mode == "voicestudio" or (not mode and not name):
         return _state("off", "Whisper not configured")
     if mode not in ("", "auto", "whisper"):
-        return _state("degraded", "unknown DOUBLESPEAK_STT")
+        return _state("degraded", "unknown TELL_STT")
     name = name or "base.en"
     # Mirror faster-whisper aliases without importing its heavyweight inference library.
     if "/" not in name and not Path(name).is_dir():
@@ -97,7 +98,7 @@ def _ollama() -> dict:
 
 
 def _voicestudio() -> dict:
-    if os.environ.get("DOUBLESPEAK_STT", "").lower() not in ("auto", "voicestudio"):
+    if _env.get("TELL_STT", "").lower() not in ("auto", "voicestudio"):
         return _state("off", "VoiceStudio STT not configured")
     base = os.environ.get("VOICESTUDIO_URL", "http://127.0.0.1:3900").rstrip("/")
     result = localhost.get_json(base + "/v1/models", timeout=1.5)

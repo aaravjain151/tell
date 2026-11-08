@@ -1,8 +1,10 @@
-"""Central configuration for DoubleSpeak.
+"""Central configuration for the legacy Tell Streamlit prototype.
 
 All tunable constants and filesystem paths live here so the rest of the code
 stays declarative. Importing this module also enforces offline mode via
-:mod:`doublespeak.offline_guard`.
+:mod:`doublespeak.offline_guard`. (This root-level ``doublespeak`` package is the
+early prototype behind ``app.py``; the product API is ``services/api/tell``. Its
+package name is kept so existing scripts keep working, see D-013.)
 """
 
 from __future__ import annotations
@@ -14,6 +16,14 @@ from pathlib import Path
 # Importing offline_guard first sets HF_HUB_OFFLINE / TRANSFORMERS_OFFLINE etc.
 from . import offline_guard  # noqa: F401  (import for side effect)
 
+
+def _setting(name: str, default=None):
+    """TELL_<name>, else the pre-rename DOUBLESPEAK_<name>, else `default` (D-013)."""
+    v = os.environ.get("TELL_" + name)
+    if v is None:
+        v = os.environ.get("DOUBLESPEAK_" + name)
+    return default if v is None else v
+
 # --------------------------------------------------------------------------- #
 # Filesystem layout
 # --------------------------------------------------------------------------- #
@@ -23,11 +33,11 @@ PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent
 
 #: Where encrypted data and offline model weights live. Overridable via env so
 #: the whole app can be pointed at a removable drive if desired.
-DATA_DIR: Path = Path(os.environ.get("DOUBLESPEAK_DATA_DIR", PROJECT_ROOT / "data"))
+DATA_DIR: Path = Path(_setting("DATA_DIR", PROJECT_ROOT / "data"))
 
 #: Local directory holding the pellav2 weights + config (downloaded once, then
 #: used fully offline). Expected files: ``pellav2_detector.pt``, ``config.json``.
-MODELS_DIR: Path = Path(os.environ.get("DOUBLESPEAK_MODELS_DIR", PROJECT_ROOT / "models"))
+MODELS_DIR: Path = Path(_setting("MODELS_DIR", PROJECT_ROOT / "models"))
 
 #: Encrypted, append-only alert history file (AES-256-GCM, see crypto_store).
 HISTORY_FILE: Path = DATA_DIR / "alert_history.enc"
@@ -92,7 +102,7 @@ class DeepfakeConfig:
     target_lufs: float = -23.0
     crop_seconds: int = 4
     #: Load the fine-tuned head (see finetune/) instead of the base weights.
-    #: Enabled by env var DOUBLESPEAK_FINETUNED=1 or by constructing a config
+    #: Enabled by env var TELL_FINETUNED=1 (legacy DOUBLESPEAK_FINETUNED=1) or by constructing a config
     #: with this set. The model falls back to base weights if neither a full
     #: fine-tuned checkpoint nor a head-delta file is present, so turning it on
     #: can never break inference.
@@ -225,9 +235,9 @@ def _optional_dir(path: Path) -> Path | None:
 
 # Instantiate the default configs once for convenient import.
 WHISPER = WhisperConfig()
-#: Honour DOUBLESPEAK_FINETUNED=1 so the fine-tuned head can be enabled without
+#: Honour TELL_FINETUNED=1 (legacy DOUBLESPEAK_FINETUNED=1) so the fine-tuned head can be enabled without
 #: code changes. Falls back to base weights if the fine-tuned file is absent.
 DEEPFAKE = DeepfakeConfig(
-    use_finetuned_head=os.environ.get("DOUBLESPEAK_FINETUNED", "") == "1"
+    use_finetuned_head=_setting("FINETUNED", "") == "1"
 )
 OLLAMA = OllamaConfig()

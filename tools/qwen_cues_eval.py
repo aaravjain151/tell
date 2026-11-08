@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "services" / "api"))
-from doublespeak.signals import shadow  # noqa: E402
+from tell.signals import shadow  # noqa: E402
 
 SCRIPTS = ["casual_clone", "long_appointment", "long_checkin", "sales_disclosed", "sales_undisclosed", "scam_bank_otp",
            "scam_grandparent", "scam_irs"]

@@ -1,4 +1,4 @@
-"""Run the full DoubleSpeak pipeline on every clip in ``test_audio/``.
+"""Run the full Tell pipeline on every clip in ``test_audio/``.
 
 Prints an aligned table of voice score, scam score, fused risk and level per
 file so you can check how well real-vs-cloned and scam-vs-normal separate.

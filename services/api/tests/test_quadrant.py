@@ -3,9 +3,9 @@ import re
 
 import pytest
 
-from doublespeak import pipeline, privacy, thresholds
-from doublespeak.quadrant import INTENT_CLEAR_BELOW, VOICE_HUMAN_MAX, quadrant_for
-from doublespeak.types import Tell, Verdict
+from tell import pipeline, privacy, thresholds
+from tell.quadrant import INTENT_CLEAR_BELOW, VOICE_HUMAN_MAX, quadrant_for
+from tell.types import Tell, Verdict
 
 BANNED = re.compile(r"\b(safe|legal|illegal|fraud|confirmed)\b", re.I)
 

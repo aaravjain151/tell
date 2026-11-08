@@ -22,7 +22,9 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.doublespeak.app.mac
-        PRODUCT_NAME: Doublespeak
+        PRODUCT_NAME: Tell
+        # The Swift module keeps its old name so `@testable import Doublespeak` and folder names stay as they are (D-013)
+        PRODUCT_MODULE_NAME: Doublespeak
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: DoublespeakBar/Info.plist
         ENABLE_HARDENED_RUNTIME: YES
@@ -30,11 +32,12 @@ targets:
     info:
       path: DoublespeakBar/Info.plist
       properties:
-        CFBundleDisplayName: Doublespeak
+        CFBundleDisplayName: Tell
+        CFBundleName: Tell
         LSUIElement: true
         LSMinimumSystemVersion: "14.0"
-        NSAudioCaptureUsageDescription: "Doublespeak listens to the call audio your Mac plays, only to warn you about scams. The audio is analysed on this Mac and never recorded or sent anywhere."
-        NSHumanReadableCopyright: "Doublespeak runs on this Mac only."
+        NSAudioCaptureUsageDescription: "Tell listens to the call audio your Mac plays, only to warn you about scams. The audio is analysed on this Mac and never recorded or sent anywhere."
+        NSHumanReadableCopyright: "Tell runs on this Mac only."
   DoublespeakBarTests:
     type: bundle.unit-test
     platform: macOS
@@ -46,7 +49,7 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: dev.doublespeak.app.mac.tests
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Doublespeak.app/Contents/MacOS/Doublespeak"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Tell.app/Contents/MacOS/Tell"
         BUNDLE_LOADER: "$(TEST_HOST)"
 schemes:
   DoublespeakBar:

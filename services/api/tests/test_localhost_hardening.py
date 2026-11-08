@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from doublespeak import localhost
+from tell import localhost
 
 
 def serve(handler_cls):
@@ -92,4 +92,4 @@ def test_multipart_boundary_uses_the_product_name(monkeypatch):
         seen["ct"] = req.headers.get("Content-type")
         return R()
     localhost.post_multipart("http://127.0.0.1:3900/v1/audio/transcriptions", {"model": "m"}, "file", "a.wav", b"x", opener=opener)
-    assert "----doublespeak" in seen["ct"] and "tell" not in seen["ct"]
+    assert "----tell" in seen["ct"] and "doublespeak" not in seen["ct"]

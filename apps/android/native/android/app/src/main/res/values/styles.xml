@@ -16,7 +16,7 @@
         <item name="android:navigationBarColor">#0B1020</item>
     </style>
 
-    <!-- Splash: navy field with the Doublespeak mark (Android 12+ system splash and the pre-12 window background). -->
+    <!-- Splash: navy field with the Tell mark (Android 12+ system splash and the pre-12 window background). -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_mark</item>

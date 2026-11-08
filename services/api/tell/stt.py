@@ -1,8 +1,8 @@
 """Local speech-to-text for the caller's audio. Never a cloud API — caller audio stays on the device.
 
-Provider order (DOUBLESPEAK_STT=auto, default): VoiceStudio on loopback (OpenAI-style
-POST {VOICESTUDIO_URL|http://127.0.0.1:3900}/v1/audio/transcriptions, via doublespeak/localhost.py only, D-009)
-→ in-process faster-whisper → none. DOUBLESPEAK_STT=voicestudio|whisper forces one. Any failure falls back silently.
+Provider order (TELL_STT=auto, default): VoiceStudio on loopback (OpenAI-style
+POST {VOICESTUDIO_URL|http://127.0.0.1:3900}/v1/audio/transcriptions, via tell/localhost.py only, D-009)
+→ in-process faster-whisper → none. TELL_STT=voicestudio|whisper forces one. Any failure falls back silently.
 VoiceStudio is AGPL-3.0: used over HTTP only. Install whisper:  pip install faster-whisper
 """
 from __future__ import annotations
@@ -14,9 +14,10 @@ import wave
 
 import numpy as np
 
+from . import env as _env
 from . import localhost
 
-log = logging.getLogger("doublespeak.stt")
+log = logging.getLogger("tell.stt")
 _model = None
 _model_failed = False
 
@@ -56,7 +57,7 @@ def _voicestudio(x16k: np.ndarray, opener=None) -> str | None:
 
 def transcribe_with_source(x16k: np.ndarray, opener=None) -> tuple[str | None, str | None]:
     """Returns (text, source) with source in {"local_voicestudio", "local_whisper"}, or (None, None)."""
-    mode = os.environ.get("DOUBLESPEAK_STT", "auto").lower()
+    mode = _env.get("TELL_STT", "auto").lower()
     if mode in ("auto", "voicestudio"):
         text = _voicestudio(x16k, opener)
         if text:
@@ -76,7 +77,7 @@ def transcribe(x16k: np.ndarray) -> str | None:
     if _model is None:
         if _model_failed:
             return None
-        size = os.environ.get("DOUBLESPEAK_WHISPER_MODEL", "base.en")
+        size = _env.get("TELL_WHISPER_MODEL", "base.en")
         try:
             _model = WhisperModel(size, device="cpu", compute_type="int8", local_files_only=True)   # cache only: no update check, no download at runtime
         except Exception as e:  # noqa: BLE001 - offline + uncached must mean "no local STT", not a 500

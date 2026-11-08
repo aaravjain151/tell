@@ -9,7 +9,7 @@ struct Notice: Equatable { var title: String; var body: String }
 
 @MainActor
 final class ListenController: ObservableObject {
-    static let consentText = "Doublespeak listens to this call through your microphone on your phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it."
+    static let consentText = "Tell listens to this call through your microphone on your phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it."
     static let meterCells = 24
 
     @Published var mode: Mode = .offline

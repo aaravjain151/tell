@@ -1,4 +1,4 @@
-/* Doublespeak for Android: microphone samples -> PCM16 mono 16 kHz frames.
+/* Tell for Android: microphone samples -> PCM16 mono 16 kHz frames.
    Pure functions (no DOM), loaded by the page and by the node tests. */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) module.exports = factory();

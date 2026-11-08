@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from doublespeak.main import app
+from tell.main import app
 from tests.synth import make_call, to_wav_bytes
 
 client = TestClient(app)
@@ -32,7 +32,7 @@ def test_bad_audio_is_415():
 def test_verdict_returns_the_analysed_transcript():
     """The UI marks up the caller's words in place, so the verdict must carry the text that was analysed."""
     from fastapi.testclient import TestClient
-    from doublespeak.main import app
+    from tell.main import app
     text = "Grandma it's me, I need bail money right now, please don't tell mom."
     r = TestClient(app).post("/analyze", data={"transcript": text}).json()
     assert r["transcript"] == text

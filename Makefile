@@ -28,17 +28,17 @@ test:
 eval:
 	cd services/api && $(VPY) eval/run_eval.py $(ARGS)
 api:
-	cd services/api && $(VPY) -m uvicorn doublespeak.main:app --reload --port 8000$(if $(ENVFILE), $(ENVFILE),)
+	cd services/api && $(VPY) -m uvicorn tell.main:app --reload --port 8000$(if $(ENVFILE), $(ENVFILE),)
 web:
 	cd apps/web && python3 -m http.server 5173 --bind 127.0.0.1
 # Android app (apps/android): the engine must accept the app's origins. http://localhost = the installed app (Capacitor),
 # :5173 = the PWA opened in Chrome on the phone. All loopback; the phone reaches it through `adb reverse` only.
 api-android:
-	cd services/api && DOUBLESPEAK_CORS_ORIGINS=http://localhost,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000 $(VPY) -m uvicorn doublespeak.main:app --port 8000$(if $(ENVFILE), $(ENVFILE),)
+	cd services/api && TELL_CORS_ORIGINS=http://localhost,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000 $(VPY) -m uvicorn tell.main:app --port 8000$(if $(ENVFILE), $(ENVFILE),)
 android-pwa:
 	cd apps/android && python3 -m http.server 5173 --bind 127.0.0.1
 
-# Heavy local voters: install their pinned packages, then download weights once (online). Then set DOUBLESPEAK_OFFLINE=1.
+# Heavy local voters: install their pinned packages, then download weights once (online). Then set TELL_OFFLINE=1.
 models:
 	@if command -v uv >/dev/null 2>&1; then uv pip install -q --python $(PY) -r $(MODELS_LOCK); else $(PY) -m pip install -q -r $(MODELS_LOCK); fi
 	$(PY) tools/models/prefetch.py
@@ -46,8 +46,8 @@ models:
 # The stage setup: API + web on loopback, models forced offline (Wi-Fi can be off). Ctrl-C stops both.
 demo:
 	@test -x $(PY) || { echo "run 'make setup' first"; exit 2; }
-	@echo "Doublespeak demo · UI http://localhost:5173 · API http://localhost:8000/health · offline models · Ctrl-C to stop"
-	@(cd services/api && DOUBLESPEAK_OFFLINE=1 exec $(VPY) -m uvicorn doublespeak.main:app --host 127.0.0.1 --port 8000$(if $(ENVFILE), $(ENVFILE),)) & API=$$!; \
+	@echo "Tell demo · UI http://localhost:5173 · API http://localhost:8000/health · offline models · Ctrl-C to stop"
+	@(cd services/api && TELL_OFFLINE=1 exec $(VPY) -m uvicorn tell.main:app --host 127.0.0.1 --port 8000$(if $(ENVFILE), $(ENVFILE),)) & API=$$!; \
 	(cd apps/web && exec python3 -m http.server 5173 --bind 127.0.0.1) & WEB=$$!; \
 	trap 'kill $$API $$WEB 2>/dev/null; wait' INT TERM EXIT; \
 	wait

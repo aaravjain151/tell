@@ -8,7 +8,7 @@ import Security
 enum BlockNumber {
     static let maxChars = 32
 
-    /// E.164 ("+14155550123") or nil. Same rules as services/api/doublespeak/blocklist.py: digits, space . - ( ) / and an
+    /// E.164 ("+14155550123") or nil. Same rules as services/api/tell/blocklist.py: digits, space . - ( ) / and an
     /// optional leading "+"; "+" or "00" means an explicit country code (7 to 15 digits, first not 0); otherwise the
     /// region decides (US/CA, GB, IN, AU) and anything else is refused. Never crashes on junk.
     static func normalise(_ raw: String, region: String = "US") -> String? {

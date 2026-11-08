@@ -56,7 +56,7 @@ struct Tell: Decodable {
     }
 }
 
-/// `scores` block of the verdict (services/api/doublespeak/scores.py). All 0...100 except the labels.
+/// `scores` block of the verdict (services/api/tell/scores.py). All 0...100 except the labels.
 struct ScoresBlock: Decodable {
     var scam = 0, aiVoice = 0, confidence = 0
     var confidenceLabel: String?
@@ -86,7 +86,7 @@ struct ScoresBlock: Decodable {
     }
 }
 
-/// `quadrant` block (services/api/doublespeak/quadrant.py): voice x content.
+/// `quadrant` block (services/api/tell/quadrant.py): voice x content.
 struct QuadrantBlock: Decodable, Equatable {
     var voice = "unclear", intent = "unclear", combo = "unclear"
     var comboLabel = ""

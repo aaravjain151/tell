@@ -30,7 +30,7 @@ struct VerdictView: Equatable {
         "ai_undisclosed": ("AI", "Likely synthetic, didn't say so", "Legitimate AI callers are required to identify themselves. Treat this as untrusted: hang up and call back on a number you already have."),
         "ai_disclosed": ("AI", "AI, identified itself", "The caller said it's automated. Fine for appointment reminders; never share codes or payment with an automated caller."),
         "scam": ("Scam", "Scam pattern", "Hang up. Do not send money, cards, or codes. Call the person or organisation back on a number you already have."),
-        "unsure": ("Not sure", "Not sure yet", "Not enough to judge yet. Doublespeak keeps listening."),
+        "unsure": ("Not sure", "Not sure yet", "Not enough to judge yet. Tell keeps listening."),
         "warming_up": ("Listening", "Listening", "Gathering the first few seconds before judging."),
     ]
 

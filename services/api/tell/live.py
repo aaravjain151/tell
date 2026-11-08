@@ -86,7 +86,7 @@ class StableTracker:
         self.last: dict | None = None
         self._persist: dict[str, list[float]] = {"pella": [], "hf": []}   # SHADOW: neural scores over the call, never fed back
         self.pcall = personal.CallTracker()      # numbers only; read by the personal layer, never by the stabiliser
-        self.personal_alert: str | None = None   # None unless DOUBLESPEAK_PERSONAL=1 AND the user opted in
+        self.personal_alert: str | None = None   # None unless TELL_PERSONAL=1 AND the user opted in
 
     def _shadow_persistence(self, d: dict) -> None:
         """SHADOW only: call-level persistence of the per-window neural scores, attached to this tick's egress.context.shadow.

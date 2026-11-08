@@ -105,10 +105,10 @@ final class AppModel: ObservableObject {
     func setLaunchAtLogin(_ on: Bool) {
         loginItemNote = LoginItem.set(on)
         loginItemOn = LoginItem.isOn
-        if on && LoginItem.needsApproval { loginItemNote = "Approve Doublespeak in System Settings, Login Items." }
+        if on && LoginItem.needsApproval { loginItemNote = "Approve Tell in System Settings, Login Items." }
     }
 
-    func openDoublespeak() {
+    func openTell() {
         Task {
             if !(await LocalAPI.pageIsUp()) { await ensurePage() }
             NSWorkspace.shared.open(uiURL)
@@ -178,7 +178,8 @@ final class AppModel: ObservableObject {
         let fm = FileManager.default
         let cached = fm.fileExists(atPath: LaunchPlan.hubCacheDir(home: NSHomeDirectory()))
         let envFile = fm.fileExists(atPath: repoPath + "/.env")      // existence only; never opened by this app
-        let spec = LaunchPlan.engine(repo: repoPath, port: port, weightsCached: cached, envFileExists: envFile, home: NSHomeDirectory())
+        let spec = LaunchPlan.engine(repo: repoPath, port: port, weightsCached: cached, envFileExists: envFile, home: NSHomeDirectory(),
+                                     target: LaunchPlan.resolveTarget(repo: repoPath))
         let s = make(spec)
         engine = s
         engineStartedAt = Date()
@@ -216,7 +217,7 @@ final class AppModel: ObservableObject {
 
     var title: String {
         switch display {
-        case .off: return needsOnboarding ? "Finish setup" : "Doublespeak is off"
+        case .off: return needsOnboarding ? "Finish setup" : "Tell is off"
         case .waiting: return "Waiting for a call"
         case .listening: return "Listening to this call"
         case .amber: return "Possible scam call"

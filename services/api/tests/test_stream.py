@@ -10,8 +10,8 @@ import pytest
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
-from doublespeak import pipeline, session as sm
-from doublespeak.main import app
+from tell import pipeline, session as sm
+from tell.main import app
 from tests.synth import make_call, to_wav_bytes
 
 ORIGIN = {"Origin": "http://localhost:5173"}
@@ -29,10 +29,10 @@ class _V:
 
 @pytest.fixture(autouse=True)
 def _env(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_WARMUP", "0")
+    monkeypatch.setenv("TELL_WARMUP", "0")
     for k in list(__import__("os").environ):
-        if k.startswith("DOUBLESPEAK_STREAM_") or k in ("DOUBLESPEAK_CORS_ORIGINS", "DOUBLESPEAK_ALLOWED_HOSTS",
-                                                        "DOUBLESPEAK_DEBUG_SAVE", "DOUBLESPEAK_ANALYZE_TIMEOUT_S"):
+        if k.startswith("TELL_STREAM_") or k in ("TELL_CORS_ORIGINS", "TELL_ALLOWED_HOSTS",
+                                                        "TELL_DEBUG_SAVE", "TELL_ANALYZE_TIMEOUT_S"):
             monkeypatch.delenv(k)
     monkeypatch.setattr(pipeline, "analyze", lambda a, t, **kw: _V())
     sm.REGISTRY.panic()
@@ -179,7 +179,7 @@ def test_non_hello_text_first_rejected(client):
 
 
 def test_unauthenticated_socket_closed_after_timeout(client, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_HELLO_TIMEOUT_S", "0.2")
+    monkeypatch.setenv("TELL_STREAM_HELLO_TIMEOUT_S", "0.2")
     with client.websocket_connect("/ws/stream", headers=ORIGIN) as ws:
         assert ws.receive_json() == {"type": "error", "code": "hello_timeout"}
         with pytest.raises(WebSocketDisconnect):
@@ -206,7 +206,7 @@ def test_session_requires_allowed_origin(client):
 
 
 def test_session_origin_from_env(client, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_CORS_ORIGINS", "http://localhost:9999")
+    monkeypatch.setenv("TELL_CORS_ORIGINS", "http://localhost:9999")
     assert client.post("/session", headers=ORIGIN).status_code == 403
     assert client.post("/session", headers={"Origin": "http://localhost:9999"}).status_code == 200
 
@@ -366,7 +366,7 @@ def test_delete_session_wipes_and_404s(client):
 
 
 def test_heartbeat_timeout_wipes_ring(client, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_HEARTBEAT_S", "0.3")
+    monkeypatch.setenv("TELL_STREAM_HEARTBEAT_S", "0.3")
     ws, info = open_ws(client)
     s = live_session(info)
     send_audio(ws, pcm(1.0))
@@ -378,7 +378,7 @@ def test_heartbeat_timeout_wipes_ring(client, monkeypatch):
 
 
 def test_ping_keeps_session_alive(client, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_HEARTBEAT_S", "0.4")
+    monkeypatch.setenv("TELL_STREAM_HEARTBEAT_S", "0.4")
     ws, info = open_ws(client)
     for _ in range(4):
         time.sleep(0.2)
@@ -389,7 +389,7 @@ def test_ping_keeps_session_alive(client, monkeypatch):
 
 
 def test_max_session_length(client, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_MAX_SESSION_S", "0.3")
+    monkeypatch.setenv("TELL_STREAM_MAX_SESSION_S", "0.3")
     ws, info = open_ws(client)
     s = live_session(info)
     buf = s.ring._buf
@@ -446,9 +446,9 @@ def test_oversize_text_and_junk_rejected(client):
 
 
 def test_overload_drops_oldest_and_warns(client, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_WINDOW_S", "2")
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_HOP_S", "1")
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_RING_S", "2")
+    monkeypatch.setenv("TELL_STREAM_WINDOW_S", "2")
+    monkeypatch.setenv("TELL_STREAM_HOP_S", "1")
+    monkeypatch.setenv("TELL_STREAM_RING_S", "2")
 
     def slow(a, t, **kw):
         time.sleep(0.4)
@@ -468,9 +468,9 @@ def test_overload_drops_oldest_and_warns(client, monkeypatch):
 
 
 def test_overloaded_warning_sent(client, monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_WINDOW_S", "2")
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_HOP_S", "1")
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_RING_S", "2")
+    monkeypatch.setenv("TELL_STREAM_WINDOW_S", "2")
+    monkeypatch.setenv("TELL_STREAM_HOP_S", "1")
+    monkeypatch.setenv("TELL_STREAM_RING_S", "2")
     monkeypatch.setattr(pipeline, "analyze", lambda a, t, **kw: (time.sleep(0.3), _V())[1])
     ws, _ = open_ws(client)
     send_audio(ws, pcm(8.0), frame_s=1.0)
@@ -482,7 +482,7 @@ def test_overloaded_warning_sent(client, monkeypatch):
 
 def test_no_file_is_created_during_a_session(client, monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("DOUBLESPEAK_DEBUG_SAVE", "1")
+    monkeypatch.setenv("TELL_DEBUG_SAVE", "1")
     writes = []
     real_open = builtins.open
 
@@ -512,9 +512,9 @@ def test_debug_save_is_ignored_by_real_pipeline(monkeypatch, tmp_path):
     """Control + treatment on the real pipeline: DEBUG_SAVE writes for /analyze but never for a stream tick."""
     monkeypatch.undo()
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("DOUBLESPEAK_DEBUG_SAVE", "1")
+    monkeypatch.setenv("TELL_DEBUG_SAVE", "1")
     monkeypatch.setenv("LLM_PROVIDER", "stub")
-    monkeypatch.setenv("DOUBLESPEAK_STT", "whisper")
+    monkeypatch.setenv("TELL_STT", "whisper")
     wav = to_wav_bytes(make_call("human", seconds=4, seed=1))
     sm._analyze_window(make_call("human", seconds=4, seed=1))
     assert not (tmp_path / "data").exists(), "stream tick wrote debug audio"

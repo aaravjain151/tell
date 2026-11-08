@@ -9,7 +9,7 @@ struct ContentView: View {
             return (v.orbWord, v.isWarming ? "Gathering speech" : "", v.headline, v.advice)
         }
         switch c.mode {
-        case .offline: return ("Offline", "", "Not connected to your computer", "Doublespeak runs on your computer. The app opens, but the bridge on your computer has not connected yet.")
+        case .offline: return ("Offline", "", "Not connected to your computer", "Tell runs on your computer. The app opens, but the bridge on your computer has not connected yet.")
         case .idle: return ("Ready", "", "Waiting for a call", "Play the call out loud near this phone, then tap Start listening.")
         case .listening: return ("Listening", "Gathering speech", "Listening", "Gathering the first few seconds before judging.")
         case .ended: return ("Stopped", "", "Listening stopped", "No verdict was reached. Start again when the call is playing out loud near this phone.")
@@ -71,7 +71,7 @@ struct ContentView: View {
 
                     if c.mode != .listening { BlockedCard().padding(.top, 20) }
 
-                    Text("Doublespeak can be wrong. It never speaks to the caller and never records.")
+                    Text("Tell can be wrong. It never speaks to the caller and never records.")
                         .font(.ds(13, .regular, relativeTo: .footnote))
                         .foregroundStyle(Theme.muted)
                         .multilineTextAlignment(.center)
@@ -108,7 +108,7 @@ struct Header: View {
         HStack {
             HStack(spacing: 10) {
                 Image("Mark").resizable().scaledToFit().frame(height: 24).accessibilityHidden(true)
-                Text("Doublespeak").font(.ds(19, .light, relativeTo: .title3)).foregroundStyle(Theme.ink)
+                Text("Tell").font(.ds(19, .light, relativeTo: .title3)).foregroundStyle(Theme.ink)
             }
             .accessibilityElement(children: .combine)
             Spacer()
@@ -134,7 +134,7 @@ struct StepsCard: View {
         VStack(alignment: .leading, spacing: 16) {
             step(1, "Play the call out loud near this phone.", "From another device's speaker, or a recording. iPhone gives apps no call audio, and none during a call on this phone.")
             step(2, "Tap Start listening.", "Audio goes only to your computer, over the USB cable.")
-            step(3, "Keep Doublespeak open.", "It keeps listening with the screen locked. A call on this iPhone takes the microphone away.")
+            step(3, "Keep Tell open.", "It keeps listening with the screen locked. A call on this iPhone takes the microphone away.")
             Button("How speaker mode works") { c.sheet = .speaker }
                 .font(.ds(15, .regular, relativeTo: .subheadline)).foregroundStyle(Theme.muted).underline()
                 .frame(minHeight: 44)
@@ -170,8 +170,8 @@ struct MicDeniedCard: View {
     @EnvironmentObject var c: ListenController
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("The microphone is off for Doublespeak").font(.ds(20, .regular, relativeTo: .title3)).foregroundStyle(Theme.ink)
-            Text("Doublespeak hears the call through the microphone while it plays out loud. Turn the microphone on in Settings, then come back.")
+            Text("The microphone is off for Tell").font(.ds(20, .regular, relativeTo: .title3)).foregroundStyle(Theme.ink)
+            Text("Tell hears the call through the microphone while it plays out loud. Turn the microphone on in Settings, then come back.")
                 .font(.ds(15, .regular, relativeTo: .subheadline)).foregroundStyle(Theme.muted)
             Button("Open Settings") { c.openSettings() }.buttonStyle(DSButtonStyle(kind: .ghost, height: 48)).padding(.top, 4)
         }

@@ -1,4 +1,8 @@
-# DoubleSpeak
+# Tell
+
+> The product is called **Tell** (D-013; it was briefly "Doublespeak", D-010). This first section describes the early
+> Streamlit prototype, whose Python package keeps its old folder name `doublespeak/` at the repo root. The product
+> engine is `services/api/tell` (see the second half of this file and `skills.md`).
 
 An **on-device scam-call detector for older people**. It checks a phone call,
 spots AI-cloned (fake) voices and scam-style talk, warns the user in big plain
@@ -140,7 +144,6 @@ python run_pipeline_tests.py
 ---
 
 # Tell
-# Doublespeak
 
 *Every voice has a tell.* A privacy-first detector that classifies the voice on a call as **Human · AI (identified itself) · AI (undisclosed) · Scam pattern**, shows the exact tells that fired, and never sends caller audio off the device.
 

@@ -17,7 +17,7 @@ call app audio --> tap_audio --stream --> tools/macos/listen.py --WS /ws/stream-
 * The API keeps a 30 s RAM ring, analyses the last 10 s every 3 s of audio, and runs a `Stabiliser` over the tick
   verdicts. It changes only what the live stream DISPLAYS. The stored per-window tier, `scorer.py` and
   `thresholds.py` are untouched (golden eval identical).
-* `GET /live/events` is a read-only Server-Sent-Events feed for the page (schema in `doublespeak/live.py` and
+* `GET /live/events` is a read-only Server-Sent-Events feed for the page (schema in `tell/live.py` and
   `services/api/skills.md`). `POST /live/dismiss` or the WS message `{"type":"dismiss"}` acknowledges a red alert.
 
 ## Using it

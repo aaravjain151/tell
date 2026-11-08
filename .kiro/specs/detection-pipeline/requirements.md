@@ -2,7 +2,7 @@
 
 ## Introduction
 
-DoubleSpeak is a 100% on-device scam-call detector for older people. This spec
+Tell is a 100% on-device scam-call detector for older people. This spec
 covers the end-to-end **detection pipeline** (`detector.py`) and its supporting
 modules: an encrypted alert store (`secure_store.py`), a network-proof monitor
 (`net_monitor.py`), a demo UI (`app.py`), and the model/test tooling

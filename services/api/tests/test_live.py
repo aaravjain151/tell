@@ -8,9 +8,9 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from doublespeak import live, pipeline, session as sm
-from doublespeak.main import app
-from doublespeak.stabiliser import POLICY_VERSION  # noqa: F401  (import check)
+from tell import live, pipeline, session as sm
+from tell.main import app
+from tell.stabiliser import POLICY_VERSION  # noqa: F401  (import check)
 
 ORIGIN = {"Origin": "http://localhost:5173"}
 SR = 16_000
@@ -116,11 +116,11 @@ def test_events_generator_frames_and_keepalive():
 # ----------------------------------------------------------------------- end to end through the WS (fake scorer)
 @pytest.fixture(autouse=True)
 def _env(monkeypatch):
-    monkeypatch.setenv("DOUBLESPEAK_WARMUP", "0")
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_WINDOW_S", "10")
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_HOP_S", "1")
-    monkeypatch.setenv("DOUBLESPEAK_STREAM_RING_S", "10")
-    for k in ("DOUBLESPEAK_CORS_ORIGINS", "DOUBLESPEAK_ALLOWED_HOSTS", "DOUBLESPEAK_ANALYZE_TIMEOUT_S"):
+    monkeypatch.setenv("TELL_WARMUP", "0")
+    monkeypatch.setenv("TELL_STREAM_WINDOW_S", "10")
+    monkeypatch.setenv("TELL_STREAM_HOP_S", "1")
+    monkeypatch.setenv("TELL_STREAM_RING_S", "10")
+    for k in ("TELL_CORS_ORIGINS", "TELL_ALLOWED_HOSTS", "TELL_ANALYZE_TIMEOUT_S"):
         monkeypatch.delenv(k, raising=False)
     sm.REGISTRY.panic()
     live.HUB.reset()

@@ -15,7 +15,7 @@ MAX_REASONS = 4
 FIRED = 0.5         # intent tells: any pattern hit scores >= 0.55
 FIRED_VOICE = 0.6   # voice and wording tells point toward AI at the same bar as P_AI_THRESHOLD
 
-NONE_FOUND = "No warning signs found. Doublespeak can be wrong."
+NONE_FOUND = "No warning signs found. Tell can be wrong."
 DISCLOSED = "The caller said it is an automated assistant."
 
 INTENT_REASON = {

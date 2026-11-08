@@ -100,5 +100,5 @@ test("app never uses the network beyond loopback and has no analytics", () => {
 
 test("consent wording is exact", () => {
   const h = readFileSync(join(root, "index.html"), "utf8");
-  assert.ok(h.includes("Doublespeak listens to this call through your microphone on your phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it."));
+  assert.ok(h.includes("Tell listens to this call through your microphone on your phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it."));
 });

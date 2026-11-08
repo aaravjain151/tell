@@ -1,4 +1,4 @@
-# Doublespeak menu bar app (macOS)
+# Tell menu bar app (macOS)
 
 A small menu bar app that keeps the local engine and the call listener running, so nobody types a command.
 It listens by itself when a call plays on this Mac, shows one icon for the state, and warns on amber or red.
@@ -21,15 +21,20 @@ Build (signs locally with your Apple ID team; build output stays out of the repo
 cd apps/macos/DoublespeakBar
 xcodegen generate
 xcodebuild -project DoublespeakBar.xcodeproj -scheme DoublespeakBar -destination 'platform=macOS' \
-  -derivedDataPath /tmp/doublespeak_dd -allowProvisioningUpdates DEVELOPMENT_TEAM=<your team id> CODE_SIGN_STYLE=Automatic build
+  -derivedDataPath /tmp/tell_dd -allowProvisioningUpdates DEVELOPMENT_TEAM=<your team id> CODE_SIGN_STYLE=Automatic build
 ```
 
 Run it from the build folder, or copy it where you like (nothing here copies it for you):
 
 ```
-open /tmp/doublespeak_dd/Build/Products/Debug/Doublespeak.app
-# optional, to keep it: cp -R /tmp/doublespeak_dd/Build/Products/Debug/Doublespeak.app ~/Applications/
+open /tmp/tell_dd/Build/Products/Debug/Tell.app
+# optional, to keep it: cp -R /tmp/tell_dd/Build/Products/Debug/Tell.app ~/Applications/
 ```
+
+Since D-013 the app is built as `Tell.app` (same bundle id `dev.doublespeak.app.mac`, so its audio-capture and
+notification permissions should carry over when it is signed with the same team; not verified on a device). A copy built before the rename is still called `Doublespeak.app`: quit it, delete
+it from ~/Applications, and turn "Launch at login" on again in the new app. Pointed at a checkout from before the rename,
+the app starts the engine as `doublespeak.main:app`; on a current checkout it uses `tell.main:app`.
 
 Tests: `xcodebuild ... test` with the same flags (42 XCTest cases, no network, no real processes).
 
@@ -38,7 +43,7 @@ Nothing starts until you press "I understand, continue".
 
 ## What it does
 
-* Starts the engine: `.venv/bin/python -m uvicorn doublespeak.main:app --host 127.0.0.1 --port 8000` from `services/api`,
+* Starts the engine: `.venv/bin/python -m uvicorn tell.main:app --host 127.0.0.1 --port 8000` from `services/api`,
   with `PELLA_MODEL=Sadanie/pellav2-audio-deepfake-detector` and `PELLA_DEVICE=mps` when the weights are in the
   Hugging Face cache. If `.env` exists it passes `--env-file <repo>/.env` to uvicorn. The app only checks that the file
   exists; it never opens, reads or prints it.
@@ -46,7 +51,7 @@ Nothing starts until you press "I understand, continue".
   satisfies `--i-understand`. `--no-notify` because the app posts the notification itself.
 * If something already answers `/ready` on the port (for example your own `make api`), the app uses it and does not
   start a second engine or stop yours. It also serves `apps/web` on `127.0.0.1:5173` if nothing is there, so "Open
-  Doublespeak" works without `make web`.
+  Tell" works without `make web`.
 * Restarts a crashed child after 1, 2, 4, 8, 16, 30 s (cap); after 4 quick failures in a row it shows "Engine problem".
 * Subscribes to `GET /live/events` for state, verdict and the stable alert. `/ready` every 3 s for the privacy row.
 * Quit stops the listener (SIGINT, so it wipes the RAM ring and closes the tap), the engine and the page server.
@@ -75,7 +80,7 @@ Every state has its own shape, not just a colour. A single failed health poll ne
 ## Menu
 
 Status and what to do, last verdict in plain words with the voice x content label (for example "Human voice, no scam
-pattern heard."), Open Doublespeak (http://localhost:5173), Pause for 1 hour / Resume, Turn off / Turn on,
+pattern heard."), Open Tell (http://localhost:5173), Pause for 1 hour / Resume, Turn off / Turn on,
 Launch at login, "Privacy: 0 bytes sent" (shown when every switch in `/ready` `privacy_posture` is off; if one is on the
 row says a setting could send data out), the honest-limits sentence, Settings, Quit.
 
@@ -87,13 +92,13 @@ turn that on in Settings. Sensitivity is shown as a label only (set by the engin
 
 ## Permissions
 
-1. Audio capture. The first time a call plays, macOS asks to let Doublespeak capture audio from other apps. The prompt
-   carries this sentence from the app: "Doublespeak listens to the call audio your Mac plays, only to warn you about
+1. Audio capture. The first time a call plays, macOS asks to let Tell capture audio from other apps. The prompt
+   carries this sentence from the app: "Tell listens to the call audio your Mac plays, only to warn you about
    scams. The audio is analysed on this Mac and never recorded or sent anywhere." Choose Allow. Denied means macOS gives
    the tap silence, not an error, so nothing is heard. Fix: System Settings, Privacy & Security, Screen & System Audio
-   Recording, allow Doublespeak (the Settings window has a button). The exact title of this prompt differs by macOS
+   Recording, allow Tell (the Settings window has a button). The exact title of this prompt differs by macOS
    version and was not captured in testing.
-2. Notifications. macOS asks "Doublespeak would like to send you notifications". If you deny, the icon still changes but no
+2. Notifications. macOS asks "Tell would like to send you notifications". If you deny, the icon still changes but no
    notice appears; Settings shows "Denied" with a button to the right System Settings pane.
 
 ## What is and is not heard
@@ -105,8 +110,8 @@ iPhone alone, calls in a browser tab (not armed by default), anything when audio
 ## Troubleshooting
 
 * Engine problem, "port 8000 is used by another program": something else owns the port. Quit it, or set another port in
-  Settings (the listener follows). If it is another Doublespeak engine that answers `/ready`, the app adopts it instead.
-* Engine problem, "No Python found" or "audio tap is not built": Settings, set the Doublespeak folder; build the tap with the
+  Settings (the listener follows). If it is another Tell engine that answers `/ready`, the app adopts it instead.
+* Engine problem, "No Python found" or "audio tap is not built": Settings, set the Tell folder; build the tap with the
   command above.
 * Stays on Waiting during a call: the call must come out of this Mac (Continuity, FaceTime, WhatsApp, Zoom). Check the
   audio capture permission. Run `tools/macos/tap_audio/.build/release/tap_audio --list` while the call plays to see

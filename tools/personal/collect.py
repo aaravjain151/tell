@@ -18,13 +18,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "services" / "api"))
 os.environ.setdefault("LLM_PROVIDER", "stub")
-os.environ.setdefault("DOUBLESPEAK_STT", "whisper")
+os.environ.setdefault("TELL_STT", "whisper")
 
 SCAM_PREFIXES = ("scam_", "long_tech_scam")
 
 
 def row_for(path: Path, engine: str, speaker: str, cond: str, name: str) -> dict:
-    from doublespeak import pipeline
+    from tell import pipeline
     txt = path.with_suffix(".txt")
     transcript = txt.read_text(encoding="utf-8", errors="replace") if txt.exists() else None
     v = pipeline.analyze(path.read_bytes(), transcript)

@@ -4,7 +4,7 @@ Every function returns a Tell with score in [0,1] *toward AI* and a plain-Englis
 These are behavioral/physiological cues (pauses, breaths, pitch wander, noise floor) rather than
 codec-artifact cues, because phone lines strip everything above ~3.4 kHz and those artifacts with it.
 
-Calibration constants live in doublespeak/thresholds.py. The maps below are linear ramps between the
+Calibration constants live in tell/thresholds.py. The maps below are linear ramps between the
 "clearly human" and "clearly TTS" anchors; outside the anchors the score saturates at 0.1 / 0.9.
 """
 from __future__ import annotations

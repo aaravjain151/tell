@@ -1,6 +1,6 @@
 """Encrypted, local-only alert history.
 
-Alerts are the only thing DoubleSpeak persists, and each record holds only a
+Alerts are the only thing Tell persists, and each record holds only a
 timestamp, a risk level, and plain-language reasons - never audio and never the
 transcript.
 

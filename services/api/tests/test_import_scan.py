@@ -1,4 +1,4 @@
-"""AST scan: every .py under doublespeak/ (recursive, no fixed file list) is checked for anything that can
+"""AST scan: every .py under tell/ (recursive, no fixed file list) is checked for anything that can
 open a network connection or spawn a process. Files that legitimately do so are in ALLOWLIST with a reason.
 The scan fails on a new file or a new banned use. It is static: native libs and subprocess children are
 covered only by the runtime guard (test_network_guard.py) and the OS-level monitor.
@@ -97,7 +97,7 @@ def scan_source(src: str) -> set[str]:
     return found
 
 
-# file (relative to doublespeak/) -> banned things it may use. Anything else, or any other file, fails.
+# file (relative to tell/) -> banned things it may use. Anything else, or any other file, fails.
 ALLOWLIST: dict[str, set[str]] = {
     # The one loopback opener (D-009): urllib for HTTP, socket only to resolve and verify the host is loopback.
     "localhost.py": {"urllib", "socket"},
@@ -110,7 +110,7 @@ ALLOWLIST: dict[str, set[str]] = {
     # redteam.py, main.py (fastapi), pipeline.py, stt.py, privacy.py, scorer.py, signals/*: nothing banned, no entry.
 }
 
-PKG = Path(__file__).resolve().parents[1] / "doublespeak"
+PKG = Path(__file__).resolve().parents[1] / "tell"
 
 
 def scan_package() -> dict[str, set[str]]:
@@ -141,6 +141,23 @@ def test_package_matches_allowlist_exactly():
 def test_localhost_is_the_only_file_with_urllib_or_socket():
     found = scan_package()
     assert {r for r, f in found.items() if f & {"urllib", "socket", "http", "ssl"}} == {"localhost.py"}
+
+
+SHIM = Path(__file__).resolve().parents[1] / "doublespeak"
+
+
+def test_compat_shim_only_aliases_tell():
+    """D-013: the deprecated `doublespeak` package is one file that maps doublespeak.X onto tell.X. Its only flagged use
+    is importlib.import_module on a name built from the constant "tell" prefix; no network, process or ctypes use."""
+    files = sorted(p.relative_to(SHIM).as_posix() for p in SHIM.rglob("*.py"))
+    assert files == ["__init__.py"]
+    src = (SHIM / "__init__.py").read_text()
+    assert scan_source(src) == {"dynamic_import"}
+    assert '_NEW = "tell"' in src
+    calls = {ast.unparse(n.args[0]) for n in ast.walk(ast.parse(src))
+             if isinstance(n, ast.Call) and getattr(n.func, "attr", "") == "import_module"}
+    # tell.<sub> for doublespeak.<sub>, and doublespeak.<name> (which the finder above maps to tell.<name>)
+    assert calls == {"_NEW + spec.name[len(__name__):]", "f'{__name__}.{name}'"}
 
 
 def test_net_monitor_and_offline_guard_need_no_network_library():

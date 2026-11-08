@@ -1,4 +1,4 @@
-"""One-time, online model download for DoubleSpeak.
+"""One-time, online model download for Tell.
 
 Run this ONCE on a trusted machine with internet access to download every model
 into the local ``models/`` folder and the faster-whisper / transformers caches.
@@ -65,7 +65,7 @@ def fetch_whisper() -> None:
 
 
 def main() -> int:
-    print("DoubleSpeak one-time model download (requires internet).\n")
+    print("Tell one-time model download (requires internet).\n")
     try:
         fetch_pellav2()
         fetch_backbone()

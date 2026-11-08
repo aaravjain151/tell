@@ -16,8 +16,18 @@ enum LaunchPlan {
          "PYTHONUNBUFFERED": "1"]
     }
 
-    static func engine(repo: String, port: Int, weightsCached: Bool, envFileExists: Bool, home: String) -> LaunchSpec {
-        var args = ["-m", "uvicorn", "doublespeak.main:app", "--host", "127.0.0.1", "--port", String(port)]
+    /// The engine's uvicorn target. The package is `tell` (D-013); a checkout from before the rename only has
+    /// `services/api/doublespeak`, so fall back to the old name there instead of failing to start.
+    static let tellTarget = "tell.main:app"
+    static let legacyTarget = "doublespeak.main:app"
+    static func resolveTarget(repo: String, fm: FileManager = .default) -> String {
+        !fm.fileExists(atPath: repo + "/services/api/tell/main.py")
+            && fm.fileExists(atPath: repo + "/services/api/doublespeak/main.py") ? legacyTarget : tellTarget
+    }
+
+    static func engine(repo: String, port: Int, weightsCached: Bool, envFileExists: Bool, home: String,
+                       target: String = tellTarget) -> LaunchSpec {
+        var args = ["-m", "uvicorn", target, "--host", "127.0.0.1", "--port", String(port)]
         if envFileExists { args += ["--env-file", repo + "/.env"] }
         var env = baseEnvironment(home: home)
         if weightsCached { env["PELLA_MODEL"] = model; env["PELLA_DEVICE"] = "mps" }
@@ -33,7 +43,7 @@ enum LaunchPlan {
                    cwd: repo, environment: baseEnvironment(home: home), stopSignal: SIGINT)
     }
 
-    /// Serves apps/web on loopback so "Open Doublespeak" works without `make web`.
+    /// Serves apps/web on loopback so "Open Tell" works without `make web`.
     static func page(repo: String, home: String) -> LaunchSpec {
         LaunchSpec(name: "page", executable: python(repo),
                    arguments: ["-m", "http.server", String(uiPort), "--bind", "127.0.0.1", "--directory", repo + "/apps/web"],
@@ -42,8 +52,10 @@ enum LaunchPlan {
 
     /// Problems the user can fix, in plain words; nil when the repo looks usable.
     static func repoProblem(_ repo: String, fm: FileManager = .default) -> String? {
-        if !fm.isExecutableFile(atPath: python(repo)) { return "No Python found at \(python(repo)). Set the Doublespeak folder in Settings." }
-        if !fm.fileExists(atPath: repo + "/services/api/doublespeak/main.py") { return "That folder is not a Doublespeak checkout." }
+        if !fm.isExecutableFile(atPath: python(repo)) { return "No Python found at \(python(repo)). Set the Tell folder in Settings." }
+        if !fm.fileExists(atPath: repo + "/services/api/tell/main.py") && !fm.fileExists(atPath: repo + "/services/api/doublespeak/main.py") {
+            return "That folder is not a Tell checkout."
+        }
         if !fm.fileExists(atPath: repo + "/tools/macos/listen.py") { return "tools/macos/listen.py is missing in that folder." }
         if !fm.isExecutableFile(atPath: tapBinary(repo)) {
             return "The audio tap is not built. Run: cd tools/macos/tap_audio && swift build -c release"

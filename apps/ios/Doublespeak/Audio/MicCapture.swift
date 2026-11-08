@@ -91,7 +91,7 @@ final class MicCapture {
             sessionActive = true
             let fmt = backend.inputFormat()
             guard fmt.sampleRate > 0, fmt.channels > 0 else {
-                throw NSError(domain: "Doublespeak", code: 1, userInfo: [NSLocalizedDescriptionKey: "No microphone input"])
+                throw NSError(domain: "Tell", code: 1, userInfo: [NSLocalizedDescriptionKey: "No microphone input"])
             }
             lock.lock(); framer = PCMFramer(inputRate: fmt.sampleRate); lock.unlock()
             if !tapInstalled {

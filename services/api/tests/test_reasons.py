@@ -1,9 +1,9 @@
-from doublespeak import reasons
+from tell import reasons
 
 
 
 def test_voice_reason_never_contradicts_fused_score():
-    from doublespeak.types import Tell
+    from tell.types import Tell
     hf = Tell("neural_hf", "acoustic", 0.96, 0.7, "x")
     low = Tell("neural_pella", "acoustic", 0.5, 4.0, "x")
     agree = reasons.build([hf, low], False, p_ai=0.8)

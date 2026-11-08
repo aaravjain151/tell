@@ -1,4 +1,4 @@
-# DoubleSpeak - pinned dependencies (Python 3.11)
+# Tell - pinned dependencies (Python 3.11)
 # Everything runs on-device. The only runtime network connection allowed is to
 # a local Ollama server on localhost:11434.
 

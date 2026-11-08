@@ -22,7 +22,7 @@ os.environ["LLM_PROVIDER"] = "stub"
 for k in ("HF_SPOOF_MODEL", "ANTI_SPOOF_MODEL"):
     os.environ.pop(k, None)
 
-from doublespeak import pipeline  # noqa: E402
+from tell import pipeline  # noqa: E402
 from tests.synth import make_call, to_wav_bytes  # noqa: E402
 
 HTML = Path(__file__).with_name("index.html")

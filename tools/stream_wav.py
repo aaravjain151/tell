@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replay a WAV file into a running Doublespeak API over the streaming WebSocket, as if it were a live call.
+"""Replay a WAV file into a running Tell API over the streaming WebSocket, as if it were a live call.
 
     python3 tools/stream_wav.py data/calls/human/x.wav [--speed 1] [--side far] [--url http://127.0.0.1:8000]
 
@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "services" / "api")
 
 import numpy as np  # noqa: E402
 
-from doublespeak import audio  # noqa: E402
+from tell import audio  # noqa: E402
 
 LOOPBACK = {"127.0.0.1", "localhost", "::1"}
 
@@ -108,7 +108,7 @@ def main() -> int:
     ap.add_argument("--speed", type=float, default=1.0, help="1 = real time, 4 = four times faster")
     ap.add_argument("--side", choices=("far", "near", "mix"), default="far")
     ap.add_argument("--frame-ms", type=int, default=100)
-    ap.add_argument("--origin", default="http://localhost:5173", help="an allowed UI origin (DOUBLESPEAK_CORS_ORIGINS)")
+    ap.add_argument("--origin", default="http://localhost:5173", help="an allowed UI origin (TELL_CORS_ORIGINS)")
     ap.add_argument("--drain-s", type=float, default=2.0)
     args = ap.parse_args()
     if args.speed <= 0:

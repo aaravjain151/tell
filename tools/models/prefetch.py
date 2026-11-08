@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Download every local model once, while online, so the demo can run with DOUBLESPEAK_OFFLINE=1 (Wi-Fi off).
+"""Download every local model once, while online, so the demo can run with TELL_OFFLINE=1 (Wi-Fi off).
 
     make models            # or: ./.venv/bin/python tools/models/prefetch.py
 
@@ -39,7 +39,7 @@ def main() -> int:
     if hf:
         from huggingface_hub import snapshot_download
         step(f"anti-spoof {hf}", lambda: snapshot_download(hf))
-    size = os.environ.get("DOUBLESPEAK_WHISPER_MODEL", "base.en")
+    size = os.environ.get("TELL_WHISPER_MODEL", "base.en")
     from faster_whisper.utils import download_model
     step(f"faster-whisper {size}", lambda: download_model(size))
     for extra in sorted(Path(__file__).parent.glob("prefetch_*.py")):      # optional per-voter prefetchers
@@ -49,7 +49,7 @@ def main() -> int:
     if failed:
         print("\nFAILED:", *[f"{n}: {e}" for n, e in failed], sep="\n  ", file=sys.stderr)
         return 1
-    print("\nNow set DOUBLESPEAK_OFFLINE=1 in .env and the app will refuse to touch the network for models.")
+    print("\nNow set TELL_OFFLINE=1 in .env and the app will refuse to touch the network for models.")
     return 0
 
 

@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from doublespeak.ring import Ring
+from tell.ring import Ring
 
 SR = 100   # tiny rate keeps the arrays readable
 

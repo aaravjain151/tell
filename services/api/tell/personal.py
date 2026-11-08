@@ -12,7 +12,7 @@ state, alert, reasons) and the UI verdict. `stable.alert` stays authoritative fo
 `decide()` (and tested): a stabiliser RED is never lowered (every red carries corroboration or p_scam >= 0.8), and on a call where
 the caller disclosed nothing and payment/credential intent fired, no alert is ever lowered.
 
-PRIVACY. Opt-in twice (env DOUBLESPEAK_PERSONAL=1 AND the user's toggle), local only, AES-256-GCM at rest through secure_store
+PRIVACY. Opt-in twice (env TELL_PERSONAL=1 AND the user's toggle), local only, AES-256-GCM at rest through secure_store
 (key in the OS keychain), holds only small numbers (weights, decayed counts), never audio, transcript, evidence or call content,
 never uploaded or shared (no network code here), wiped by `wipe()` / DELETE /personal.
 
@@ -42,6 +42,7 @@ from typing import Any, Callable, Iterable, Protocol
 
 import numpy as np
 
+from . import env as _env
 from . import secure_store, thresholds
 
 VERSION = "personal-v1"
@@ -411,7 +412,7 @@ class FeedbackSource(Protocol):
 
 
 class FakeFeedback:
-    """Test/dev stand-in for doublespeak.feedback (owned by the feat/block-spam branch). Records are dicts:
+    """Test/dev stand-in for tell.feedback (owned by the feat/block-spam branch). Records are dicts:
     {"id"?: str, "call_id"?: str|None, "label": 'scam'|'not_scam'|'ai'|'human', "tick"?: int, "ts"?: float}, newest LAST."""
 
     def __init__(self, records: Iterable[dict] = ()) -> None:
@@ -422,7 +423,7 @@ class FakeFeedback:
 
 
 def feedback_adapter() -> FeedbackSource:
-    """Thin adapter over the real store. Until doublespeak/feedback.py (`recent(n)`) lands this returns an empty fake, so the
+    """Thin adapter over the real store. Until tell/feedback.py (`recent(n)`) lands this returns an empty fake, so the
     personal layer is inert instead of failing. If the real module returns newest-first, it is reversed here to oldest-first."""
     try:
         from . import feedback as _fb          # type: ignore[attr-defined]  # may not exist yet
@@ -445,7 +446,7 @@ def _record_key(r: dict) -> str:
 
 # ---------------------------------------------------------------------------------------------------------- the layer (IO)
 def env_on() -> bool:
-    return os.environ.get("DOUBLESPEAK_PERSONAL") == "1"
+    return _env.get("TELL_PERSONAL") == "1"
 
 
 def state_path() -> Path:

@@ -54,7 +54,7 @@ def test_debug_only_helpers_are_compiled_out_of_release():
 
 def test_consent_wording_is_the_fixed_text_and_bridge_port_matches():
     c = (IOS / "Doublespeak" / "Session" / "ListenController.swift").read_text()
-    assert ("Doublespeak listens to this call through your microphone on your phone and sends the audio only to your own "
+    assert ("Tell listens to this call through your microphone on your phone and sends the audio only to your own "
             "computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it.") in c
     assert "8765" in (IOS / "Doublespeak" / "Core" / "Protocol.swift").read_text()
     assert "PHONE_PORT = 8765" in (ROOT / "tools" / "ios" / "bridge.py").read_text()

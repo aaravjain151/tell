@@ -1,4 +1,4 @@
-from doublespeak import llm
+from tell import llm
 
 
 def test_cap_words_keeps_the_tail():
@@ -41,7 +41,7 @@ def test_qwen3_requests_no_thinking(monkeypatch):
         seen["body"] = _json.loads(req.data)
         return R()
     import types
-    from doublespeak import localhost
+    from tell import localhost
     monkeypatch.setattr(localhost, "_OPENER", types.SimpleNamespace(open=fake))
     llm._ollama("hello world")
     assert seen["body"]["think"] is False

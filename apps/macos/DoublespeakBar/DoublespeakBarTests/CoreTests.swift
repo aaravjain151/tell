@@ -252,7 +252,7 @@ final class LaunchPlanTests: XCTestCase {
     func testEngineArgumentsAndPellaEnv() {
         let s = LaunchPlan.engine(repo: "/r", port: 8010, weightsCached: true, envFileExists: true, home: "/h")
         XCTAssertEqual(s.executable, "/r/.venv/bin/python")
-        XCTAssertEqual(s.arguments, ["-m", "uvicorn", "doublespeak.main:app", "--host", "127.0.0.1", "--port", "8010", "--env-file", "/r/.env"])
+        XCTAssertEqual(s.arguments, ["-m", "uvicorn", "tell.main:app", "--host", "127.0.0.1", "--port", "8010", "--env-file", "/r/.env"])
         XCTAssertEqual(s.cwd, "/r/services/api")
         XCTAssertEqual(s.environment["PELLA_MODEL"], "Sadanie/pellav2-audio-deepfake-detector")
         XCTAssertEqual(s.environment["PELLA_DEVICE"], "mps")
@@ -274,6 +274,23 @@ final class LaunchPlanTests: XCTestCase {
     }
     func testRepoProblemWording() {
         XCTAssertNotNil(LaunchPlan.repoProblem("/definitely/not/here"))
+    }
+    /// D-013: the engine package is `tell`; a checkout from before the rename only has `doublespeak` and must still start.
+    func testEngineTargetFollowsTheCheckout() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent("tell-target-\(UUID().uuidString)")
+        defer { try? fm.removeItem(at: root) }
+        let api = root.appendingPathComponent("services/api")
+        try fm.createDirectory(at: api.appendingPathComponent("doublespeak"), withIntermediateDirectories: true)
+        fm.createFile(atPath: api.appendingPathComponent("doublespeak/main.py").path, contents: Data())
+        XCTAssertEqual(LaunchPlan.resolveTarget(repo: root.path), "doublespeak.main:app")
+        try fm.createDirectory(at: api.appendingPathComponent("tell"), withIntermediateDirectories: true)
+        fm.createFile(atPath: api.appendingPathComponent("tell/main.py").path, contents: Data())
+        XCTAssertEqual(LaunchPlan.resolveTarget(repo: root.path), "tell.main:app")
+        XCTAssertEqual(LaunchPlan.resolveTarget(repo: "/definitely/not/here"), "tell.main:app")
+        let s = LaunchPlan.engine(repo: "/r", port: 8000, weightsCached: false, envFileExists: false, home: "/h",
+                                  target: LaunchPlan.legacyTarget)
+        XCTAssertEqual(s.arguments[2], "doublespeak.main:app")
     }
 }
 
@@ -333,7 +350,7 @@ final class StaticChecksTests: XCTestCase {
     }
 
     func testBuiltAppHasNoNetworkEntitlementsAndIsMenuBarOnly() throws {
-        let app = Bundle.main.bundleURL.path.hasSuffix("Doublespeak.app") ? Bundle.main : Bundle(identifier: "dev.doublespeak.app.mac")
+        let app = Bundle.main.bundleURL.path.hasSuffix("Tell.app") ? Bundle.main : Bundle(identifier: "dev.doublespeak.app.mac")
         let info = app?.infoDictionary ?? [:]
         XCTAssertEqual(info["LSUIElement"] as? Bool, true)
         XCTAssertNotNil(info["NSAudioCaptureUsageDescription"])

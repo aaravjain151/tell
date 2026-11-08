@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "services" / "api"))
 os.environ.setdefault("LLM_PROVIDER", "stub")
 
-from doublespeak import live, personal  # noqa: E402
+from tell import live, personal  # noqa: E402
 
 CATS = ("real_benign", "real_ai_disclosed", "real_scam", "pressure_disclosed", "pressure_human", "soft_scam")
 WARRANTED = {"real_benign": False, "real_ai_disclosed": False, "real_scam": True, "pressure_disclosed": False,

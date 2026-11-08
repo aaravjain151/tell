@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Doublespeak live listener: feeds a call's audio to the LOCAL API and shows the live verdict.
+"""Tell live listener: feeds a call's audio to the LOCAL API and shows the live verdict.
 
     python3 tools/macos/listen.py --now   [--process NAME]     start listening immediately (tap_audio --stream)
     python3 tools/macos/listen.py --watch [--call-process NAME ...]   arm by itself when a call app produces audio
@@ -42,7 +42,7 @@ LOOPBACK = {"127.0.0.1", "localhost", "::1"}
 DEFAULT_TAP = ROOT / "tools" / "macos" / "tap_audio" / ".build" / "release" / "tap_audio"
 DEFAULT_CALL_PROCESSES = ("FaceTime", "Phone", "callservicesd", "avconferenced", "zoom.us", "WhatsApp",
                           "Microsoft Teams")
-CONSENT = ("Doublespeak will listen to this call. The audio is analysed in memory on THIS machine only: nothing is "
+CONSENT = ("Tell will listen to this call. The audio is analysed in memory on THIS machine only: nothing is "
            "recorded and nothing is sent anywhere. It never speaks to the caller.")
 FRAME_MS = 100
 FRAME_BYTES = 16000 * FRAME_MS // 1000 * 2
@@ -72,7 +72,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     mode.add_argument("--watch", action="store_true", help="arm automatically when a call app produces audio")
     mode.add_argument("--file", metavar="WAV", help="replay a file at real-time speed")
     ap.add_argument("--url", default="http://127.0.0.1:8000", help="API base URL (loopback only)")
-    ap.add_argument("--origin", default="http://localhost:5173", help="an allowed UI origin (DOUBLESPEAK_CORS_ORIGINS)")
+    ap.add_argument("--origin", default="http://localhost:5173", help="an allowed UI origin (TELL_CORS_ORIGINS)")
     ap.add_argument("--call-process", action="append", metavar="NAME", help="call app process name (repeatable); "
                     "replaces the default list")
     ap.add_argument("--process", metavar="NAME", help="with --now: tap only this app (default: system audio)")
@@ -170,7 +170,7 @@ def status_line(m: dict, latency: float | None, saving: bool = False) -> str:
 def notify(text: str, sound: bool) -> None:
     if sys.platform != "darwin":
         return
-    script = f'display notification "{text}" with title "Doublespeak"' + (' sound name "Ping"' if sound else "")
+    script = f'display notification "{text}" with title "Tell"' + (' sound name "Ping"' if sound else "")
     try:
         subprocess.run(["osascript", "-e", script], timeout=5, check=False, capture_output=True)
     except (OSError, subprocess.SubprocessError):
@@ -190,7 +190,7 @@ def banner(on: bool, label: str = "", saving: bool = False) -> None:
     else:
         say("=== NOT LISTENING ===")
     if sys.stdout.isatty():
-        sys.stdout.write(f"\033]0;{'LISTENING - Doublespeak' if on else 'Doublespeak'}\007")
+        sys.stdout.write(f"\033]0;{'LISTENING - Tell' if on else 'Tell'}\007")
         sys.stdout.flush()
 
 
@@ -310,7 +310,7 @@ class LabeledSaver:
 def load_pcm16(path: str) -> bytes:
     sys.path.insert(0, str(ROOT / "services" / "api"))
     import numpy as np
-    from doublespeak import audio
+    from tell import audio
     x, _sr, _ms = audio.decode(Path(path).read_bytes())
     return (np.clip(x, -1, 1) * 32767).astype("<i2").tobytes()
 

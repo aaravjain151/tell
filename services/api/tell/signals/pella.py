@@ -27,7 +27,7 @@ import numpy as np
 from ..types import Tell
 from . import windows as win
 
-log = logging.getLogger("doublespeak.pella")
+log = logging.getLogger("tell.pella")
 W_PELLA = 4.0                       # 1.6 -> 4.0 (2026-11-07.2) from the wild eval, see pm/AUDITS.md; tier logic untouched
 REPO, FILENAME = "Sadanie/pellav2-audio-deepfake-detector", "pellav2_detector.pt"
 REVISION = "b668eb4dfe4719665692c73c1d70383680afff6b"

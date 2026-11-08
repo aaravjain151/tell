@@ -1,6 +1,6 @@
-# Doublespeak for iPhone
+# Tell for iPhone
 
-A thin client, like the Android app. The phone listens through its microphone and the audio goes over the USB cable to the Doublespeak engine on your Mac. The engine does the analysis; the phone shows the verdict. The audio stays on your own devices: it goes from the phone only to your own computer over the USB cable (it does leave the phone), is analysed in memory there, and nothing is recorded or stored on the phone or the Mac. There is no LAN, Wi-Fi, cloud, relay, analytics or third-party SDK, and the app never speaks to the caller (D-003, D-009, D-011; the phone-to-computer cable is the PROPOSED exception D-012 to D-004's "never leaves the device").
+A thin client, like the Android app. The phone listens through its microphone and the audio goes over the USB cable to the Tell engine on your Mac. The engine does the analysis; the phone shows the verdict. The audio stays on your own devices: it goes from the phone only to your own computer over the USB cable (it does leave the phone), is analysed in memory there, and nothing is recorded or stored on the phone or the Mac. There is no LAN, Wi-Fi, cloud, relay, analytics or third-party SDK, and the app never speaks to the caller (D-003, D-009, D-011; the phone-to-computer cable is the PROPOSED exception D-012 to D-004's "never leaves the device").
 
 ## What it can and cannot do (read this first)
 
@@ -57,7 +57,7 @@ To prove it compiles for a device without signing (done in this repo): `xcodebui
 
 ## Run it
 
-1. Open **Doublespeak** on the phone. First run shows the consent sheet; read it, continue. The connection screen shows the **pairing code** (for example `K7QM-4TXD`) and the exact command.
+1. Open **Tell** on the phone. First run shows the consent sheet; read it, continue. The connection screen shows the **pairing code** (for example `K7QM-4TXD`) and the exact command.
 2. On the Mac, with the phone plugged in and unlocked, in the repo root:
    ```
    python3 tools/ios/bridge.py --token K7QM-4TXD
@@ -70,7 +70,7 @@ To prove it compiles for a device without signing (done in this repo): `xcodebui
 
 1. Bridge connected (pill says "Your computer").
 2. No call needed first: play `data/calls/qwen3tts/scam_bank_otp.wav` from the Mac at normal volume near the phone and tap Start listening. Expect "Listening" for several seconds, then human/unsure, amber, then the red takeover with a vibration.
-3. Real call, supported way: call the iPhone-owner from a SECOND device (or play a recording on one) so the call plays out loud near the phone, open Doublespeak on the iPhone, Start listening. Have the caller read a scripted scam ("this is your bank, read me the code you just received, don't tell anyone"). A call answered ON this iPhone cannot be heard by the app (see above); for that use the Mac route.
+3. Real call, supported way: call the iPhone-owner from a SECOND device (or play a recording on one) so the call plays out loud near the phone, open Tell on the iPhone, Start listening. Have the caller read a scripted scam ("this is your bank, read me the code you just received, don't tell anyone"). A call answered ON this iPhone cannot be heard by the app (see above); for that use the Mac route.
 4. Lock the screen for 5 minutes while listening (audio background mode): does it keep updating when you unlock?
 
 Write down: did the level bars move with the caller's voice on a real call or stay flat; did the call-active message appear and clear; time to first verdict; time to amber/red on the scripted call; screen-lock survival; haptics on amber and red; anything that said the wrong thing. Put it in the call-connection issue (`docs/call-connection/HANDS-ON-TESTS.md`, Test C).

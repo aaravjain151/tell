@@ -30,7 +30,7 @@ public class ListenService extends Service {
         NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel ch = new NotificationChannel(CHANNEL, "Listening", NotificationManager.IMPORTANCE_LOW);
-            ch.setDescription("Shown while Doublespeak listens through the microphone.");
+            ch.setDescription("Shown while Tell listens through the microphone.");
             ch.setShowBadge(false);
             nm.createNotificationChannel(ch);
         }
@@ -38,7 +38,7 @@ public class ListenService extends Service {
         PendingIntent pi = PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         Notification.Builder b = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? new Notification.Builder(this, CHANNEL) : new Notification.Builder(this);
         Notification n = b.setSmallIcon(R.drawable.ic_stat_mic)
-            .setContentTitle("Doublespeak is listening")
+            .setContentTitle("Tell is listening")
             .setContentText("Audio goes only to your computer over USB. Tap to open.")
             .setContentIntent(pi).setOngoing(true).setOnlyAlertOnce(true).setCategory(Notification.CATEGORY_SERVICE).build();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

@@ -13,7 +13,7 @@ than about 1 November 2026 (they were re-uploaded after a corruption
 report). Install ffmpeg if you use `--opus` or non-WAV files.
 
 > In this repo a local `pellav2_infer.py` shim is already provided: it exposes
-> the same `Detector` and `load_clip` API by reusing DoubleSpeak's ported
+> the same `Detector` and `load_clip` API by reusing Tell's ported
 > pellav2 code (`doublespeak/deepfake.py`), so the scripts run offline now and
 > the official `pellav2_infer.py` can replace it drop-in.
 
@@ -46,7 +46,7 @@ flagged" low on the held-out speakers.
 
 In the app, load `pellav2_qwen.pt` instead of the original weights. The project
 also has a config switch: copy the fine-tuned file to
-`models/pellav2_detector_finetuned.pt` and run with `DOUBLESPEAK_FINETUNED=1`
+`models/pellav2_detector_finetuned.pt` and run with `TELL_FINETUNED=1` (the old `DOUBLESPEAK_FINETUNED=1` still works)
 (or `dataclasses.replace(config.DEEPFAKE, use_finetuned_head=True)`).
 Everything runs offline after step 1.
 

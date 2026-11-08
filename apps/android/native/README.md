@@ -1,4 +1,4 @@
-# Doublespeak for Android: native wrapper (Capacitor)
+# Tell for Android: native wrapper (Capacitor)
 
 Wraps the PWA in `apps/android/` (bundled into the APK, not loaded from a server) and adds a microphone foreground service. The APK is a thin client: audio goes only to the engine on the owner's computer through `adb reverse tcp:8000 tcp:8000`. Speaker mode only (Android gives apps no call audio).
 
@@ -8,7 +8,7 @@ Built and installed on a Galaxy S20 FE (Android 13) as a debug APK. Not built: a
 
 * `capacitor.config.json`: `dev.doublespeak.app`, `androidScheme: http`, `hostname: localhost` (the page's origin is `http://localhost`; the engine must allow it: `make api-android`). No `server.url`, so no remote content.
 * `android/app/src/main/AndroidManifest.xml`: permissions `RECORD_AUDIO`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MICROPHONE`, `POST_NOTIFICATIONS` (+ `INTERNET` to open a socket, `VIBRATE`, `WAKE_LOCK`, `MODIFY_AUDIO_SETTINGS`). `usesCleartextTraffic=false`; `res/xml/network_security_config.xml` allows cleartext to `localhost` and `127.0.0.1` only.
-* `ListenService` + `ListenServicePlugin` (Java): the page calls `Capacitor.Plugins.ListenService.start()` after `getUserMedia` succeeds and `stop()` on Stop. The service only shows the "Doublespeak is listening" notification and holds the `microphone` foreground-service type so capture survives the screen locking; capture itself stays in the WebView.
+* `ListenService` + `ListenServicePlugin` (Java): the page calls `Capacitor.Plugins.ListenService.start()` after `getUserMedia` succeeds and `stop()` on Stop. The service only shows the "Tell is listening" notification and holds the `microphone` foreground-service type so capture survives the screen locking; capture itself stays in the WebView.
 * Adaptive launcher icon and splash from the repo logo (`design/logo`), navy `#0B1020`.
 
 ## Build (JDK 17 + Android SDK 34)

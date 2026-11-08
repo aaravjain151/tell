@@ -5,8 +5,8 @@ Threat: the API listens on localhost, so (a) any web page the user has open can 
 can wedge a laptop mid-demo. Everything is configured by env vars (see .env.example) and read at call time.
 
 CORS tradeoff: a page opened from file:// sends `Origin: null`. `null` is also what sandboxed iframes and some
-redirects send, so any site can forge it. It is therefore refused unless listed explicitly in DOUBLESPEAK_CORS_ORIGINS.
-Anyone who opens apps/web/index.html from file:// must set DOUBLESPEAK_CORS_ORIGINS=http://localhost:5173,null
+redirects send, so any site can forge it. It is therefore refused unless listed explicitly in TELL_CORS_ORIGINS.
+Anyone who opens apps/web/index.html from file:// must set TELL_CORS_ORIGINS=http://localhost:5173,null
 (or, better, use `make web` and open http://localhost:5173). Requests that carry a disallowed Origin are rejected
 outright (403), not just left without CORS headers, because CORS alone does not stop a simple cross-site POST from
 being executed by the server.
@@ -16,7 +16,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import os
 import traceback
 import weakref
 from concurrent.futures import ThreadPoolExecutor
@@ -26,7 +25,9 @@ from fastapi import HTTPException
 from starlette.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-log = logging.getLogger("doublespeak.limits")
+from . import env as _env
+
+log = logging.getLogger("tell.limits")
 
 DEFAULT_ORIGINS = ("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8000", "http://127.0.0.1:8000")
 DEFAULT_HOSTS = ("localhost", "127.0.0.1", "::1", "testserver")
@@ -38,7 +39,7 @@ _SMALL_BODY = 1 << 20    # every other POST route
 
 
 def _csv(name: str, default: tuple[str, ...]) -> list[str]:
-    raw = os.environ.get(name)
+    raw = _env.get(name)
     if raw is None or not raw.strip():
         return list(default)
     return [p.strip() for p in raw.split(",") if p.strip()]
@@ -46,31 +47,31 @@ def _csv(name: str, default: tuple[str, ...]) -> list[str]:
 
 def _float(name: str, default: float) -> float:
     try:
-        v = float(os.environ.get(name, ""))
+        v = float(_env.get(name, ""))
         return v if v > 0 else default
     except ValueError:
         return default
 
 
 def allowed_origins() -> list[str]:
-    return _csv("DOUBLESPEAK_CORS_ORIGINS", DEFAULT_ORIGINS)
+    return _csv("TELL_CORS_ORIGINS", DEFAULT_ORIGINS)
 
 
 def allowed_hosts() -> set[str]:
-    extra = [h.lower() for h in _csv("DOUBLESPEAK_ALLOWED_HOSTS", ())]
+    extra = [h.lower() for h in _csv("TELL_ALLOWED_HOSTS", ())]
     return {h.lower() for h in DEFAULT_HOSTS} | set(extra)
 
 
 def max_upload_bytes() -> int:
-    return int(_float("DOUBLESPEAK_MAX_UPLOAD_MB", 25) * 1024 * 1024)
+    return int(_float("TELL_MAX_UPLOAD_MB", 25) * 1024 * 1024)
 
 
 def max_audio_s() -> float:
-    return _float("DOUBLESPEAK_MAX_AUDIO_S", 180)
+    return _float("TELL_MAX_AUDIO_S", 180)
 
 
 def analyze_timeout_s() -> float:
-    return _float("DOUBLESPEAK_ANALYZE_TIMEOUT_S", 60)
+    return _float("TELL_ANALYZE_TIMEOUT_S", 60)
 
 
 def _host_only(value: str) -> str:

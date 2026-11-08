@@ -1,5 +1,5 @@
-/* Doublespeak for Android: thin client. The phone captures microphone audio (speaker mode) and sends PCM16 16 kHz to the
-   Doublespeak engine on the owner's computer over loopback (adb reverse). Display comes from GET /live/events.
+/* Tell for Android: thin client. The phone captures microphone audio (speaker mode) and sends PCM16 16 kHz to the
+   Tell engine on the owner's computer over loopback (adb reverse). Display comes from GET /live/events.
    No LAN, no cloud, no analytics; nothing is stored. Passive only: it never speaks to the caller. */
 (function () {
   "use strict";
@@ -72,7 +72,7 @@
     var egress = h && h.egress ? Number(h.egress.caller_audio_bytes_sent) || 0 : null;
     return '<h2 id="' + (full ? "pair-h" : "cn-h") + '">' + (up ? "Connected to your computer" : "Connect to your computer") + "</h2>" +
       "<p>" + (up ? "The engine answers over the USB cable. Audio goes only there." :
-        "Doublespeak runs on your computer. The phone only listens and sends the audio over the USB cable. Nothing goes over Wi-Fi or the internet.") + "</p>" +
+        "Tell runs on your computer. The phone only listens and sends the audio over the USB cable. Nothing goes over Wi-Fi or the internet.") + "</p>" +
       (up ? "" : '<p class="num">On your computer, with the phone plugged in and USB debugging on, run:</p>' +
         '<div class="cmd"><code>' + TUNNEL_CMD + '</code><button type="button" data-copy>Copy</button></div>' +
         '<p class="num">Then start the engine: <b>make api-android</b>. Keep the cable plugged in while you listen.</p>') +
@@ -258,7 +258,7 @@
     consent().then(function (ok) { if (ok) begin(); });
   }
   function begin() {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return fail("Microphone not available", "This browser cannot capture audio here. Open the Doublespeak app, or Chrome at http://localhost.");
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return fail("Microphone not available", "This browser cannot capture audio here. Open the Tell app, or Chrome at http://localhost.");
     setMode("starting"); resetSession();
     navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } }).then(function (stream) {
       S.stream = stream;
@@ -272,7 +272,7 @@
       S.ping = setInterval(function () { if (S.ws && S.ws.readyState === 1) S.ws.send('{"type":"ping"}'); }, 10000);
     }).catch(function (e) {
       var n = e && e.name, m = e && e.message || "";
-      if (n === "NotAllowedError" || n === "SecurityError") fail("Microphone is blocked", "Allow the microphone for Doublespeak in your phone's app settings (Permissions > Microphone), then tap Start listening again.");
+      if (n === "NotAllowedError" || n === "SecurityError") fail("Microphone is blocked", "Allow the microphone for Tell in your phone's app settings (Permissions > Microphone), then tap Start listening again.");
       else if (n === "NotFoundError") fail("No microphone found", "This phone did not offer a microphone to the app.");
       else if (m === "origin") fail("The engine refused this page", "Start the engine with make api-android so it accepts the app, then try again.");
       else if (m === "busy") fail("Another listening session is open", "Stop it on your computer, or wait a minute, then try again.");

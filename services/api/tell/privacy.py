@@ -14,9 +14,11 @@ import json
 import os
 import threading
 
+from . import env as _env
+
 _lock = threading.Lock()
 _state = {"external_requests": 0, "bytes_sent_external": 0, "caller_audio_bytes_sent": 0,
-          "localhost_requests": 0}   # loopback engines via doublespeak/localhost.py; NOT external egress
+          "localhost_requests": 0}   # loopback engines via tell/localhost.py; NOT external egress
 
 
 class AudioEgressError(RuntimeError):
@@ -65,7 +67,7 @@ def audio_fingerprint(data: bytes | None) -> str:
 
 
 def sign(payload: dict, audio_fp: str) -> str:
-    key = os.environ.get("DOUBLESPEAK_SIGNING_KEY", "change-me-local").encode()
+    key = _env.get("TELL_SIGNING_KEY", "change-me-local").encode()
     canon = json.dumps({**payload, "audio_fp": audio_fp}, sort_keys=True, separators=(",", ":")).encode()
     return "ds1:" + audio_fp + ":" + hmac.new(key, canon, hashlib.sha256).hexdigest()[:32]
 
@@ -81,7 +83,7 @@ def verify(payload: dict, signature: str) -> bool:
 def posture() -> dict:
     """Switches that can move call content off the machine or onto disk. Read at call time; for a readiness page."""
     return {
-        "debug_save": os.environ.get("DOUBLESPEAK_DEBUG_SAVE") == "1",        # raw caller audio written to data/debug
+        "debug_save": _env.get("TELL_DEBUG_SAVE") == "1",        # raw caller audio written to data/debug
         "llm_provider_anthropic": os.environ.get("LLM_PROVIDER", "stub") == "anthropic",   # transcript sent out
         "gradium_key_set": bool(os.environ.get("GRADIUM_API_KEY")),            # /speak can send fixed wording out
     }

@@ -1,6 +1,6 @@
 """Network-proof monitor.
 
-DoubleSpeak promises your call never leaves the machine. This module counts the
+Tell promises your call never leaves the machine. This module counts the
 *outbound* network connections opened by this app's own process, ignoring
 loopback (``127.0.0.1`` / ``::1``). It also renders a large, always-visible
 Streamlit panel: green "0 outside connections" when clean, red with the remote
@@ -50,7 +50,7 @@ class OutboundReport:
 def count_outbound() -> OutboundReport:
     """Return this process's outbound connections, excluding loopback.
 
-    Scoped to the current PID so we report only what DoubleSpeak itself does.
+    Scoped to the current PID so we report only what Tell itself does.
     """
     try:
         proc = psutil.Process(os.getpid())

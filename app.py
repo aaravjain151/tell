@@ -1,4 +1,4 @@
-"""DoubleSpeak - Streamlit demo UI.
+"""Tell - Streamlit demo UI.
 
 Large fonts, high contrast, plain language - built for older users. You can
 upload a clip or record one, then the on-device pipeline tells you whether the
@@ -32,7 +32,7 @@ _LOGO_PATH = config.PROJECT_ROOT / "assets" / "logo.png"
 _LOGO = str(_LOGO_PATH) if _LOGO_PATH.exists() else None
 
 st.set_page_config(
-    page_title="DoubleSpeak",
+    page_title="Tell",
     page_icon=_LOGO or "🛡️",
     layout="centered",
 )
@@ -187,9 +187,9 @@ def main() -> None:
         with logo_col:
             st.image(_LOGO, width=96)
         with title_col:
-            st.title("DoubleSpeak")
+            st.title("Tell")
     else:
-        st.title("🛡️ DoubleSpeak")
+        st.title("🛡️ Tell")
     st.write("A friendly helper that spots fake voices and scam calls.")
 
     # Always-visible network proof.
