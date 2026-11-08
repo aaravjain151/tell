@@ -10,7 +10,7 @@ from . import llm, privacy, scorer
 from . import audio as audio_mod
 from . import llm, privacy, reasons, scorer, secure_store
 from . import stt
-from .signals import acoustic, intent, neural, script
+from .signals import acoustic, intent, neural, script, shadow
 from .types import Tell, Verdict
 
 
@@ -65,6 +65,7 @@ def _analyze(audio_bytes: bytes | None, transcript: str | None, ephemeral: bool 
     t0 = time.perf_counter()
     ctx: dict = {}
     acoustic_tells: list[Tell] = []
+    x = None
     if audio_bytes:
         x, orig_sr, dur_ms = audio_mod.decode(audio_bytes)
         ctx["original_sample_rate"] = orig_sr
@@ -97,6 +98,9 @@ def _analyze(audio_bytes: bytes | None, transcript: str | None, ephemeral: bool 
     if vw:
         ctx["voice_windows"] = vw   # display only: nothing reads it back into a tier or score
     v = scorer.fuse(acoustic_tells, script_tells, intent_tells, disclosed, denial, ctx)
+    if x is not None:
+        # SHADOW layers: logged only, added AFTER fusion and outside the signed payload; nothing reads them back.
+        ctx["shadow"] = shadow.compute_all(x, vw)
     v.transcript = transcript
     v.reasons = reasons.build(v.tells, v.disclosed_ai, v.p_ai)   # fixed wording from deterministic tells
     v.model_notes = notes                                # display only: never read by scorer, reasons or speak
