@@ -58,3 +58,12 @@ def test_consent_wording_is_the_fixed_text_and_bridge_port_matches():
             "computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it.") in c
     assert "8765" in (IOS / "Doublespeak" / "Core" / "Protocol.swift").read_text()
     assert "PHONE_PORT = 8765" in (ROOT / "tools" / "ios" / "bridge.py").read_text()
+
+
+def test_call_state_is_honest_callkit_only_and_no_text_implies_hearing_a_call_on_this_iphone():
+    obs = (IOS / "Doublespeak" / "Session" / "CallObserver.swift").read_text()
+    assert "CXCallObserver" in obs and "CXCallController" not in obs and "CXProvider" not in obs   # state only, no call control
+    ui = "\n".join(p.read_text() for p in (IOS / "Doublespeak" / "UI").glob("*.swift"))
+    assert "speakerphone" not in ui.lower()                    # the supported cases are another device or a recording
+    assert "iOS does not let apps listen during a call" in obs
+    assert "Calls on Other Devices" in obs

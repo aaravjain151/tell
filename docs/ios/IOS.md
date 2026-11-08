@@ -4,8 +4,9 @@ A thin client, like the Android app. The phone listens through its microphone an
 
 ## What it can and cannot do (read this first)
 
-* **Speaker mode only.** iOS gives apps no call audio. The call has to be on speakerphone; the microphone hears the caller from the speaker, plus your own voice and the room. The app never claims to hear both sides, and does not hear a call held to the ear, on Bluetooth or on headphones.
-* A call can interrupt the microphone for other apps. If the level bars stay flat for 8 seconds the app says so. Whether the iPhone 14 Pro Max does this on a real call is exactly what the call test below finds out. **Not yet verified on a real call or a real device.**
+* **Speaker mode only, and NOT for a call on this same iPhone.** iOS gives apps no call audio, and it will not let a third-party app start (or keep) the microphone while a phone call is active on the phone (confirmed on the owner's iPhone 14 Pro Max: "Could not start the microphone" during a call). The app listens through the microphone to a call playing out loud *near* the phone: another device's speaker, or a recording. For a call on this iPhone use the Mac route (Calls on Other Devices, so the call plays on the Mac). The app never claims to hear both sides, and does not hear a call held to the ear, on Bluetooth or on headphones.
+* The app detects an active call with CallKit's `CXCallObserver` (it reports only that a call exists: no audio, no entitlement). While a call is active Start is disabled and a calm fixed message says "A phone call is using the microphone. iOS does not let apps listen during a call. Listen to a call on another device, or use the Mac (Calls on Other Devices)." The state clears when the call ends. If a call begins while listening, the screen says "The call interrupted the microphone" and the app tries to resume by itself when the call ends (and on the AVAudioSession interruption-ended notification).
+* If the level bars stay flat for 8 seconds the app also says so.
 * The models do not run on the phone. The Mac engine must be running and the cable plugged in.
 * Speakerphone audio is a blend of both voices, so the app sends `side=mix` and the engine caps how sure it says it is (0.6). The "How sure" label is also honest about the voice: while the voice question is unresolved it can never read High, and a note says "The voice check is not sure." or "The voice checks disagree."
 
@@ -69,15 +70,16 @@ To prove it compiles for a device without signing (done in this repo): `xcodebui
 
 1. Bridge connected (pill says "Your computer").
 2. No call needed first: play `data/calls/qwen3tts/scam_bank_otp.wav` from the Mac at normal volume near the phone and tap Start listening. Expect "Listening" for several seconds, then human/unsure, amber, then the red takeover with a vibration.
-3. Real call: have someone call you, answer, **switch to speakerphone**, open Doublespeak, Start listening. Have them read a scripted scam ("this is your bank, read me the code you just received, don't tell anyone").
+3. Real call, supported way: call the iPhone-owner from a SECOND device (or play a recording on one) so the call plays out loud near the phone, open Doublespeak on the iPhone, Start listening. Have the caller read a scripted scam ("this is your bank, read me the code you just received, don't tell anyone"). A call answered ON this iPhone cannot be heard by the app (see above); for that use the Mac route.
 4. Lock the screen for 5 minutes while listening (audio background mode): does it keep updating when you unlock?
 
-Write down: did the level bars move with the caller's voice on a real call or stay flat; did iOS interrupt the microphone when the call connected; time to first verdict; time to amber/red on the scripted call; screen-lock survival; haptics on amber and red; anything that said the wrong thing. Put it in the call-connection issue (`docs/call-connection/HANDS-ON-TESTS.md`, Test C).
+Write down: did the level bars move with the caller's voice on a real call or stay flat; did the call-active message appear and clear; time to first verdict; time to amber/red on the scripted call; screen-lock survival; haptics on amber and red; anything that said the wrong thing. Put it in the call-connection issue (`docs/call-connection/HANDS-ON-TESTS.md`, Test C).
 
 ## Not yet verified
 
 * Installing and running on the real iPhone (no signing identity here).
-* A real phone call in speaker mode, the screen-locked capture, and iOS interrupting the microphone during a call.
+* Screen-locked capture over minutes, and resume after a call that ends while the app is listening (the call-active state and the disabled Start were confirmed by the owner on the phone; the resume path is unit-tested with a fake observer only).
+* Layout on the real phone after the safe-area fix (checked in the iPhone 14 Pro Max and 17 Pro simulators only).
 * `iproxy` delivering the connection to the app's loopback listener over a real cable (the app listens on 127.0.0.1 and ::1; iproxy was only checked to be installed). The bridge and the app were driven end to end in the simulator with `--direct`.
 
 ## Limits worth knowing
