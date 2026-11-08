@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Paired statistics for WORK/features.csv: qwen - real per script, bootstrap 95% CI over scripts (n shown), per condition.
 
-    python3 tools/qwen_cues_stats.py WORK [--out table.md]
+    python3 tools/qwen_cues_stats.py WORK [--scripts all|old|new]
+
+Pairs = every script that exists both as a real (human) and a Qwen clip in WORK/features.csv (2026-11-08: 18). `old` = the 8 scripts
+of the 2026-11-07 study, `new` = the rest: running `new` is the held-out-by-script replication of the 8-pair findings.
 """
 from __future__ import annotations
 
@@ -11,8 +14,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-PAIRS = ["casual_clone", "long_appointment", "long_checkin", "sales_disclosed", "sales_undisclosed",
-         "scam_bank_otp", "scam_grandparent", "scam_irs"]
+OLD_PAIRS = ["casual_clone", "long_appointment", "long_checkin", "sales_disclosed", "sales_undisclosed",
+             "scam_bank_otp", "scam_grandparent", "scam_irs"]
+PAIRS: list[str] = []
 CONDS = ["clean", "opus8k", "g711_mulaw8k", "chain_replay_call"]
 rng = np.random.default_rng(0)
 
@@ -40,7 +44,12 @@ def paired(df: pd.DataFrame, feat: str, cond: str):
 
 def main() -> int:
     work = Path(sys.argv[1])
+    which = sys.argv[sys.argv.index("--scripts") + 1] if "--scripts" in sys.argv else "all"
     df = pd.read_csv(work / "features.csv")
+    both = sorted(set(df[df.cls == "human"].script) & set(df[df.cls == "qwen"].script))
+    PAIRS[:] = [s for s in both if which == "all" or (s in OLD_PAIRS) == (which == "old")]
+    print(f"{len(PAIRS)} pairs ({which}): {', '.join(PAIRS)}")
+    sfx = "" if which == "all" else f"_{which}"
     feats = [c for c in df.columns if c not in ("cls", "script", "cond")]
     lines = ["| feature | cond | n | real | qwen | diff (qwen-real) [95% CI] | dz | scripts same sign |", "|---|---|---|---|---|---|---|---|"]
     summ = {}
@@ -52,7 +61,7 @@ def main() -> int:
             summ[(f, c)] = r
             mark = "*" if r["sig"] else ""
             lines.append(f"| {f} | {c} | {r['n']} | {r['h']:.3g} | {r['q']:.3g} | {r['d']:+.3g} [{r['lo']:+.3g}, {r['hi']:+.3g}]{mark} | {r['dz']:+.2f} | {r['same_sign']}/{r['n']} |")
-    (work / "paired_table.md").write_text("\n".join(lines))
+    (work / f"paired_table{sfx}.md").write_text("\n".join(lines))
     # compact: which features have CI excluding 0 per condition
     rows = []
     for f in feats:
@@ -65,7 +74,7 @@ def main() -> int:
     out = pd.DataFrame(rows)
     pd.set_option("display.width", 250); pd.set_option("display.max_rows", 200); pd.set_option("display.max_colwidth", 40)
     print(out.to_string(index=False))
-    out.to_csv(work / "paired_compact.csv", index=False)
+    out.to_csv(work / f"paired_compact{sfx}.csv", index=False)
     return 0
 
 

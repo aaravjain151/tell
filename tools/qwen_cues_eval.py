@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Evaluate the Qwen shadow layers (signals/shadow.py qwen_*) on real-vs-Qwen pairs, held out by SCRIPT.
 
-    python3 tools/qwen_cues_eval.py WORK   # needs WORK/audio from tools/qwen_cues_prep.py
+    python3 tools/qwen_cues_eval.py WORK [--scripts all|old|new]   # needs WORK/audio from tools/qwen_cues_prep.py
+    (2026-11-08: scripts are discovered from WORK/audio, every script with both a human and a qwen clip; `old` = the first 8.)
 
 For each feature and condition (clean, opus8k, g711_mulaw8k, chain_replay_call, plus floor_matched = Qwen clip with the real
 recording's own pause noise added at matched speech-to-noise ratio) prints:
   paired diff (qwen - real) with bootstrap 95% CI over scripts, Cohen dz, and leave-one-script-out results:
   direction is learned on the other 7 scripts, each held-out clip is z-scored against the training real clips, then
   AUC over the 16 held-out clips and paired win rate. Whole clips and 6 s windows (cluster bootstrap by script).
-ONE speaker, ONE TTS engine, n = 8 scripts. These are descriptive numbers, not accuracy.
+ONE speaker, ONE TTS engine, n = number of paired scripts (8 in the first study, 18 on 2026-11-08). Descriptive, not accuracy.
 """
 from __future__ import annotations
 
@@ -20,8 +21,9 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "services" / "api"))
 from tell.signals import shadow  # noqa: E402
 
-SCRIPTS = ["casual_clone", "long_appointment", "long_checkin", "sales_disclosed", "sales_undisclosed", "scam_bank_otp",
-           "scam_grandparent", "scam_irs"]
+OLD_SCRIPTS = ["casual_clone", "long_appointment", "long_checkin", "sales_disclosed", "sales_undisclosed", "scam_bank_otp",
+               "scam_grandparent", "scam_irs"]
+SCRIPTS: list[str] = []
 CONDS = ["clean", "opus8k", "g711_mulaw8k", "chain_replay_call", "floor_matched"]
 FEATS = [k for k in shadow.FEATURES if k.startswith("qwen_")] + ["modulation_4_16_ratio"]
 rng = np.random.default_rng(0)
@@ -73,8 +75,12 @@ def loso(vh, vq, boot=2000):
 
 def main() -> int:
     work = Path(sys.argv[1]) / "audio"
+    which = sys.argv[sys.argv.index("--scripts") + 1] if "--scripts" in sys.argv else "all"
+    have = {c: {f.stem.split("__")[1] for f in work.glob(f"{c}__*__clean.npy")} for c in ("human", "qwen")}
+    SCRIPTS[:] = [s for s in sorted(have["human"] & have["qwen"]) if which == "all" or (s in OLD_SCRIPTS) == (which == "old")]
+    print(f"{len(SCRIPTS)} pairs ({which}): {', '.join(SCRIPTS)}")
     clean = {(c, s): np.load(work / f"{c}__{s}__clean.npy") for c in ("human", "qwen") for s in SCRIPTS}
-    print(f"{'feature':26s} {'cond':18s} {'real':>8s} {'qwen':>8s} {'diff [95% CI over 8 scripts]':>30s} {'dz':>6s} | {'clip AUC [CI]':>20s} {'wins':>5s} | {'6s-window AUC [CI]':>22s}")
+    print(f"{'feature':26s} {'cond':18s} {'real':>8s} {'qwen':>8s} {'diff [95% CI over scripts]':>30s} {'dz':>6s} | {'clip AUC [CI]':>20s} {'wins':>5s} | {'6s-window AUC [CI]':>22s}")
     for f in FEATS:
         for c in CONDS:
             H, Q, WH, WQ = [], [], [], []

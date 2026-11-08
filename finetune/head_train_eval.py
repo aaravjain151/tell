@@ -34,6 +34,8 @@ import os
 K_FOLDS, SEED = 5, int(os.environ.get("HEAD_FOLD_SEED", "7"))
 HN = FT / "humans_new"          # new real humans (finetune/head_humans.py); appended only with --extra-humans
 EXTRA = {"on": False, "groups": "location"}
+SP = FT / "pairs" / "win"       # Sanath real + Qwen-clone pairs (finetune/qwen_pairs.py windows/features); used only with --sanath-pairs
+PAIRS = {"on": False, "split": "script", "no_fakes": False}
 
 
 # --------------------------------------------------------------------------------------------- data
@@ -50,8 +52,30 @@ def _new_speaker(m: dict) -> str:
     return f"new_c{dict(zip(sp['clips'], sp['clusters_k_best']))[m['clip']]}"
 
 
+def _sanath_script_fold(script: str) -> int:
+    """Script -> fold for the Sanath pairs (--sanath-pairs script): sorted scripts shuffled with the fold seed, round-robin.
+    Both the real reading and the Qwen clone of a script land in the same fold, so no script is in train and test."""
+    scripts = sorted({m["script"] for m in csv.DictReader(open(SP / "windows.csv"))})
+    rng = np.random.default_rng(SEED + 100)
+    rng.shuffle(scripts)
+    return {sc: i % K_FOLDS for i, sc in enumerate(scripts)}[script]
+
+
+def _keep_old() -> np.ndarray:
+    """With --sanath-pairs the old cache's Sanath rows (10 real + 9 clone clips) and the two owner files are replaced by the pairs set."""
+    old = list(csv.DictReader(open(FT / "windows.csv")))
+    return np.array([not (PAIRS["on"] and (m["speaker"] == "sanath" or m["owner"] == "1")) for m in old])
+
+
 def load_meta() -> list[dict]:
     meta = list(csv.DictReader(open(FT / "windows.csv")))
+    if PAIRS["on"]:
+        keep = _keep_old()
+        meta = [m for m, k in zip(meta, keep) if k]
+        for m in csv.DictReader(open(SP / "windows.csv")):
+            m["speaker"] = f"sanath_s{_sanath_script_fold(m['script'])}" if PAIRS["split"] == "script" else "sanath"
+            m["wid"] = str(len(meta))
+            meta.append(m)
     if EXTRA["on"]:
         new = list(csv.DictReader(open(HN / "windows.csv")))
         for m in new:
@@ -64,6 +88,11 @@ def load_meta() -> list[dict]:
 def load(backbone: str):
     meta = load_meta()
     F = {c: dict(np.load(FT / f"feat_{backbone}_{c}.npz")) for c in CONDS}
+    if PAIRS["on"]:
+        keep = _keep_old()
+        Fp = {c: np.load(SP / f"feat_{backbone}_{c}.npz") for c in CONDS}
+        for c in CONDS:
+            F[c] = {k: np.concatenate([F[c][k][keep], Fp[c][k]]) for k in ("mean", "std", "p_current")}
     if EXTRA["on"]:
         Fn = {c: np.load(HN / f"feat_{backbone}_{c}.npz") for c in CONDS}
         for c in CONDS:
@@ -73,9 +102,12 @@ def load(backbone: str):
 
 def folds_for(meta) -> dict[str, int]:
     rng = np.random.default_rng(SEED)
-    spk = sorted({m["speaker"] for m in meta if m["owner"] == "0" and m.get("split") != "humans_new"})
+    spk = sorted({m["speaker"] for m in meta if m["owner"] == "0" and m.get("split") not in ("humans_new", "sanath_pairs")}
+                 | ({"sanath"} if PAIRS["on"] else set()))
     rng.shuffle(spk)
     f = {s: i % K_FOLDS for i, s in enumerate(spk)}          # identical to the 2026-11-07 run for the old speakers
+    for k in range(K_FOLDS):
+        f[f"sanath_s{k}"] = k                                  # --sanath-pairs script: Sanath scripts spread over the 5 folds
     for j, s in enumerate(sorted({m["speaker"] for m in meta if m.get("split") == "humans_new"})):
         f[s] = K_FOLDS + j                                     # every new speaker group is its OWN held-out fold
     f["owner"] = -1
@@ -224,6 +256,8 @@ def run_eval(backbone, kind, use_std, aug, epochs, train_conds_arg=None):
         g_out = scn[4:] if scn.startswith("loo_") else None
         for k in range(max(fold.values()) + 1):
             tr = (fold_of != k) & ((lab == 0) | (gen != g_out) if g_out else True)
+            if PAIRS["no_fakes"]:                              # ablation: Sanath clones never in training
+                tr = tr & ~((lab == 1) & np.char.startswith(spk.astype(str), "sanath"))
             h = fit(Xm[tr], Xs[tr], lab[tr], weights_for(lab[tr], gen[tr], spk[tr]), kind, use_std, epochs=epochs, seed=k)
             n_params = sum(p.numel() for p in h.parameters())
             te_w = np.array([fold[meta[i]["speaker"]] == k for i in idx])
@@ -257,9 +291,34 @@ def report(meta, idx, sources, scores, owner_idx, owner_scores, n_params, secs, 
         block(f"loo_{g}/head", scores[f"loo_{g}"], mk)
         block(f"loo_{g}/current", sources["current"], mk)
     spk_all = np.array([m["speaker"] for m in meta])
-    mk = ((y_all == 0) & (spk_all == "sanath")) | ((y_all == 1) & (gen_all == "qwen") & (spk_all == "sanath"))
+    is_san = np.char.startswith(spk_all.astype(str), "sanath")
+    mk = ((y_all == 0) & is_san) | ((y_all == 1) & (gen_all == "qwen") & is_san)
     block("sanath_only_loo_qwen/head", scores["loo_qwen"], mk)
     block("sanath_only_loo_qwen/current", sources["current"], mk)
+    pairs_rows = np.array([m.get("split") == "sanath_pairs" for m in meta])
+    if pairs_rows.any():
+        # the paired set: Sanath real vs his Qwen clone; every window scored by a model that never saw its SCRIPT (script split)
+        # or never saw Sanath at all (speaker split). new = scripts recorded after the 2026-11-07 study.
+        old8 = {"casual_clone", "long_appointment", "long_checkin", "sales_disclosed", "sales_undisclosed", "scam_bank_otp",
+                "scam_grandparent", "scam_irs", "long_agent_undisclosed"}
+        new_s = np.array([m.get("split") == "sanath_pairs" and m["script"] not in old8 for m in meta])
+        for scn in ("seen_gen", "loo_qwen"):
+            block(f"sanath_pairs_{scn}/head", scores[scn], pairs_rows)
+            block(f"sanath_pairs_new_{scn}/head", scores[scn], new_s)
+        block("sanath_pairs/current", sources["current"], pairs_rows)
+        block("sanath_pairs_new/current", sources["current"], new_s)
+        src = np.array(["libri" if m.get("split") in ("dev-clean", "test-clean") else "sanath" if m.get("split") == "sanath_pairs" else
+                        "friends" if m.get("split") == "humans_new" else "other" for m in meta])
+        fa = {}
+        for name, sc in [("head_seen_gen", scores["seen_gen"]), ("head_loo_qwen", scores["loo_qwen"]), ("current", sources["current"])]:
+            fa[name] = {}
+            for c in EVAL_CONDS:
+                fa[name][c] = {}
+                for g in ("libri", "sanath", "friends"):
+                    mm = (y_all == 0) & (src == g) & np.isfinite(sc[c])
+                    if mm.any():
+                        fa[name][c][g] = {"n": int(mm.sum()), "fpr_0.5": float((sc[c][mm] >= 0.5).mean())}
+        res["human_false_alarms_by_source"] = fa
     mk = np.ones(len(meta), bool)
     block("seen_gen/head", scores["seen_gen"], mk)
     block("seen_gen/current", sources["current"], mk)
@@ -308,15 +367,20 @@ def main():
     ap.add_argument("--out", default="")
     ap.add_argument("--extra-humans", choices=["", "location", "cluster", "single"], default="",
                     help="append the new phone-memo humans (data/finetune/humans_new) to the real class, grouped by location, estimated speaker cluster, or as one group")
+    ap.add_argument("--sanath-pairs", choices=["", "script", "speaker"], default="",
+                    help="replace the old Sanath rows by the 2026-11-08 Sanath real + Qwen-clone pairs (data/finetune/pairs/win), folded by script or as one speaker")
+    ap.add_argument("--no-sanath-fakes", action="store_true", help="with --sanath-pairs: never train on a Sanath clone (ablation)")
     a = ap.parse_args()
+    if a.sanath_pairs:
+        PAIRS.update(on=True, split=a.sanath_pairs, no_fakes=a.no_sanath_fakes)
     if a.extra_humans:
         EXTRA.update(on=True, groups=a.extra_humans)
     use_std = not a.no_std
-    tag = f"{'hum_' + a.extra_humans + '_' if a.extra_humans else ''}{'s' + str(SEED) + '_' if SEED != 7 else ''}{'all_' if a.train_all_conds else ''}{a.backbone}_{a.kind}{'' if use_std else '_meanonly'}{'_cleanonly' if a.clean_only else ''}"
+    tag = f"{'pairs_' + a.sanath_pairs + ('_nofakes' if a.no_sanath_fakes else '') + '_' if a.sanath_pairs else ''}{'hum_' + a.extra_humans + '_' if a.extra_humans else ''}{'s' + str(SEED) + '_' if SEED != 7 else ''}{'all_' if a.train_all_conds else ''}{a.backbone}_{a.kind}{'' if use_std else '_meanonly'}{'_cleanonly' if a.clean_only else ''}"
     if a.mode == "evaluate":
         meta0 = load_meta()
         r = report(*run_eval(a.backbone, a.kind, use_std, not a.clean_only, a.epochs, CONDS if a.train_all_conds else None), tag,
-                   sanath_fold=folds_for(meta0)["sanath"])
+                   sanath_fold=folds_for(meta0).get("sanath", 0))
         (FT / f"results_{tag}.json").write_text(json.dumps(r, indent=1))
         print("wrote", FT / f"results_{tag}.json", "params", r["head_params"])
     else:
