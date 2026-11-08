@@ -18,6 +18,8 @@ GET /live/events  (text/event-stream; loopback client + allowed Origin/Host only
          "alert": "none|amber|red",
          "since_s": num,              # seconds (audio clock) since tier/state/alert last changed
          "reasons": [str, ...]}       # <= 4 fixed plain sentences, never caller text
+      On a graceful end (stop, normal close, max length) one last verdict scores the unscored tail; it carries
+      "tail": true and always comes BEFORE that session's "ended". The key is absent on ordinary ticks.
   {"type":"ended","reason":str}
       A session stopped (stop|kill|disconnect|heartbeat_timeout|max_length|deleted|panic|ended ...).
 
@@ -202,11 +204,14 @@ class Hub:
         self.publish({"type": "ended", "reason": reason})
         self.publish(self.state())
 
-    def on_tick(self, s: Any, d: dict, stable: dict, tick: int, personal_alert: str | None = None) -> None:
+    def on_tick(self, s: Any, d: dict, stable: dict, tick: int, personal_alert: str | None = None,
+                tail: bool = False) -> None:
         if s.id in self.sessions and not s.closed:
             ev = {"type": "verdict", "tick": tick, "elapsed_s": round(s.received_s, 1), "verdict": d, "stable": stable}
             if personal_alert is not None:           # only present when the user opted in: otherwise the event is unchanged
                 ev["personal_alert"] = personal_alert
+            if tail:                                 # the final-flush verdict of a graceful end (precedes "ended")
+                ev["tail"] = True
             self.publish(ev)
 
     def dismiss_all(self) -> int:
