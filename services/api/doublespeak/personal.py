@@ -77,10 +77,10 @@ EXPLAIN_TOPIC = {
     "pressure_human": "calls from a person who mentions urgency or money",
     "other": "other calls",
 }
-EXPLAIN_LESS = "Doublespeak has learned to alert you slightly less for {}."
-EXPLAIN_SOONER = "Doublespeak has learned to alert you slightly sooner for {}."
-EXPLAIN_RED = "Doublespeak has learned to raise a red alert slightly sooner when a call you reported as a scam looks like this one."
-EXPLAIN_LEARNING = "Doublespeak is still learning from your feedback and has not changed anything yet."
+EXPLAIN_LESS = "Tell has learned to alert you slightly less for {}."
+EXPLAIN_SOONER = "Tell has learned to alert you slightly sooner for {}."
+EXPLAIN_RED = "Tell has learned to raise a red alert slightly sooner when a call you reported as a scam looks like this one."
+EXPLAIN_LEARNING = "Tell is still learning from your feedback and has not changed anything yet."
 EXPLAIN_ALWAYS = ("This only changes when you are notified. It never changes what a call is judged to be, "
                   "and a strong scam alert is always shown.")
 EXPLAIN_OFF = "Personal learning is off. Nothing is being learned or stored."

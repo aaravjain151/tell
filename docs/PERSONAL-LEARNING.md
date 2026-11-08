@@ -1,6 +1,6 @@
 # Personal learning (opt-in, on-device, notification sensitivity only)
 
-Like a phone keyboard that learns your next word, Doublespeak can learn **when you want to be interrupted**. It never learns what a call *is*.
+Like a phone keyboard that learns your next word, Tell can learn **when you want to be interrupted**. It never learns what a call *is*.
 
 **Honest name.** This is *online learning*: a Thompson-sampling contextual bandit over six sensitivity arms per call profile (the default), with an online logistic calibration kept as the tested alternative. It is **not** deep reinforcement learning. The whole state is a few dozen numbers.
 
@@ -46,7 +46,7 @@ The only output is one extra field in the live event, `personal_alert: none|ambe
 - `POST /personal` `{enabled:bool}` -> same shape. Cannot enable while the env flag is off.
 - `DELETE /personal` -> `{wiped:true}`.
 
-`explain` uses fixed wording only, for example: "Doublespeak has learned to alert you slightly less for automated appointment calls that say they are automated." (or "slightly sooner for ..."). Until 5 labels are in: "Doublespeak is still learning from your feedback and has not changed anything yet." The last line is always: "This only changes when you are notified. It never changes what a call is judged to be, and a strong scam alert is always shown."
+`explain` uses fixed wording only, for example: "Tell has learned to alert you slightly less for automated appointment calls that say they are automated." (or "slightly sooner for ..."). Until 5 labels are in: "Tell is still learning from your feedback and has not changed anything yet." The last line is always: "This only changes when you are notified. It never changes what a call is judged to be, and a strong scam alert is always shown."
 
 ## Feedback adapter
 

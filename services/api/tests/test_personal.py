@@ -119,7 +119,7 @@ def test_learns_to_alert_less_for_disclosed_automated_calls_and_says_so():
     assert p.alert_level(f) == 1
     teach(p, f, "not_scam", 40)
     assert p.alert_level(f) == 0
-    assert "Doublespeak has learned to alert you slightly less for automated appointment calls that say they are automated." in p.explain()
+    assert "Tell has learned to alert you slightly less for automated appointment calls that say they are automated." in p.explain()
     assert p.explain()[-1] == pe.EXPLAIN_ALWAYS
 
 
