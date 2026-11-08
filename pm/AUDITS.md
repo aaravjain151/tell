@@ -36,3 +36,57 @@ Pellav2 single-point-of-failure stress (replay): if Pellav2 wrongly said 1.0 on 
 Why 0.80 and not 0.9: the paired design reads the same text for human and AI, so script tells are identical across classes and a high share only drops a constant. Real undisclosed-agent calls differ in wording, so the script family keeps 20%.
 Not done: P_AI_THRESHOLD stays 0.60. At these weights 0.45 would catch 20/28 clean and 15/28 opus with 0 humans flagged (0.20 margin over the highest human), but one speaker cannot justify it; needs a second speaker and a phone line first.
 Golden eval unchanged: transcript 0.98 (32), synthetic audio 1.00 (48).
+
+## Shadow layers (not used by the scorer) (2026-11-07)
+**One human speaker (Sanath) and tiny n. Everything here is a sanity check. Any separation may be speaker identity (his mic and room), and nothing supports a claim of generalisation.** Scorer, thresholds, stabiliser and signature are untouched; the features are computed in `signals/shadow.py`, stored only in `egress.context.shadow` after fusion, and a test proves tier/p/confidence/signature are bit-identical with the module on or patched out. Golden eval before and after: transcript 0.98 (32), synthetic audio 1.00 (48), identical.
+
+Data: a copy of data/calls (AI 37: gradium 11, gradium_stock 8, qwen3tts 10, elevenlabs 4, voicestudio 4; human 11, all Sanath). The 8 elevenlabs/voicestudio clips are 5 s and score a flat p_ai 0.49 in every condition (cause not investigated; it looks like no usable voter output), so they only add a constant. Conditions made by `tools/redteam/degrade.py` identically for every class; `amr_nb` was NOT run (this ffmpeg has no libopencore_amrnb encoder; skipped, not faked). Loss in `opus_lowbitrate_with_loss` is our own burst-loss + repeat-and-decay concealment (measured 8% on one clip), the RIR is synthetic.
+
+**Per-condition p_ai (real pipeline, `run_eval.py --wild`, shipping threshold 0.60). n is AI / human in every row.**
+
+| Condition | AI n / human n | AUC | EER | FPR@90%TPR | Caught @0.60 | Qwen3-TTS AUC (n=10) | LOEO TPR range (FPR) |
+|---|---|---|---|---|---|---|---|
+| clean | 37 / 11 | 0.79 | 0.26 | 0.36 | 3/37 | 0.77 | 0.62-1.00 (0.36) |
+| opus-8k | 37 / 11 | 0.78 | 0.27 | 0.36 | 3/37 | 0.76 | 0.70-1.00 (0.36) |
+| g711_mulaw8k | 37 / 11 | 0.78 | 0.27 | 0.36 | 3/37 | 0.77 | 0.62-1.00 (0.36) |
+| g711_alaw8k | 37 / 11 | 0.78 | 0.27 | 0.36 | 3/37 | 0.77 | 0.70-1.00 (0.36) |
+| opus_lowbitrate_with_loss | 37 / 11 | 0.79 | 0.27 | 0.36 | 3/37 | 0.77 | 0.80-1.00 (0.36) |
+| speaker_rerecord_sim | 37 / 11 | 0.72 | 0.27 | 0.64 | 3/37 | 0.60 | 0.60-1.00 (0.36-0.64) |
+| chain_pstn_voip | 37 / 11 | 0.80 | 0.19 | 0.36 | 3/37 | 0.80 | 0.80-1.00 (0.36) |
+| chain_replay_call | 37 / 11 | 0.72 | 0.27 | 0.55 | 3/37 | 0.60 | 0.60-1.00 (0.36-0.73) |
+| amr_nb | not run | | | | | | |
+
+Reading: the codec conditions barely move p_ai on these clips (AUC 0.78-0.80), so opus-8k is not a harder test than G.711 here; the replay-style conditions (synthetic RIR + 4 kHz band-limit) are the ones that hurt (AUC 0.72, Qwen3-TTS 0.60 = chance-ish, FPR@90%TPR up to 0.64). That is consistent with the replay failure on the real Continuity call, but a synthetic RIR is not that call. Only 3/37 AI clips pass 0.60 in every condition (the disclosure-script floor accounts for some of those; see the re-weight note above). Full per-engine rows: `run_eval.py --wild DIR`.
+
+**Shadow features, clean and opus-8k** (`tools/shadow_report.py DIR --conditions clean,opus8k`; AUC = P(AI value > human value), 95% CI = bootstrap over clips, 2000 draws). AI n=37, human n=11 in all rows unless shown (loudness needs >= 3 utterances).
+
+| Feature | clean AI / human mean | clean AUC [95% CI] | opus-8k AI / human mean | opus-8k AUC [95% CI] |
+|---|---|---|---|---|
+| noise_floor_dbfs | -60.6 / -48.3 | 0.30 [0.13, 0.48] | -62.3 / -50.2 | 0.30 [0.13, 0.48] |
+| noise_floor_std_db | 10.8 / 14.6 | 0.30 [0.14, 0.50] | 10.2 / 11.1 | 0.54 [0.37, 0.71] |
+| digital_zero_run_ms | 0.4 / 153 | 0.08 [0.00, 0.25] | 0.8 / 4.5 | 0.10 [0.00, 0.29] |
+| gate_transitions_per_min | 0 / 0.88 | 0.36 [0.23, 0.50] | 0 / 0 | 0.50 [0.50, 0.50] |
+| modulation_4_16_ratio | 0.242 / 0.245 | 0.58 [0.43, 0.73] | 0.246 / 0.246 | 0.59 [0.43, 0.74] |
+| spectral_flatness_300_3400 | 0.102 / 0.097 | 0.60 [0.42, 0.78] | 0.092 / 0.083 | 0.59 [0.41, 0.77] |
+| loudness_std_db (n 27-28 / 10) | 1.29 / 1.62 | 0.43 [0.22, 0.63] | 1.43 / 1.47 | 0.48 [0.26, 0.71] |
+| bandwidth_hz | 7219 / 6619 | 0.66 [0.47, 0.83] | 4608 / 4719 | 0.45 [0.29, 0.62] |
+| snr_db | 40.3 / 24.0 | 0.72 [0.57, 0.87] | 41.9 / 25.7 | 0.72 [0.57, 0.87] |
+
+Reading, with the caveats up front: (1) intervals that exclude 0.5 are noise_floor_dbfs (AI floor lower, both conditions), snr_db (AI higher), digital_zero_run_ms and, in clean, noise_floor_std_db. All four are properties of the recording room and recorder, and the human clips come from one person on one mic: the 153 ms digital-zero runs in his clean files are a recorder artefact that opus-8k removes (4.5 ms), and the noise-floor and SNR gaps are what a TTS file with no room looks like against a real room. Research B's anecdote (floor -77/-70 vs -51 dBFS) is the same effect. These would read "human" for an AI voice played through a speaker into a phone (acoustic relay, see the speaker_rerecord_sim row), so they must never be a human-confirming signal. (2) The modulation-spectrum ratio, flatness, loudness consistency and bandwidth do not separate (intervals span 0.5); the earlier 0.28-vs-0.54 syllable-rate anecdote does not reproduce with this definition. (3) bandwidth_hz is a channel descriptor: it drops from ~7.2 kHz to ~4.6 kHz in opus-8k for both classes, as it should. (4) Persistence features (per-voter mean/min/fraction > 0.5/longest 0.2-0.6 run) are n/a on single clips (the neural voters score at most 3 windows per analysis); they are computed per call in the live stream (`call_persist_*` in the tick's `egress.context.shadow`) and have NO measurements yet. Windows overlap across ticks, so treat them as a descriptive proxy.
+
+Next step before anything graduates from shadow: at least 3-5 more human speakers on different mics, and real Continuity/phone captures including AI audio injected digitally versus played acoustically.
+
+## Neural head on frozen SSL layers: held-out generator and speaker eval (2026-11-07) - NOT wired
+Full write-up and tables: docs/HEAD-FINETUNE.md. Data: LibriSpeech dev/test-clean (80 speakers, CC BY 4.0) + Sanath real = 410 clips; fakes = 419 local Qwen3-TTS clones (80 LibriSpeech voices, 2 synthetic demo voices, repo Sanath clones) + 18 Gradium + 40 macOS `say`; no ElevenLabs clip exists (paid API not used). Head = learned layer weights + 2-layer MLP on mean/std pooled frozen w2v-BERT 2.0 states, 262,426 params, trained with tools/redteam/degrade.py channels on both classes; leave-one-generator-out x leave-speakers-out (5 folds), same windows scored by the shipped Pellav2 and HF voters.
+Result: on the replay chain (speaker_rerecord_sim then opus8k) the head beats Pellav2 for all three held-out generators (AUC 0.65 vs 0.58 Qwen, 0.82 vs 0.42 Gradium, 0.92 vs 0.73 say; n = 440 real / 442, 72, 94 fake windows); on clean it ties; on held-out Qwen opus8k/g711 it is slightly worse (TPR at 5% FPR 0.85 vs 0.91, 0.88 vs 0.95) and false alarms at the 0.5 cut on held-out real speakers are 0.02 to 0.04 in several cells vs 0.00. Bar was "beats without raising false alarms", so no `neural_head` voter, W_* and thresholds untouched. Owner files (n=2): Pellav2 0.67/0.02 clean, 0.67/0.00 opus8k -> head 0.59/0.62 clean, 0.93/0.57 opus8k with no Qwen in training (0.78/0.69, 0.98/0.96 with other Qwen clones seen). HF-backbone head beats the shipped HF voter everywhere but not Pellav2.
+Caveats: real class is read audiobook speech plus ONE conversational speaker; synthetic channels only; one Qwen family; no ElevenLabs; Gradium/say have few sources. Golden eval untouched (scorer.py/thresholds.py not edited).
+
+## 2026-11-07 Qwen3-TTS cue study (branch feat/qwen-cues)
+
+Question (owner, human listener): two Qwen3-TTS clones of Sanath's voice (`rough_morning` p_ai 0.39, `long_tech_scam` 0.25) were not caught; a person hears them as non-human instantly. Method: paired real-vs-Qwen features on 8 scripts (same speaker, same words), clean + opus8k + g711 + chain_replay_call, bootstrap CIs over scripts, ~70 features. Full write-up in `docs/QWEN-CUES.md`; tables in `docs/qwen-cues-paired-table.md`.
+
+Findings that survive phone-band (paired, n=8 scripts): voice too clean (CPPS +2.9 dB, dz +2.6-3.0 in every condition; jitter lower, 7/8), sentence-end pauses half as long (649 vs 324 ms; articulation rate equal), pitch moves less and slower (F0 rate 30.9 vs 25.2 st/s, F0 std 3.1 vs 2.4 st), stronger 4-16 Hz syllable rhythm (existing shadow layer, clip AUC 0.92 on these pairs vs 0.58 over all AI engines, so it is Qwen-specific). Not supported: "timbre drifts less" (MFCC and wav2vec2 drift equal within noise), "pauses at regular spacing", mid-phrase pause placement. Mostly recorder, not voice: pause floor depth (-20 vs -40 dB) and onset sharpness (collapses under the noise-matched control, 21 -> 10.6 vs 9.0 real). Above 8 kHz the 24 kHz Qwen files are empty (about -47 dB re 1-4 kHz vs about -23 dB in the 48 kHz real originals) but that is lost at 16 kHz / on any call.
+
+Shadow layers added (never scored): qwen_cpp_db, qwen_f0_rate_st_s, qwen_long_pause_per_min, qwen_onset_sharpness_db, qwen_lowmid_balance_db. Leave-one-script-out clip AUC (clean/opus8k/g711/replay): cpp 1.00/1.00/1.00/0.92, long-pause 0.97/0.98/0.98/0.96, f0-rate 0.81/0.69/0.81/0.89, onset 0.92/0.88/0.90/0.80 (0.67 noise-matched), lowmid 0.88 throughout (likely mic). Scorer, thresholds untouched; golden eval identical (transcript 0.98 / synthetic 1.00 before and after); tests 549 passed.
+
+Caveat that governs all of it: ONE speaker, ONE engine, 8 scripts; real and Qwen differ in recording chain as well as synthesis. Not promotable. Next step: more speakers/mics, a second TTS engine, Qwen in real phone captures, and a short listening test to confirm which cues people actually use; then decide whether a "too clean voice" tell belongs in `acoustic.py`.

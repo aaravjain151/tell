@@ -15,8 +15,10 @@ Flow
   phone  -> {"type":"ready"}
   phone  -> {"type":"started"} + binary PCM16 16 kHz mono 100 ms frames   (the user tapped Start listening)
   engine <- POST /session (allowed Origin), WS /ws/stream hello {side:"mix", source:"iphone"}, frames as they arrive
-  engine -> GET /live/events (SSE) verdict ticks (verdict + stable)  -> phone {"type":"tick",...}
-  phone  -> {"type":"dismiss"}  -> engine WS dismiss + POST /live/dismiss
+  engine -> verdict messages on THIS session's own WS (full verdict + stable) -> phone {"type":"tick",...}
+            (never the global /live/events feed: it carries every session, e.g. a Mac listener's transcript)
+  phone  -> {"type":"dismiss"}  -> this session's WS {"type":"dismiss"} (never POST /live/dismiss, which hits all sessions)
+  engine -> final / error / closed (panic, DELETE /session, max length) -> phone {"type":"ended","reason":...}
   phone  -> {"type":"stopped"}  -> engine stop; the engine wipes its buffer. Nothing is recorded here or on the phone.
 
 It is passive: it never speaks to the caller. Needs the `websockets` package (services/api/requirements.txt).
@@ -25,15 +27,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import http.client
 import json
-import os
 import shutil
 import signal
 import socket
 import subprocess
 import sys
-import threading
 import urllib.error
 import urllib.request
 from urllib.parse import urlparse
@@ -59,17 +58,18 @@ def normalize_token(t: str) -> str:
     return "".join(ch for ch in t.upper() if ch.isalnum())
 
 
-def tick_message(ev: dict) -> dict:
-    """Engine /live/events verdict event -> the phone's tick message (same fields, unchanged)."""
-    return {"type": "tick", "tick": ev.get("tick", 0), "elapsed_s": ev.get("elapsed_s", 0),
-            "verdict": ev.get("verdict") or {}, "stable": ev.get("stable") or {}}
-
-
 def tick_from_ws_verdict(m: dict) -> dict:
-    """Fallback when the SSE feed is unavailable: the thin WS verdict (no transcript/tells) still has `stable`."""
+    """This session's WS verdict -> the phone's tick. `verdict` is the full per-window verdict the engine adds for the
+    session's own client (stream.py); an older engine without it still gives the thin fields and `stable`."""
+    full = m.get("verdict") if isinstance(m.get("verdict"), dict) else None
+    thin = {k: m.get(k) for k in ("tier", "p_ai", "p_scam", "confidence", "headline")}
     return {"type": "tick", "tick": m.get("seq", 0), "elapsed_s": m.get("t", 0),
-            "verdict": {k: m.get(k) for k in ("tier", "p_ai", "p_scam", "confidence", "headline")},
-            "stable": m.get("stable") or {}}
+            "verdict": full if full is not None else thin, "stable": m.get("stable") or {}}
+
+
+ENDED_TEXT = {"panic": "Everything was wiped on your computer (panic).", "deleted": "The session was closed on your computer.",
+              "max_length": "The longest allowed listening time was reached.", "kill": "The session was closed on your computer.",
+              "heartbeat_timeout": "Your computer stopped hearing from the phone.", "engine_closed": "The engine closed the connection."}
 
 
 def status_line(msg: dict) -> str:
@@ -88,90 +88,54 @@ def say(msg: str) -> None:
     print(msg, flush=True)
 
 
+class NotLoopback(RuntimeError):
+    pass
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Same rule as services/api/doublespeak/localhost.py: a loopback request is never bounced anywhere else."""
+
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+# ProxyHandler({}) ignores *_PROXY env vars; _NoRedirect turns any 3xx into an HTTPError instead of following it.
+_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
+
+
+def _local(url: str, data: bytes | None, origin: str | None, timeout: float) -> bytes:
+    """Every request is re-checked (not only the --url at startup): loopback host, no proxy, no redirects."""
+    if not is_loopback_url(url):
+        raise NotLoopback(f"refusing non-loopback URL {url!r}")
+    headers = {"Content-Type": "application/json"}
+    if origin:
+        headers["Origin"] = origin
+    req = urllib.request.Request(url, data=data, method="POST" if data is not None else "GET", headers=headers)
+    with _OPENER.open(req, timeout=timeout) as r:
+        return r.read()
+
+
 def create_session(base: str, origin: str) -> dict:
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))      # a loopback call never uses a proxy
-    req = urllib.request.Request(base.rstrip("/") + "/session", method="POST", data=b"{}",
-                                 headers={"Origin": origin, "Content-Type": "application/json"})
-    with opener.open(req, timeout=10) as r:
-        return json.loads(r.read())
-
-
-def post_dismiss(base: str, origin: str) -> None:
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    req = urllib.request.Request(base.rstrip("/") + "/live/dismiss", method="POST", data=b"{}",
-                                 headers={"Origin": origin, "Content-Type": "application/json"})
-    opener.open(req, timeout=5).read()
+    return json.loads(_local(base.rstrip("/") + "/session", b"{}", origin, 10))
 
 
 def engine_up(base: str) -> bool:
     try:
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        opener.open(base.rstrip("/") + "/health", timeout=3).read()
+        _local(base.rstrip("/") + "/health", None, None, 3)
         return True
     except Exception:  # noqa: BLE001
         return False
 
 
-class SSEThread(threading.Thread):
-    """Reads GET /live/events and hands each JSON event to `emit` (called on the thread; use call_soon_threadsafe)."""
-
-    def __init__(self, base: str, origin: str, emit, on_fail) -> None:
-        super().__init__(daemon=True)
-        u = urlparse(base)
-        self.host, self.port, self.origin = u.hostname or "127.0.0.1", u.port or 80, origin
-        self.emit, self.on_fail = emit, on_fail
-        self.stop_flag = threading.Event()
-        self.conn: http.client.HTTPConnection | None = None
-        self.sock: socket.socket | None = None
-
-    def run(self) -> None:
-        try:
-            self.conn = http.client.HTTPConnection(self.host, self.port, timeout=12)
-            self.conn.request("GET", "/live/events", headers={"Origin": self.origin, "Accept": "text/event-stream"})
-            self.sock = self.conn.sock
-            r = self.conn.getresponse()
-            if r.status != 200:
-                self.on_fail(f"events feed answered {r.status}")
-                return
-            while not self.stop_flag.is_set():
-                line = r.readline()
-                if not line:
-                    break
-                if line.startswith(b"data: "):
-                    try:
-                        self.emit(json.loads(line[6:]))
-                    except ValueError:
-                        pass
-        except Exception as e:  # noqa: BLE001 — a closing socket on stop is normal
-            if not self.stop_flag.is_set():
-                self.on_fail(str(e))
-        finally:
-            try:
-                if self.conn is not None:
-                    self.conn.close()
-            except Exception:  # noqa: BLE001
-                pass
-
-    def stop(self) -> None:
-        # Never conn.close() from here: it waits for the reader thread's lock. Shutting the socket unblocks the read.
-        self.stop_flag.set()
-        try:
-            if self.sock is not None:
-                self.sock.shutdown(socket.SHUT_RDWR)
-        except OSError:
-            pass
-
-
 # ---------------------------------------------------------------------------------------------- the bridge
 class Engine:
-    """One engine session: POST /session, WS /ws/stream, SSE ticks. Closed (and the engine wipes its buffer) on stop."""
+    """One engine session: POST /session, then WS /ws/stream. Verdicts and dismiss go over THIS socket only.
+    Closed (and the engine wipes its buffer) on stop; a server-side end is reported to the phone."""
 
     def __init__(self, bridge: "Bridge") -> None:
         self.b = bridge
         self.ws = None
-        self.sse: SSEThread | None = None
         self.tasks: list[asyncio.Task] = []
-        self.sse_ok = False
         self.closed = False
 
     async def open(self) -> str | None:
@@ -182,11 +146,13 @@ class Engine:
         try:
             info = await loop.run_in_executor(None, create_session, b.engine_url, b.origin)
         except urllib.error.HTTPError as e:
-            return "busy" if e.code == 429 else "refused" if e.code == 403 else "down"
-        except Exception:  # noqa: BLE001
+            return "busy" if e.code == 429 else "refused" if e.code in (403, 401) else "down"
+        except Exception:  # noqa: BLE001 — includes NotLoopback and refused redirects
             return "down"
         u = urlparse(b.engine_url)
         ws_url = f"{'wss' if u.scheme == 'https' else 'ws'}://{u.netloc}{info['ws_path']}"
+        if not is_loopback_url(b.engine_url):
+            return "refused"
         try:
             self.ws = await websockets.connect(ws_url, additional_headers={"Origin": b.origin}, max_size=1 << 20, proxy=None)
             await self.ws.send(json.dumps({"type": "hello", "token": info["token"], "sample_rate": 16000,
@@ -196,41 +162,32 @@ class Engine:
             return "down"
         if first.get("type") != "ready":
             return "refused"
-        self.sse = SSEThread(b.engine_url, b.origin, lambda ev: loop.call_soon_threadsafe(self._on_sse, ev), self._sse_failed)
-        self.sse.start()
         self.tasks = [asyncio.ensure_future(self._reader()), asyncio.ensure_future(self._pinger())]
         return None
 
-    def _sse_failed(self, why: str) -> None:
-        self.sse_ok = False
-
-    def _on_sse(self, ev: dict) -> None:
-        if self.closed:
-            return
-        t = ev.get("type")
-        if t == "verdict":
-            self.sse_ok = True
-            self.b.to_phone(tick_message(ev))
-            say(status_line(tick_message(ev)))
-        elif t == "ended":
-            self.b.to_phone({"type": "ended", "reason": str(ev.get("reason", "ended"))})
-
     async def _reader(self) -> None:
+        reason = "engine_closed"
         try:
             async for raw in self.ws:
                 m = json.loads(raw)
-                if m.get("type") == "verdict" and not self.sse_ok:
-                    self.b.to_phone(tick_from_ws_verdict(m))
-                elif m.get("type") == "error":
-                    self.b.to_phone({"type": "engine", "status": "error", "detail": str(m.get("code", "error"))})
-                    return
-                elif m.get("type") == "warn":
+                t = m.get("type")
+                if t == "verdict":
+                    tick = tick_from_ws_verdict(m)
+                    self.b.to_phone(tick)
+                    say(status_line(tick))
+                elif t == "error":
+                    reason = str(m.get("code", "error"))
+                    break
+                elif t == "warn":
                     say(f"LISTENING | engine {m.get('code')}")
-                elif m.get("type") == "final":
-                    return
-        except Exception:  # noqa: BLE001
-            if not self.closed:
-                self.b.to_phone({"type": "engine", "status": "down", "detail": "The engine closed the connection."})
+                elif t == "final":
+                    reason = str(m.get("reason", "ended"))
+                    break
+        except Exception:  # noqa: BLE001 — the socket died
+            pass
+        if not self.closed:                       # the SERVER ended it (panic, DELETE, max length, error, crash)
+            self.closed = True
+            self.b.engine_ended(self, reason)
 
     async def _pinger(self) -> None:
         while not self.closed:
@@ -240,36 +197,34 @@ class Engine:
             except Exception:  # noqa: BLE001
                 return
 
-    async def frame(self, data: bytes) -> None:
-        if self.ws is not None and not self.closed:
-            try:
-                await self.ws.send(data)
-            except Exception:  # noqa: BLE001
-                pass
+    async def frame(self, data: bytes) -> bool:
+        if self.ws is None or self.closed:
+            return False
+        try:
+            await self.ws.send(data)
+            return True
+        except Exception:  # noqa: BLE001
+            return False
 
     async def dismiss(self) -> None:
+        """Scoped to THIS session (the stream's own control message), never every session."""
         if self.ws is not None and not self.closed:
             try:
                 await self.ws.send(json.dumps({"type": "dismiss"}))
             except Exception:  # noqa: BLE001
                 pass
-        try:
-            await asyncio.get_running_loop().run_in_executor(None, post_dismiss, self.b.engine_url, self.b.origin)
-        except Exception:  # noqa: BLE001
-            pass
 
     async def close(self) -> None:
-        if self.closed:
-            return
-        self.closed = True
-        if self.sse:
-            self.sse.stop()
-        if self.ws is not None:
+        if self.ws is not None and not self.closed:
+            self.closed = True
             try:
                 await self.ws.send(json.dumps({"type": "stop"}))
-                await asyncio.wait_for(asyncio.shield(self.tasks[0]), 3) if self.tasks else None
+                if self.tasks:
+                    await asyncio.wait_for(asyncio.shield(self.tasks[0]), 3)
             except Exception:  # noqa: BLE001
                 pass
+        self.closed = True
+        if self.ws is not None:
             try:
                 await self.ws.close()
             except Exception:  # noqa: BLE001
@@ -286,16 +241,30 @@ class Bridge:
         self.engine: Engine | None = None
         self.paired = asyncio.Event()
         self.frames = 0
+        self.send_failures = 0
 
     def to_phone(self, msg: dict) -> None:
         if self.phone is not None:
             asyncio.ensure_future(self._send(msg))
 
-    async def _send(self, msg: dict) -> None:
+    async def _send(self, msg: dict) -> bool:
         try:
             await self.phone.send(json.dumps(msg, separators=(",", ":")))
-        except Exception:  # noqa: BLE001
-            pass
+            return True
+        except Exception as e:  # noqa: BLE001 — surfaced, not swallowed: the session loop notices the dead socket
+            self.send_failures += 1
+            say(f"could not reach the phone ({type(e).__name__}); stopping the engine session")
+            if self.engine is not None:
+                asyncio.ensure_future(self._drop_engine())
+            return False
+
+    def engine_ended(self, eng: "Engine", reason: str) -> None:
+        """The engine ended the session by itself: tell the phone (it stops listening) and forget the session."""
+        if self.engine is eng:
+            self.engine = None
+        say(f"engine ended the session: {reason}")
+        self.to_phone({"type": "ended", "reason": reason, "detail": ENDED_TEXT.get(reason, "Listening stopped on your computer.")})
+        asyncio.ensure_future(eng.close())
 
     async def run(self, stop: asyncio.Event) -> str:
         """Connect to the phone (retrying until it is there), relay until `stop`. Returns why it ended."""
@@ -362,8 +331,10 @@ class Bridge:
     async def _on_phone(self, msg) -> None:
         if isinstance(msg, bytes):
             self.frames += 1
-            if self.engine is not None:
-                await self.engine.frame(msg)
+            if self.engine is not None and not await self.engine.frame(msg):
+                eng = self.engine
+                eng.closed = True
+                self.engine_ended(eng, "engine_closed")
             return
         if len(msg) > PHONE_MAX_TEXT:
             return

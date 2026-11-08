@@ -80,7 +80,7 @@ final class LoopbackServer: @unchecked Sendable {
             guard let c = client, authenticated || s.contains("\"ready\"") else { return }
             let md = NWProtocolWebSocket.Metadata(opcode: .text)
             let ctx = NWConnection.ContentContext(identifier: "text", metadata: [md])
-            c.send(content: s.data(using: .utf8), contentContext: ctx, isComplete: true, completion: .contentProcessed { _ in })
+            c.send(content: s.data(using: .utf8), contentContext: ctx, isComplete: true, completion: .contentProcessed { [weak self, weak c] err in self?.sendDone(err, c) })
         }
     }
 
@@ -89,7 +89,7 @@ final class LoopbackServer: @unchecked Sendable {
             guard let c = client, authenticated else { return }
             let md = NWProtocolWebSocket.Metadata(opcode: .binary)
             let ctx = NWConnection.ContentContext(identifier: "bin", metadata: [md])
-            c.send(content: data, contentContext: ctx, isComplete: true, completion: .contentProcessed { _ in })
+            c.send(content: data, contentContext: ctx, isComplete: true, completion: .contentProcessed { [weak self, weak c] err in self?.sendDone(err, c) })
         }
     }
 
@@ -97,6 +97,16 @@ final class LoopbackServer: @unchecked Sendable {
     func disconnectClient() { queue.async { [self] in dropClient() } }
 
     // MARK: private
+
+    /// A failed send is not swallowed: the client is dropped, which the app shows as "Lost contact with your computer".
+    private func sendDone(_ err: NWError?, _ c: NWConnection?) {
+        guard err != nil, let c else { return }
+        queue.async { [weak self] in
+            guard let self, self.client === c else { return }
+            self.dropClient()
+        }
+    }
+
 
     private func emit(_ e: Event) { DispatchQueue.main.async { [weak self] in self?.onEvent?(e) } }
 

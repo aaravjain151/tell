@@ -83,9 +83,23 @@ def _label(rel: Path, base: str) -> str:
     return "human" if "human" in rel.parts[:-1] or base.startswith("human") else "ai"
 
 
+# Condition suffixes written by tools/redteam/degrade.py (<stem>.<suffix>.wav). "opus8k" keeps its historic label "opus-8k".
+CONDITION_SUFFIXES = ("opus8k", "amr_nb", "g711_mulaw8k", "g711_alaw8k", "opus_lowbitrate_with_loss",
+                      "speaker_rerecord_sim", "chain_pstn_voip", "chain_replay_call")
+CAVEAT = ("**CAVEAT: ONE human speaker (Sanath) and tiny n. Every number below is a sanity check on the pipeline, "
+          "not an estimate of real-world accuracy and not evidence of generalisation. Any separation may be speaker identity.**")
+
+
 def _condition(stem: str) -> tuple[str, str]:
-    """('clean'|'opus-8k', base stem)."""
-    return ("opus-8k", stem[: -len(".opus8k")]) if stem.endswith(".opus8k") else ("clean", stem)
+    """(condition label, base stem). 'clean' when no known suffix."""
+    for suf in CONDITION_SUFFIXES:
+        if stem.endswith("." + suf):
+            return ("opus-8k" if suf == "opus8k" else suf), stem[: -len(suf) - 1]
+    return "clean", stem
+
+
+def _cond_order(c: str) -> tuple[int, str]:
+    return (0, "") if c == "clean" else (1, "") if c == "opus-8k" else (2, c)
 
 
 def _transcript(wav: Path, base: str) -> str | None:
@@ -112,7 +126,7 @@ def wild_markdown(rows: dict[str, list[dict]], thr: float, version: str) -> str:
     out = [f"thresholds_version `{version}` · shipping P_AI_THRESHOLD {thr}", "",
            "| Condition | Slice | AI n | Human n | AUC | EER | FPR@90%TPR | Caught @thr | False alarms @thr | LOEO TPR / FPR |",
            "|---|---|---|---|---|---|---|---|---|---|"]
-    for cond in sorted(rows):
+    for cond in sorted(rows, key=_cond_order):
         ai = [r for r in rows[cond] if r["label"] == "ai"]
         h = [r["p_ai"] for r in rows[cond] if r["label"] == "human"]
         by: dict[str, list[float]] = {}
@@ -142,16 +156,18 @@ def run_wild(folder: str, verbose: bool, dump: str | None = None) -> None:
         rel = wav.relative_to(root)
         cond, base = _condition(wav.stem)
         v = pipeline.analyze(wav.read_bytes(), _transcript(wav, base))
+        shadow = (v.egress.get("context") or {}).get("shadow") or {}   # logged only; nothing here is scored
         fired = [f"{t.name}={t.score:.2f}" for t in v.tells if t.applicable and t.score >= 0.5]
         rows.setdefault(cond, []).append({"name": str(rel), "label": _label(rel, base), "engine": _engine(rel, base),
-                                          "p_ai": v.p_ai, "tier": v.tier, "fired": fired,
+                                          "p_ai": v.p_ai, "tier": v.tier, "fired": fired, "shadow": shadow,
                                           "tells": [{"name": t.name, "family": t.family, "score": t.score, "weight": t.weight,
                                                      "applicable": t.applicable} for t in v.tells]})
     if not rows:
         print(f"no .wav clips under {folder} (make redteam ARGS='--engine all' / record humans into {folder}/human / tools/redteam/degrade.sh)")
         return
+    print(CAVEAT)
     print(f"wild eval ({folder}) · thresholds {THRESHOLDS_VERSION} · shipping p_ai threshold {P_AI_THRESHOLD}")
-    for cond in sorted(rows):
+    for cond in sorted(rows, key=_cond_order):
         ai = [r for r in rows[cond] if r["label"] == "ai"]
         hu = [r for r in rows[cond] if r["label"] == "human"]
         a, h = [r["p_ai"] for r in ai], [r["p_ai"] for r in hu]
@@ -179,6 +195,7 @@ def run_wild(folder: str, verbose: bool, dump: str | None = None) -> None:
             for r in rows[cond]:
                 print(f"   {r['label']:5} {r['engine']:12} {r['name']}: p_ai {r['p_ai']:.2f}")
     print("\n" + wild_markdown(rows, P_AI_THRESHOLD, THRESHOLDS_VERSION))
+    print("\n" + CAVEAT)
     if dump:  # per-clip tells, for replaying other weights offline (eval/replay_weights.py); contains clip names only
         Path(dump).write_text(json.dumps(rows))
 

@@ -1,6 +1,6 @@
 # Doublespeak for iPhone
 
-A thin client, like the Android app. The phone listens through its microphone and the audio goes over the USB cable to the Doublespeak engine on your Mac. The engine does the analysis; the phone shows the verdict. Nothing is recorded or stored on the phone or the Mac, there is no LAN, Wi-Fi, cloud, relay, analytics or third-party SDK, and the app never speaks to the caller (D-003, D-004, D-009, D-011).
+A thin client, like the Android app. The phone listens through its microphone and the audio goes over the USB cable to the Doublespeak engine on your Mac. The engine does the analysis; the phone shows the verdict. The audio stays on your own devices: it goes from the phone only to your own computer over the USB cable (it does leave the phone), is analysed in memory there, and nothing is recorded or stored on the phone or the Mac. There is no LAN, Wi-Fi, cloud, relay, analytics or third-party SDK, and the app never speaks to the caller (D-003, D-009, D-011; the phone-to-computer cable is the PROPOSED exception D-012 to D-004's "never leaves the device").
 
 ## What it can and cannot do (read this first)
 
@@ -17,10 +17,10 @@ An iPhone cannot reach the Mac's `localhost`, so the app runs a tiny WebSocket *
 ```
 iPhone mic -> app (PCM16 16 kHz mono, 100 ms frames) -- loopback WS server :8765
    <== USB cable (usbmuxd / iproxy) ==>  tools/ios/bridge.py  -> engine POST /session + WS /ws/stream (side=mix, source=iphone)
-engine GET /live/events (verdict + stable + 2x2 + How sure) -> bridge -> phone JSON ticks
+engine verdicts on the bridge's OWN /ws/stream session (full verdict + stable + 2x2 + How sure) -> bridge -> phone JSON ticks
 ```
 
-The phone accepts one client, requires the per-launch **pairing code** shown on its connection screen (the bridge sends it in its first message, within 5 s), and refuses anything with an `Origin` header (a web page). Stop on either side wipes buffers; the engine wipes its ring when the stream closes.
+The phone accepts one client, requires the per-launch **pairing code** shown on its connection screen (the bridge sends it in its first message, within 5 s), and refuses anything with an `Origin` header (a web page). Stop on either side wipes buffers; the engine wipes its ring when the stream closes. If the computer ends the session (panic, closed, longest time reached, engine gone) the phone stops listening and says so. The bridge never reads the engine's global live feed and never follows a redirect; every request it makes is re-checked to be loopback.
 
 ## Computer setup
 
@@ -63,7 +63,7 @@ To prove it compiles for a device without signing (done in this repo): `xcodebui
    python3 tools/ios/bridge.py --token K7QM-4TXD
    ```
    It prints the consent line, starts `iproxy`, connects, and the phone's pill turns to "Your computer". If `iproxy` or the phone is missing it says so loudly and tells you the fix. `--url`, `--origin`, `--udid` and `--port` exist; the engine URL must be loopback.
-3. Tap **Start listening** on the phone. The Listening bar shows a timer, level bars and a big Stop. Amber and red give a haptic; red takes over the screen with **Dismiss** (the bridge forwards it to the engine and `POST /live/dismiss`).
+3. Tap **Start listening** on the phone. The Listening bar shows a timer, level bars and a big Stop. Amber and red give a haptic; red takes over the screen with **Dismiss** (the bridge sends it on its own engine session only, so it never clears another listener's alert).
 4. The code changes every time the app launches. The iOS Simulator shares the Mac's loopback: use `--direct` instead of iproxy.
 
 ## The speaker-mode call test (about 10 minutes)
