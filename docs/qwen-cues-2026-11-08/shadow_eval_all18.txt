@@ -1,0 +1,32 @@
+18 pairs (all): address_send, casual_clone, coffee_7, dinner_plans, long_appointment, long_checkin, morning_routine, new_internship, number_appointment, room_booking, rough_morning, sales_disclosed, sales_undisclosed, scam_bank_otp, scam_grandparent, scam_irs, stolen_package, urgent_recording
+feature                    cond                   real     qwen     diff [95% CI over scripts]     dz |        clip AUC [CI]  wins |     6s-window AUC [CI]
+qwen_cpp_db                clean                  11.1     15.1      +4.01 [   +3.14,   +4.87]  +2.00 |  0.99 [0.96,1.00]  1.00 |  0.94 [0.87,0.99] n=18
+qwen_cpp_db                opus8k                 11.6     15.5      +3.87 [   +2.88,   +4.97]  +1.64 |  0.98 [0.94,1.00]  1.00 |  0.94 [0.86,0.99] n=18
+qwen_cpp_db                g711_mulaw8k           11.1     14.6      +3.55 [   +2.49,    +4.6]  +1.55 |  0.98 [0.94,1.00]  1.00 |  0.93 [0.85,0.98] n=18
+qwen_cpp_db                chain_replay_call      9.33     9.97     +0.644 [  +0.235,   +1.08]  +0.69 |  0.77 [0.62,0.90]  0.72 |  0.72 [0.58,0.86] n=18
+qwen_cpp_db                floor_matched          11.1     13.2      +2.17 [   +1.33,   +2.92]  +1.24 |  0.88 [0.74,0.97]  0.83 |  0.80 [0.68,0.91] n=18
+qwen_onset_sharpness_db    clean                  10.6     16.7      +5.96 [   +2.68,   +9.64]  +0.89 |  0.85 [0.70,0.97]  0.67 |  0.79 [0.63,0.93] n=13
+qwen_onset_sharpness_db    opus8k                 11.1     17.9      +7.07 [   +4.02,   +10.4]  +1.10 |  0.88 [0.73,0.98]  0.67 |  0.90 [0.82,0.98] n=14
+qwen_onset_sharpness_db    g711_mulaw8k           10.6     16.4      +5.77 [   +2.61,    +9.1]  +0.87 |  0.84 [0.68,0.96]  0.78 |  0.86 [0.76,0.96] n=15
+qwen_onset_sharpness_db    chain_replay_call      8.59     11.6      +2.82 [   +0.68,   +5.21]  +0.62 |  0.72 [0.53,0.88]  0.44 |  0.29 [0.12,0.52] n=14
+qwen_onset_sharpness_db    floor_matched          10.6     10.7     +0.103 [   -1.09,   +1.19]  +0.04 |  0.31 [0.17,0.42]  0.22 |  0.56 [0.44,0.71] n=17
+qwen_f0_rate_st_s          clean                  27.6     26.5      -1.13 [   -3.33,    +1.1]  -0.22 |  0.61 [0.44,0.76]  0.56 |  0.64 [0.50,0.78] n=18
+qwen_f0_rate_st_s          opus8k                 27.1     26.3     -0.785 [   -2.84,   +1.16]  -0.17 |  0.57 [0.43,0.72]  0.61 |  0.61 [0.50,0.72] n=18
+qwen_f0_rate_st_s          g711_mulaw8k           27.7     26.5      -1.15 [   -3.41,      +1]  -0.23 |  0.60 [0.44,0.77]  0.56 |  0.65 [0.49,0.78] n=18
+qwen_f0_rate_st_s          chain_replay_call      21.4     18.6      -2.79 [   -5.01,  -0.595]  -0.55 |  0.68 [0.51,0.83]  0.67 |  0.71 [0.56,0.83] n=18
+qwen_f0_rate_st_s          floor_matched          27.6     25.7      -1.94 [   -4.33,  +0.389]  -0.37 |  0.63 [0.48,0.79]  0.67 |  0.67 [0.53,0.82] n=18
+qwen_long_pause_per_min    clean                  21.9       13      -7.69 [   -11.9,   -3.56]  -0.96 |  0.85 [0.65,0.98]  0.56 |  0.68 [0.43,0.89] n=13
+qwen_long_pause_per_min    opus8k                 21.8     12.8      -7.98 [   -11.6,   -4.39]  -1.10 |  0.87 [0.72,0.97]  0.67 |  0.68 [0.43,0.88] n=14
+qwen_long_pause_per_min    g711_mulaw8k           21.9     12.8      -8.57 [   -12.2,   -4.75]  -1.10 |  0.88 [0.73,0.98]  0.67 |  0.72 [0.50,0.91] n=15
+qwen_long_pause_per_min    chain_replay_call      17.8       11      -6.72 [   -10.8,   -3.33]  -0.90 |  0.83 [0.69,0.96]  0.72 |  0.71 [0.47,0.89] n=14
+qwen_long_pause_per_min    floor_matched          21.9     14.8      -7.07 [   -10.1,   -3.89]  -1.01 |  0.79 [0.65,0.92]  0.83 |  0.64 [0.46,0.81] n=18
+qwen_lowmid_balance_db     clean                 -8.35     -4.9      +3.45 [   +1.86,      +5]  +0.97 |  0.85 [0.70,0.97]  0.78 |  0.82 [0.67,0.94] n=18
+qwen_lowmid_balance_db     opus8k                -8.58    -4.96      +3.62 [   +1.95,   +5.27]  +0.98 |  0.86 [0.72,0.97]  0.83 |  0.83 [0.68,0.95] n=18
+qwen_lowmid_balance_db     g711_mulaw8k          -8.35     -4.9      +3.45 [   +1.88,   +5.03]  +0.97 |  0.85 [0.69,0.96]  0.78 |  0.82 [0.68,0.94] n=18
+qwen_lowmid_balance_db     chain_replay_call     -8.31    -4.99      +3.32 [   +1.79,   +4.86]  +0.98 |  0.85 [0.70,0.96]  0.72 |  0.84 [0.69,0.96] n=18
+qwen_lowmid_balance_db     floor_matched         -8.35    -4.92      +3.43 [   +1.82,   +5.01]  +0.97 |  0.85 [0.69,0.96]  0.78 |  0.82 [0.67,0.94] n=18
+modulation_4_16_ratio      clean                 0.274    0.344    +0.0703 [ +0.0427,  +0.105]  +1.03 |  0.84 [0.73,0.94]  0.83 |  0.67 [0.57,0.77] n=18
+modulation_4_16_ratio      opus8k                0.275    0.345    +0.0697 [ +0.0431,  +0.104]  +1.01 |  0.84 [0.73,0.93]  0.83 |  0.66 [0.56,0.77] n=18
+modulation_4_16_ratio      g711_mulaw8k          0.274    0.344      +0.07 [ +0.0434,  +0.103]  +1.03 |  0.85 [0.74,0.94]  0.83 |  0.66 [0.56,0.76] n=18
+modulation_4_16_ratio      chain_replay_call     0.179    0.247    +0.0682 [ +0.0395, +0.0996]  +1.03 |  0.84 [0.72,0.95]  0.89 |  0.72 [0.63,0.82] n=18
+modulation_4_16_ratio      floor_matched         0.274    0.349    +0.0757 [ +0.0497,  +0.109]  +1.14 |  0.86 [0.78,0.95]  1.00 |  0.68 [0.58,0.77] n=18
