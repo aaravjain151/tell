@@ -45,7 +45,7 @@ from .stabiliser import INTENT_FAMILIES, RawTick, Stabiliser
 
 router = APIRouter()
 
-MAX_SUBSCRIBERS = 4
+MAX_SUBSCRIBERS = 24   # raised from 4 for demo robustness (multiple tabs + probes)
 QUEUE_MAX = 64
 STATE_EVERY_S = 5.0
 LOOPBACK_CLIENTS = {"127.0.0.1", "::1", "localhost", "testclient"}   # "testclient" is Starlette's TestClient only
