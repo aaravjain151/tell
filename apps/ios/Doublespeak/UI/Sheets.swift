@@ -25,7 +25,7 @@ struct AlertTakeover: View {
                     }.padding(.top, 20).opacity(0.92)
                     Button("Dismiss") { c.dismissAlert() }
                         .buttonStyle(DSButtonStyle(kind: .alert, height: 64)).padding(.top, 28)
-                    Text("Dismiss clears this alert. Doublespeak keeps listening and will warn again if there is new evidence.")
+                    Text("Dismiss clears this alert. Tell keeps listening and will warn again if there is new evidence.")
                         .font(.ds(14, .regular, relativeTo: .footnote)).opacity(0.85).multilineTextAlignment(.center).padding(.top, 14)
                 }
                 .foregroundStyle(Theme.alertFg)
@@ -76,7 +76,7 @@ struct SpeakerSheet: View {
     @EnvironmentObject var c: ListenController
     var body: some View {
         SheetFrame(title: "How speaker mode works") {
-            Text("iPhone does not give apps the audio of a phone call, and it does not let apps use the microphone during one. So Doublespeak listens the way you do: through the microphone, to a call playing out loud near this phone.")
+            Text("iPhone does not give apps the audio of a phone call, and it does not let apps use the microphone during one. So Tell listens the way you do: through the microphone, to a call playing out loud near this phone.")
                 .font(.ds(17, .regular, relativeTo: .body)).foregroundStyle(Theme.ink).padding(.top, 12)
             VStack(alignment: .leading, spacing: 12) {
                 fact("It hears", " a call playing from another device's speaker, or a recording played near the phone, plus your voice and the room.")
@@ -116,7 +116,7 @@ struct ConnectCard: View {
         VStack(alignment: .leading, spacing: 14) {
             if full { Text("Connect to your computer").font(.ds(20, .regular, relativeTo: .title3)).foregroundStyle(Theme.ink) }
             Text(up ? "The bridge is connected over the USB cable. Audio goes only there."
-                    : "Doublespeak runs on your computer. The phone only listens and sends the audio over the USB cable. Nothing goes over Wi-Fi or the internet.")
+                    : "Tell runs on your computer. The phone only listens and sends the audio over the USB cable. Nothing goes over Wi-Fi or the internet.")
                 .font(.ds(15, .regular, relativeTo: .subheadline)).foregroundStyle(Theme.muted)
             VStack(alignment: .leading, spacing: 4) {
                 Text("Pairing code").font(.ds(13, .regular, relativeTo: .footnote)).foregroundStyle(Theme.muted)
@@ -125,7 +125,7 @@ struct ConnectCard: View {
                     .accessibilityLabel("Pairing code \(PairingToken.display(c.token).map { String($0) }.joined(separator: " "))")
             }
             if !up {
-                Text("On your computer, in the Doublespeak folder, with the phone plugged in and unlocked:").font(.ds(14, .regular, relativeTo: .footnote)).foregroundStyle(Theme.muted)
+                Text("On your computer, in the Tell folder, with the phone plugged in and unlocked:").font(.ds(14, .regular, relativeTo: .footnote)).foregroundStyle(Theme.muted)
                 HStack(spacing: 8) {
                     Text(command).font(.system(size: 12.5, weight: .medium, design: .monospaced)).foregroundStyle(Theme.ink)
                         .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)

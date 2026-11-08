@@ -33,7 +33,7 @@ targets:
     info:
       path: Doublespeak/Info.plist
       properties:
-        CFBundleDisplayName: Doublespeak
+        CFBundleDisplayName: Tell
         UILaunchScreen:
           UIColorName: LaunchBackground
           UIImageName: LaunchMark
@@ -42,7 +42,7 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [audio]
         UIAppFonts: [Outfit-ExtraLight.ttf, Outfit-Light.ttf, Outfit-Regular.ttf, Outfit-Medium.ttf]
-        NSMicrophoneUsageDescription: "Doublespeak listens to a call you play out loud near this phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored."
+        NSMicrophoneUsageDescription: "Tell listens to a call you play out loud near this phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored."
         ITSAppUsesNonExemptEncryption: false
         # App Group id the list is shared through. It only takes effect when the build is signed with the
         # appgroup entitlements (docs/BLOCK-SPAM.md); without them the app keeps the list to itself.

@@ -40,7 +40,7 @@ enum CallBanner: Equatable {
         case .inCall:
             return "iOS does not let apps listen during a call. Listen to a call on another device, or use the Mac (Calls on Other Devices)."
         case .interrupted:
-            return "Doublespeak will try again when the call ends. Nothing is being heard right now."
+            return "Tell will try again when the call ends. Nothing is being heard right now."
         }
     }
 
