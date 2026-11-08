@@ -12,7 +12,7 @@ enum AlertLevel: String, Equatable {
 
 /// Fixed wording (same words as tools/macos/listen.py). Never any caller text.
 enum Wording {
-    static let consent = "Doublespeak listens to this call on your Mac only to warn you. Nothing is recorded or sent anywhere. Tell the other person if your state requires it."
+    static let consent = "Tell listens to this call on your Mac only to warn you. Nothing is recorded or sent anywhere. Tell the other person if your state requires it."
     static let amber = "Possible scam call. Be careful with money and codes."
     static let red = "Likely scam call. Do not share money, codes or passwords."
     static let limits = "Works for calls played on this Mac (iPhone calls answered on the Mac via Calls on Other Devices, FaceTime, WhatsApp, Zoom)."

@@ -24,7 +24,7 @@ final class Notifier {
     func post(_ level: AlertLevel, sound: Bool) {
         guard let text = Wording.notification(for: level) else { return }
         let c = UNMutableNotificationContent()
-        c.title = "Doublespeak"
+        c.title = "Tell"
         c.body = text
         c.sound = sound ? .default : nil
         c.interruptionLevel = level == .red ? .timeSensitive : .active

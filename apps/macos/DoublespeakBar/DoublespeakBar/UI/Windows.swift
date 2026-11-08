@@ -11,13 +11,13 @@ final class WindowPresenter {
     init(model: AppModel) { self.model = model }
 
     func showWelcome() {
-        show(&welcome, title: "Welcome to Doublespeak", size: NSSize(width: 460, height: 520)) {
+        show(&welcome, title: "Welcome to Tell", size: NSSize(width: 460, height: 520)) {
             WelcomeView(model: model, close: { [weak self] in self?.welcome?.close() })
         }
     }
 
     func showSettings() {
-        show(&settings, title: "Doublespeak Settings", size: NSSize(width: 480, height: 460)) {
+        show(&settings, title: "Tell Settings", size: NSSize(width: 480, height: 460)) {
             SettingsView(model: model)
         }
     }
@@ -76,13 +76,13 @@ struct WelcomeView: View {
             Text("Two macOS permissions").font(.system(size: 24, weight: .semibold))
             permissionBlock(
                 icon: "waveform", title: "Audio capture",
-                body: "The first time a call plays, macOS asks to let Doublespeak capture audio from other apps. The prompt shows this sentence: \u{201C}\(Bundle.main.object(forInfoDictionaryKey: "NSAudioCaptureUsageDescription") as? String ?? "")\u{201D} Choose Allow. If you choose Don't Allow, macOS hands it silence and it hears nothing. Fix it later in System Settings, Privacy & Security, Screen & System Audio Recording.",
+                body: "The first time a call plays, macOS asks to let Tell capture audio from other apps. The prompt shows this sentence: \u{201C}\(Bundle.main.object(forInfoDictionaryKey: "NSAudioCaptureUsageDescription") as? String ?? "")\u{201D} Choose Allow. If you choose Don't Allow, macOS hands it silence and it hears nothing. Fix it later in System Settings, Privacy & Security, Screen & System Audio Recording.",
                 button: "Open audio settings") { SystemLinks.open(SystemLinks.audioCapture) }
             permissionBlock(
                 icon: "bell", title: "Notifications",
                 body: model.notifications == .allowed ? "Allowed. You get one notice when a call turns amber or red, with fixed wording and no sound."
                     : model.notifications == .denied ? "Denied. The menu bar icon still changes colour and shape, but no notice appears. Turn it on in System Settings, Notifications."
-                    : "macOS asks \u{201C}Doublespeak would like to send you notifications\u{201D}. Choose Allow to get one notice when a call turns amber or red.",
+                    : "macOS asks \u{201C}Tell would like to send you notifications\u{201D}. Choose Allow to get one notice when a call turns amber or red.",
                 button: model.notifications == .unknown ? "Ask now" : "Open notification settings") {
                     if model.notifications == .unknown { model.requestNotifications() } else { SystemLinks.open(SystemLinks.notifications) }
                 }
@@ -105,7 +105,7 @@ struct WelcomeView: View {
     private var ready: some View {
         VStack(alignment: .leading, spacing: 14) {
             Image(systemName: "checkmark.circle").font(.system(size: 34)).foregroundStyle(Palette.teal)
-            Text("Doublespeak is on").font(.system(size: 24, weight: .semibold))
+            Text("Tell is on").font(.system(size: 24, weight: .semibold))
             Text("Look for the ear in your menu bar. It turns into a waveform while a call is being listened to, and that icon stays visible for the whole call.")
                 .fixedSize(horizontal: false, vertical: true)
             Text(Wording.limits).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -122,7 +122,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Where Doublespeak lives") {
+            Section("Where Tell lives") {
                 HStack {
                     TextField("Folder", text: $repo).textFieldStyle(.roundedBorder)
                     Button("Choose") { choose() }

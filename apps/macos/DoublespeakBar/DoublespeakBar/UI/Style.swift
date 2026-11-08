@@ -33,13 +33,13 @@ extension DisplayState {
 
     var accessibilityName: String {
         switch self {
-        case .off: return "Doublespeak is off"
-        case .waiting: return "Doublespeak is waiting for a call"
-        case .listening: return "Doublespeak is listening to a call"
-        case .amber: return "Doublespeak: possible scam call"
-        case .red: return "Doublespeak: likely scam call"
-        case .paused: return "Doublespeak is paused"
-        case .engineProblem: return "Doublespeak has an engine problem"
+        case .off: return "Tell is off"
+        case .waiting: return "Tell is waiting for a call"
+        case .listening: return "Tell is listening to a call"
+        case .amber: return "Tell: possible scam call"
+        case .red: return "Tell: likely scam call"
+        case .paused: return "Tell is paused"
+        case .engineProblem: return "Tell has an engine problem"
         }
     }
 }

@@ -127,7 +127,7 @@ final class Capture {
         }
         let uuid = UUID()
         desc.uuid = uuid
-        desc.name = "doublespeak-tap"
+        desc.name = "tell-tap"
         desc.isPrivate = true
         desc.muteBehavior = .unmuted
 
@@ -144,7 +144,7 @@ final class Capture {
         resampler = rs
 
         var dict: [String: Any] = [
-            kAudioAggregateDeviceNameKey: "doublespeak-agg",
+            kAudioAggregateDeviceNameKey: "tell-agg",
             kAudioAggregateDeviceUIDKey: UUID().uuidString,
             kAudioAggregateDeviceIsPrivateKey: true,
             kAudioAggregateDeviceTapAutoStartKey: true,
