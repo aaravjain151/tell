@@ -414,7 +414,7 @@ def test_wipe_discards_inflight_result(client, monkeypatch):
     while not s.inflight and time.time() < deadline:
         time.sleep(0.01)
     assert s.inflight
-    ws.send_json({"type": "stop"})
+    ws.send_json({"type": "kill"})          # kill wipes at once; a graceful stop lets it land (test_stream_tail.py)
     f, seen = read_until(ws, lambda m: m["type"] == "final")
     gate.set()
     time.sleep(0.2)

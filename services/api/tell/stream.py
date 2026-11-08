@@ -9,8 +9,13 @@ Auth that works from a browser (a WebSocket cannot send custom headers, and the 
   3. server -> {"type":"ready"}; then binary PCM16 mono 16 kHz frames (<= 128 KiB each), plus text control messages
      {"type":"ping"} (heartbeat; any message counts), {"type":"stop"}, {"type":"kill"}.
 Optional hello field "source" (short label for the live feed). {"type":"dismiss"} acknowledges a red alert.
-Server -> client: ready | verdict (raw fields + "stable", see live.py) | warn(lagging|overloaded) | final{ticks,reason} | error{code} | pong.
+Server -> client: ready | verdict (raw fields + "stable", see live.py) | warn(lagging|overloaded) | final{ticks,reason[,tail]} | error{code} | pong.
 Every end (stop, kill, heartbeat timeout, disconnect, max length, DELETE /session/{id}, POST /panic) wipes the ring.
+A GRACEFUL end (stop, a clean close 1000/1001, max length) first runs Session.finish: the in-flight tick may land and
+the unscored tail (>= 2 s of new, non-silent audio) gets ONE last analysis through the same stabiliser, sent as a
+verdict with "tail": true before `final` (whose "tail" says scored|covered|no_new_audio|silence|timeout|failed|closed)
+and before the live feed's "ended". Bounded by params.final_flush_s (<= TELL_ANALYZE_TIMEOUT_S). Kill, panic, DELETE,
+heartbeat timeout and errors wipe at once with no extra analysis.
 """
 from __future__ import annotations
 
@@ -26,6 +31,7 @@ router = APIRouter()
 
 WS_PATH = "/ws/stream"
 CLOSE_BAD, CLOSE_AUTH, CLOSE_TIMEOUT, CLOSE_TOO_BIG = 4400, 4401, 4408, 1009
+NORMAL_CLOSE = (1000, 1001)                           # client closed cleanly (or went away): flush the tail
 
 
 @router.post("/session")
@@ -151,11 +157,12 @@ async def _serve(ws: WebSocket, out: _Out, s: Session) -> None:
     wake_task = asyncio.ensure_future(wake.wait())
     recv: "asyncio.Future | None" = None
     reason = ""
+    flush = False                                     # graceful end: score the unscored tail before wiping
     try:
         while not s.closed:
             left = deadline - loop.time()
             if left <= 0:
-                reason = "max_length"
+                reason, flush = "max_length", True
                 break
             recv = asyncio.ensure_future(ws.receive())
             done, _ = await asyncio.wait({recv, wake_task}, timeout=min(s.p["heartbeat_s"], left),
@@ -165,7 +172,7 @@ async def _serve(ws: WebSocket, out: _Out, s: Session) -> None:
                 break
             if recv not in done:
                 if loop.time() >= deadline:
-                    reason = "max_length"
+                    reason, flush = "max_length", True
                 else:
                     reason = "heartbeat_timeout"
                     await out({"type": "error", "code": "heartbeat_timeout"})
@@ -174,6 +181,7 @@ async def _serve(ws: WebSocket, out: _Out, s: Session) -> None:
             recv = None
             if msg["type"] != "websocket.receive":    # disconnect
                 reason = "disconnect"
+                flush = msg.get("code", 1000) in NORMAL_CLOSE   # a clean close is a graceful end; anything else wipes
                 break
             data = msg.get("bytes")
             if data is not None:
@@ -195,7 +203,7 @@ async def _serve(ws: WebSocket, out: _Out, s: Session) -> None:
             elif kind == "dismiss":                  # acknowledge a latched red alert (display only)
                 s.stab.dismiss()
             elif kind in ("stop", "kill"):
-                reason = kind
+                reason, flush = kind, kind == "stop"
                 break
             else:
                 reason = "bad_message"
@@ -205,11 +213,19 @@ async def _serve(ws: WebSocket, out: _Out, s: Session) -> None:
         if recv is not None and not recv.done():
             recv.cancel()
         wake_task.cancel()
-        ticks = s.ticks
-        s.close(reason or "ended")                    # wipe BEFORE telling the client, and drop any in-flight result
-        s.cancel_job()
+        if not flush:                                 # kill, panic, DELETE, heartbeat timeout, errors: wipe NOW and
+            s.close(reason or "ended")                # drop any in-flight result
+            s.cancel_job()
+    final: dict = {"type": "final", "ticks": s.ticks, "reason": reason}
+    if flush and not s.closed:                        # one last verdict over the unscored tail, before final/ended
+        final["tail"] = await s.finish(out)
+        final["ticks"] = s.ticks
+    if s.closed and s.close_reason in ("deleted", "panic") and reason != s.close_reason:
+        final["reason"] = reason = s.close_reason     # wiped from outside while flushing
+    s.close(reason or "ended")                        # wipe BEFORE telling the client
+    s.cancel_job()
     if reason in ("stop", "kill", "max_length", "deleted", "panic"):
-        await out({"type": "final", "ticks": ticks, "reason": reason})
+        await out(final)
     try:
         await ws.close()
     except Exception:  # noqa: BLE001

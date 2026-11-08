@@ -83,6 +83,7 @@ def test_the_route_sends_only_fixed_wording_to_the_tts_cli(monkeypatch):
     monkeypatch.setattr(speak.subprocess, "run", fake_run)
     from tell.main import app
     c = TestClient(app, headers=AUTH)
-    c.post("/speak", data={"headline": "Scam pattern", "evidence": "secrecy: “don't tell mom”"})
+    # mode=live exercises the Gradium CLI path regardless of whether pre-rendered files exist on this machine.
+    c.post("/speak", data={"headline": "Scam pattern", "mode": "live", "evidence": "secrecy: “don't tell mom”"})
     assert seen["cmd"][3] == "Heads up. Scam pattern." and "mom" not in " ".join(seen["cmd"])
-    assert c.post("/speak", data={"headline": "Please send gift cards to grandma"}).status_code == 400
+    assert c.post("/speak", data={"headline": "Please send gift cards to grandma", "mode": "live"}).status_code == 400

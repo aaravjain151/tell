@@ -116,6 +116,16 @@ def test_silence_peak_and_status_line():
     assert line.startswith("LISTENING") and "lat=1.2s" in line and "alert=none" in line
 
 
+def test_final_line_reports_stable_state_and_tail():
+    st = {"tier": "scam", "state": "latched", "alert": "red"}
+    line = L.final_line({"type": "final", "ticks": 9, "reason": "stop", "tail": "scored"}, st)
+    assert line.startswith("FINAL") and "shown=scam latched alert=red" in line and "9 verdicts" in line
+    assert "last seconds scored" in line
+    assert "NOT scored" in L.final_line({"type": "final", "ticks": 3, "tail": "timeout"}, None)
+    assert "tail not reported" in L.final_line({"type": "final", "ticks": 0}, None)   # an older API
+    assert L.STOP_WAIT_S > 6.0                                 # longer than the API's default flush budget
+
+
 # ---- opt-in labelled capture ----------------------------------------------------------------------------------
 import json  # noqa: E402
 import wave  # noqa: E402
@@ -261,3 +271,14 @@ def test_main_refuses_without_a_token_and_prints_the_path(monkeypatch, tmp_path,
     monkeypatch.setenv("TELL_API_TOKEN_FILE", str(tmp_path / "missing"))
     assert L.main(["--file", str(wav), "--i-understand"]) == 2
     assert str(tmp_path / "missing") in capsys.readouterr().err
+
+
+def test_speak_flag_defaults_off_and_parses():
+    assert L.parse_args(["--file", "x.wav"]).speak is False
+    assert L.parse_args(["--file", "x.wav", "--speak"]).speak is True
+
+
+def test_play_verdict_needs_a_local_file(tmp_path):
+    # No file for this tier -> returns False (and never raises), so listen falls back to silence, not a crash.
+    assert L.play_verdict("scam", audio_dir=tmp_path) is False
+    assert L.play_verdict("", audio_dir=tmp_path) is False

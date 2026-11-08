@@ -4,5 +4,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url)), src = join(here, ".."), out = join(here, "www");
 rmSync(out, { recursive: true, force: true }); mkdirSync(out, { recursive: true });
-for (const f of ["index.html", "app.css", "app.js", "worklet.js", "outfit.woff2", "manifest.webmanifest", "lib", "icons"]) cpSync(join(src, f), join(out, f), { recursive: true });
+// "demo" holds two short consented, recorded PCM16 16 kHz clips streamed into the real engine by demo mode (stage).
+for (const f of ["index.html", "app.css", "app.js", "worklet.js", "outfit.woff2", "manifest.webmanifest", "lib", "icons", "demo"]) cpSync(join(src, f), join(out, f), { recursive: true });
 console.log("www ready:", out);

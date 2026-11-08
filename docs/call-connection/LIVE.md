@@ -81,6 +81,20 @@ ring.
   with stray blips never alerts (both in `tests/test_live.py`). The notification fires only when the alert CHANGES to
   amber or red, with fixed wording, no sound unless `--sound`, and never any caller text.
 
+## The last seconds are scored (final flush)
+
+A tick only runs every 3 s of audio and a busy engine can skip one, so the last few seconds of a call used to be thrown
+away when it ended. In a replay of `long_tech_scam.wav` (28 s) the last tick covered audio to 20 s: the card-number
+request at the end was never scored and the stable state stayed amber. Now a GRACEFUL end (`stop`, a clean close
+1000/1001, max length) lets a tick already in flight land, then, if at least 2 s of new non-silent audio arrived after
+the last scored window, runs ONE more analysis over the last 10 s up to the end of received audio, through the same
+stabiliser. It is sent as a `verdict` with `"tail": true` BEFORE `final` (and before `ended` on `/live/events`); `final`
+gains `"tail": scored|covered|no_new_audio|silence|timeout|failed|closed`. The whole flush is bounded by
+`params.final_flush_s` (`TELL_STREAM_FINAL_S`, default 6 s, never above `TELL_ANALYZE_TIMEOUT_S`); past it the session
+ends without it and the API logs why. Kill, panic, `DELETE /session/{id}`, heartbeat timeout and errors still wipe at once
+with no extra analysis. `listen.py` sends `stop` on file end and Ctrl-C and waits up to 12 s, printing the tail verdict
+(`LAST WORDS | ...`) and a `FINAL | shown=... alert=...` line. Tests: `services/api/tests/test_stream_tail.py`.
+
 ## Measured (replay, this branch, real API, whisper + stub LLM)
 
 Per-tick latency from the moment the audio for a window was sent to its verdict: 0.3 to 1.0 s. A call that starts

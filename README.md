@@ -147,7 +147,7 @@ python run_pipeline_tests.py
 
 *Every voice has a tell.* A privacy-first detector that classifies the voice on a call as **Human · AI (identified itself) · AI (undisclosed) · Scam pattern**, shows the exact tells that fired, and never sends caller audio off the device.
 
-Built at HACK1984 (Privacy-First track · Best use of Gradium).
+Built at HACK1984 — targeting the Privacy-First (main) track, Most Startup-able, and the Best Use of Gradium side prize (it stacks with Privacy-First). We used Gradium to clone our own teammates' voices for the red-team attacker clips and to speak the verdict; only our own script text is ever sent to Gradium, never a caller.
 
 ## Run it
 ```

@@ -765,8 +765,10 @@ html[data-sens="quiet"] #caution{display:none}
       <label class="btn" for="audio" id="uploadlbl" tabindex="0" role="button">Upload audio</label>
       <input class="vh" type="file" id="audio" accept="audio/*" tabindex="-1">
       <button class="btn" id="speak" type="button">Speak verdict</button>
+      <label class="rt-q" id="autospeak-wrap" title="Play the pre-rendered spoken verdict automatically after each result"><input type="checkbox" id="autospeak"> Speak automatically</label>
       <div class="attach" id="attach"><b id="attachname"></b><span id="attachmeta"></span><button class="link" id="detach" type="button">Remove</button></div>
     </div>
+    <p class="srcnote" id="speaknote">Spoken verdict voiced by Gradium (rendered ahead of time; nothing is sent during a call).</p>
     <p class="status" id="status" role="status" aria-live="polite"></p>
     <p class="alert" id="alert" role="alert"></p>
   </section>
@@ -1223,6 +1225,7 @@ function render(v, {animate = true, live = false, textOnly = false} = {}){
   document.documentElement.dataset.tier = v.tier;
   $("tierlabel").textContent = TIER[v.tier] || v.tier;
   setHeadline(v.headline); $("advice").textContent = v.advice;
+  maybeAutoSpeak(v.tier);
   lastProv = textOnly ? "Your transcript (no audio)" : live ? "Live analysis" : "Sample (stored)";
   $("prov").dataset.kind = textOnly ? "text" : live ? "live" : "sample";
   showProvenance(lastProv);
@@ -1435,17 +1438,49 @@ async function toggleRecord(){
   }catch(e){ stream.getTracks().forEach(t => t.stop()); showError("Couldn't start recording: " + e.message); }
   recStarting = false;
 }
-async function speak(){
-  if (!lastVerdict){ setStatus("Analyze a call first."); return; }
-  if (!apiUp){ showError("Spoken verdicts need the local API and a GRADIUM_API_KEY."); return; }
-  const fd = new FormData(); fd.append("headline", lastVerdict.headline);          // only our own wording is ever spoken
-  setStatus("Asking Gradium for the voice. Only our own text leaves this device.");
+// Pre-rendered spoken verdicts live next to this page (verdict_audio/<tier>.wav), rendered ahead of time by
+// tools/render_verdict_audio.py. Playing one is a same-origin, loopback read: no network, no Gradium, nothing leaves
+// the device — it works with Wi-Fi off. Only if the file is missing do we fall back to the live Gradium path.
+const VERDICT_AUDIO_BASE = "verdict_audio/";
+let autoSpeak = false, lastSpokenTier = null;
+try{ autoSpeak = localStorage.getItem("ds-autospeak") === "1"; }catch(e){}
+
+async function playPrerendered(tier){
+  try{
+    const r = await fetch(VERDICT_AUDIO_BASE + encodeURIComponent(tier) + ".wav", {cache:"no-store"});
+    if (!r.ok) return false;
+    const b = await r.blob();
+    if (!b || !b.size) return false;
+    await new Audio(URL.createObjectURL(b)).play();
+    return true;
+  }catch(e){ return false; }
+}
+
+async function speak(auto){
+  const v = lastVerdict;
+  if (!v){ if (!auto) setStatus("Analyze a call first."); return; }
+  const tier = v.tier;
+  if (await playPrerendered(tier)){                                   // pre-rendered, local, offline
+    log(`Spoke verdict (pre-rendered Gradium voice, played locally for "${tier}"): 0 bytes out, 0 caller audio, 0 caller words`);
+    if (!auto) setStatus("");
+    return;
+  }
+  if (!apiUp){ if (!auto) showError("No pre-rendered verdict audio yet (run make verdict-audio). The live path needs the local API and a GRADIUM_API_KEY."); return; }
+  const fd = new FormData(); fd.append("headline", v.headline); fd.append("tier", tier); fd.append("mode", "live");  // only our own wording
+  if (!auto) setStatus("No pre-rendered file found — asking Gradium live. Only our own text leaves this device.");
   try{
     const r = await api("/speak", {method:"POST", body:fd});
     if (!r.ok){ const j = await r.json(); throw new Error(j.detail || r.statusText); }
     new Audio(URL.createObjectURL(await r.blob())).play();
-    log(`POST /speak: ${lastVerdict.headline.length} characters of our own wording out, 0 caller audio, 0 caller words`); setStatus("");
-  }catch(e){ setStatus(""); showError("Couldn't speak the verdict: " + e.message); }
+    log(`POST /speak (live — pre-rendered file missing): ${v.headline.length} characters of our own wording out, 0 caller audio, 0 caller words`); if (!auto) setStatus("");
+  }catch(e){ if (!auto){ setStatus(""); showError("Couldn't speak the verdict: " + e.message); } }
+}
+
+function maybeAutoSpeak(tier){
+  if (!autoSpeak || !tier) return;
+  if (tier === lastSpokenTier) return;                                // don't repeat the same tier back to back
+  lastSpokenTier = tier;
+  speak(true);
 }
 
 /* ---------- tooltip on marked phrases ---------- */
@@ -1538,7 +1573,10 @@ $("trust-list").addEventListener("click", e => {
 $("rtmore").addEventListener("click", () => { rtAll = !rtAll; syncRt(); });
 $("rtq").addEventListener("change", () => { if (rtCur) pickClip(rtCur.id); });
 $("rec").addEventListener("click", toggleRecord);
-$("speak").addEventListener("click", speak);
+$("speak").addEventListener("click", () => speak(false));
+(() => { const cb = $("autospeak"); if (!cb) return; cb.checked = autoSpeak;
+  cb.addEventListener("change", () => { autoSpeak = cb.checked; try{ localStorage.setItem("ds-autospeak", autoSpeak ? "1" : "0"); }catch(e){}
+    if (autoSpeak && lastVerdict){ lastSpokenTier = null; maybeAutoSpeak(lastVerdict.tier); } }); })();
 $("toggle").addEventListener("click", () => setMode($("paper").dataset.mode === "read" ? "edit" : "read"));
 $("detach").addEventListener("click", () => { clearAudio(); setStatus(""); });
 $("transcript").addEventListener("input", () => document.querySelectorAll(".sample").forEach(b => b.setAttribute("aria-pressed", "false")));

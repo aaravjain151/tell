@@ -5,8 +5,8 @@
 })(typeof self !== "undefined" ? self : this, function () {
   "use strict";
   /* Speakerphone audio blends the caller and the room, so the side is always "mix" (the engine caps confidence). */
-  function hello(token) {
-    return { type: "hello", token: token, sample_rate: 16000, format: "pcm_s16le", side: "mix", source: "android speaker" };
+  function hello(token, source) {
+    return { type: "hello", token: token, sample_rate: 16000, format: "pcm_s16le", side: "mix", source: source || "android speaker" };
   }
   /* The engine accepts loopback hosts only; so does this app. ?api= is honoured for tests but never for another host. */
   function loopbackApi(search, fallback) {
