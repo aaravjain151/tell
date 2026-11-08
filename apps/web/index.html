@@ -1196,6 +1196,7 @@ function drawBar(){
 }
 setInterval(drawBar, 1000);
 function resetSession(){
+  emptyEndToken++;
   Object.assign(L, {active:true, ended:false, endReason:"", tick:-1, ticks:[], tier:null, dismissed:false, sigs:{}, lost:false});
   barNote = "";
   HTML.dataset.ended = "0"; HTML.dataset.alert = "none"; HTML.dataset.warm = "1"; HTML.dataset.tier = "unsure";
@@ -1217,7 +1218,14 @@ function endSession(reason){
   if (!L.active) return;
   L.elapsed = Math.max(L.elapsed, liveClock()); L.ended = true; L.endReason = reason || "";
   HTML.dataset.ended = "1"; $("caution").hidden = true; $("redbar").hidden = true; HTML.dataset.banner = "0"; drawBar();
+  if (!$("livetx").textContent.trim()) {   // the call ended and no words were ever heard: say so, do not leave "Gathering..." up
+    swapHeadline("Nothing was heard", "No speech reached Doublespeak on this call. Check that the call is answered on this Mac and plays through its speakers.", true);
+    $("tierlabel").textContent = "Nothing heard";
+    const mine = ++emptyEndToken;           // back to the waiting page after a few seconds, unless a new call starts first
+    setTimeout(() => { if (mine === emptyEndToken && L.ended && !$("livetx").textContent.trim()) clearSession(); }, 7000);
+  }
 }
+let emptyEndToken = 0;
 function clearSession(){ Object.assign(L, {active:false, ended:false, ticks:[], tier:null}); HTML.dataset.ended = "0"; setLive(conn.ok ? "empty" : "offline"); drawBar(); }
 function stableView(v, st){
   // The card shows the STABLE tier. If this tick disagrees, recompute the 2x2 and scores from the stable tier so the card never contradicts itself.

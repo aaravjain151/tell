@@ -63,6 +63,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--call-process", action="append", metavar="NAME", help="call app process name (repeatable); "
                     "replaces the default list")
     ap.add_argument("--process", metavar="NAME", help="with --now: tap only this app (default: system audio)")
+    ap.add_argument("--tap-call-app-only", action="store_true",
+                    help="--watch: tap only the detected call app instead of all system audio (can hear silence if the "
+                         "call is rendered by another process)")
     ap.add_argument("--tap", default=str(DEFAULT_TAP), help="path to the tap_audio binary")
     ap.add_argument("--side", choices=("far", "near", "mix"), default="far")
     ap.add_argument("--silence-s", type=float, default=90.0, help="stop after this many seconds of silence")
@@ -277,6 +280,7 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
         rd = asyncio.ensure_future(reader())
         quiet_s = 0.0
         last_ping = loop.time()
+        diag = {"t": loop.time(), "peak": 0.0, "warned": False}
         try:
             async for frame in frames:
                 if stop.is_set():
@@ -289,7 +293,18 @@ async def run_session(args: argparse.Namespace, frames, label: str, stop: asynci
                 state["sent"] += len(frame)
                 while len(sent_at) < state["sent"] // 32000:
                     sent_at.append(loop.time())
-                quiet_s = quiet_s + FRAME_MS / 1000 if peak(frame) < SILENCE_PEAK else 0.0
+                pk = peak(frame)
+                diag["peak"] = max(diag["peak"], pk)
+                if loop.time() - diag["t"] >= 6:
+                    if diag["peak"] < SILENCE_PEAK:
+                        say("LISTENING | hearing SILENCE: the call audio is not reaching the tap "
+                            "(is the call answered on this Mac and playing through its speakers?)")
+                        diag["warned"] = True
+                    elif diag["warned"]:
+                        say("LISTENING | audio is arriving again")
+                        diag["warned"] = False
+                    diag["t"], diag["peak"] = loop.time(), 0.0
+                quiet_s = quiet_s + FRAME_MS / 1000 if pk < SILENCE_PEAK else 0.0
                 if quiet_s >= args.silence_s:
                     reason = "silence"
                     break
@@ -355,7 +370,7 @@ async def watch(args: argparse.Namespace, stop: asyncio.Event) -> int:
         if ev == "arm" and task is None:
             say(f"call detected ({ws_state.armed}): arming")
             sess_stop = asyncio.Event()
-            task = asyncio.ensure_future(run_session(args, tap_frames(args.tap, ws_state.armed), "tap", sess_stop))
+            task = asyncio.ensure_future(run_session(args, tap_frames(args.tap, ws_state.armed if args.tap_call_app_only else None), "tap", sess_stop))
             idle_said = False
         elif ev == "stop" and task is not None:
             say("call ended: stopping")
