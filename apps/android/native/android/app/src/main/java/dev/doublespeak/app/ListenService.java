@@ -19,14 +19,18 @@ public class ListenService extends Service {
     static final String CHANNEL = "listening";
     static final int ID = 7001;
     static final String ACTION_STOP = "dev.doublespeak.app.STOP";
+    /** True while the page listens by hand; auto-listen then does not open a second session. */
+    static volatile boolean running;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && ACTION_STOP.equals(intent.getAction())) {
+            running = false;
             stopForeground(true);
             stopSelf();
             return START_NOT_STICKY;
         }
+        running = true;
         NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel ch = new NotificationChannel(CHANNEL, "Listening", NotificationManager.IMPORTANCE_LOW);
@@ -47,6 +51,12 @@ public class ListenService extends Service {
             startForeground(ID, n);
         }
         return START_NOT_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        running = false;
+        super.onDestroy();
     }
 
     @Override

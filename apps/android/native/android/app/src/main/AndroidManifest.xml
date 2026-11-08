@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
+        android:name=".TellApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -33,6 +34,32 @@
             android:exported="false"
             android:foregroundServiceType="microphone" />
 
+        <!-- Auto-listen (opt-in, OFF by default; docs/android/ANDROID.md "Auto-listen"). Native capture, same USB-only path. -->
+        <service
+            android:name=".CallListenService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+        <!-- Call state only (ringing / answered / ended), never the number. Disabled until the user turns auto-listen on.
+             PHONE_STATE is a protected broadcast: only the system can send it. -->
+        <receiver
+            android:name=".CallStateReceiver"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PHONE_STATE" />
+            </intent-filter>
+        </receiver>
+
+        <!-- "Turn on speaker": opens the phone app's in-call screen (public TelecomManager API) and finishes at once. -->
+        <activity
+            android:name=".SpeakerActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -53,4 +80,6 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Auto-listen only, asked when the user turns the setting on: to know a call was answered and when it ended. -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
 </manifest>
