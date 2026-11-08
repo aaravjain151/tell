@@ -80,7 +80,7 @@ public class CallListenService extends Service {
             @Override public void onEnded(CallSession.Outcome o, String text) {
                 if (o != CallSession.Outcome.STOPPED) Notices.notice(CallListenService.this, text);
                 CallMonitor.get(CallListenService.this).onSessionEnded();
-                AutoListenBus.emit("state", "ended:" + o.name().toLowerCase(), 0);
+                AutoListenBus.emit("state", "ended:" + o.name().toLowerCase(java.util.Locale.ROOT), 0);
                 end();
             }
         });

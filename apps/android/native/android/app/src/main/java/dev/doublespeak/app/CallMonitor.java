@@ -40,7 +40,7 @@ final class CallMonitor implements AutoListenCore.Effects, AutoListenCore.Env {
     synchronized void onPhoneState(CallStateMachine.Phone p) {
         AutoListenCore.Result r = core.onPhoneState(p, this);
         AutoListenPrefs.saveMachine(ctx, core.machine().snapshot());
-        AutoListenBus.emit("call", p.name().toLowerCase() + ":" + r.name().toLowerCase(), 0);
+        AutoListenBus.emit("call", p.name().toLowerCase(java.util.Locale.ROOT) + ":" + r.name().toLowerCase(java.util.Locale.ROOT), 0);
     }
 
     synchronized void onUserStop() {

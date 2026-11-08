@@ -147,7 +147,7 @@ public final class LoopbackEngine implements CallSession.Engine {
             InputStream in = sock.getInputStream();
             String head = readHead(in);
             if (parseStatus(head) != 101) throw new CallSession.EngineError(CallSession.Outcome.REFUSED, "ws " + parseStatus(head));
-            if (!head.toLowerCase().contains(WsFrames.acceptFor(key).toLowerCase())) throw new IOException("bad accept");
+            if (!head.contains(WsFrames.acceptFor(key))) throw new IOException("bad accept");
             sendText(hello(token));
             WsFrames.Frame f = WsFrames.read(in);            // the first answer must be ready (or an error)
             String t = f.text();
