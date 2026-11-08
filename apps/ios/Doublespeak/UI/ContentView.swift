@@ -69,6 +69,8 @@ struct ContentView: View {
                     if let v = c.verdict, !v.isWarming { ReadingSection(v: v).padding(.top, 20) }
                     if let f = c.listenerFailed { NoticeCard(notice: Notice(title: "The phone-side listener could not start", body: f)).padding(.top, 20) }
 
+                    if c.mode != .listening { BlockedCard().padding(.top, 20) }
+
                     Text("Doublespeak can be wrong. It never speaks to the caller and never records.")
                         .font(.ds(13, .regular, relativeTo: .footnote))
                         .foregroundStyle(Theme.muted)
@@ -92,6 +94,7 @@ struct ContentView: View {
             case .consent: ConsentSheet().interactiveDismissDisabled()
             case .speaker: SpeakerSheet()
             case .connect: ConnectSheet()
+            case .blocked: BlockedSheet()
             }
         }
         .task { c.boot() }
