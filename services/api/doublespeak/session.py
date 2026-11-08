@@ -234,7 +234,10 @@ class Session:
         self.ticks += 1
         msg = self.verdict_message(d, seq, t0, t1)
         msg["stable"] = self.stab.observe(d, t0, t1)
-        live.HUB.on_tick(self, d, msg["stable"], self.ticks)
+        pa = self.stab.personal_alert
+        if pa is not None:                       # opt-in only; absent otherwise so the message is bit-identical
+            msg["personal_alert"] = pa
+        live.HUB.on_tick(self, d, msg["stable"], self.ticks, pa)
         await emit(msg)
         if self.last_lag_s > LAG_WARN_FACTOR * self.p["hop_s"]:
             await self._warn("lagging", emit)

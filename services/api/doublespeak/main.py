@@ -7,10 +7,11 @@ import os
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 
-from . import limits, net_monitor, offline_guard, pipeline, privacy, readiness, secure_store, speak, thresholds, uploads
+from . import blocklist, feedback, limits, net_monitor, offline_guard, pipeline, privacy, readiness, secure_store, speak, thresholds, uploads
 from .audio import AudioDecodeError
 from .redteam import router as redteam_router
 from .live import router as live_router
+from .personal import router as personal_router
 from .stream import router as stream_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
@@ -20,6 +21,9 @@ limits.install(app)  # CORS allow-list, Host/Origin guard, body limit (see limit
 app.include_router(redteam_router)
 app.include_router(stream_router)
 app.include_router(live_router)
+app.include_router(personal_router)
+app.include_router(blocklist.router)
+app.include_router(feedback.router)
 
 
 @app.on_event("startup")

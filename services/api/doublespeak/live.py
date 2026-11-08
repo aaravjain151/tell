@@ -37,6 +37,7 @@ from typing import Any, AsyncIterator, Callable
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
+from . import personal
 from .signals import shadow
 from .stabiliser import INTENT_FAMILIES, RawTick, Stabiliser
 
@@ -84,6 +85,8 @@ class StableTracker:
         self._since_t = 0.0
         self.last: dict | None = None
         self._persist: dict[str, list[float]] = {"pella": [], "hf": []}   # SHADOW: neural scores over the call, never fed back
+        self.pcall = personal.CallTracker()      # numbers only; read by the personal layer, never by the stabiliser
+        self.personal_alert: str | None = None   # None unless DOUBLESPEAK_PERSONAL=1 AND the user opted in
 
     def _shadow_persistence(self, d: dict) -> None:
         """SHADOW only: call-level persistence of the per-window neural scores, attached to this tick's egress.context.shadow.
@@ -127,7 +130,16 @@ class StableTracker:
         self.last = {"tier": sv.shown_tier, "state": state, "alert": alert,
                      "since_s": round(max(0.0, t1 - self._since_t), 2), "reasons": reasons[:4]}
         self._shadow_persistence(d)
+        self._personal(d)
         return self.last
+
+    def _personal(self, d: dict) -> None:
+        """Opt-in notification sensitivity. Runs AFTER `self.last` is final and only sets `personal_alert`; it can never
+        change `stable` (tier, state, alert, reasons). Any failure leaves it None, i.e. the event is unchanged."""
+        try:
+            self.personal_alert = personal.LAYER.on_tick(self.pcall, d, self.last["alert"], self.last["tier"])
+        except Exception:  # noqa: BLE001
+            self.personal_alert = None
 
     def dismiss(self) -> bool:
         return self.stab.dismiss(None)
@@ -136,6 +148,8 @@ class StableTracker:
         self.stab.reset()
         self._key, self.last = None, None
         self._persist = {"pella": [], "hf": []}
+        self.pcall = personal.CallTracker()
+        self.personal_alert = None
 
 
 class Hub:
@@ -181,13 +195,19 @@ class Hub:
     def session_ended(self, s: Any, reason: str) -> None:
         if self.sessions.pop(s.id, None) is None:
             return
+        try:
+            personal.LAYER.on_call_end(getattr(getattr(s, "stab", None), "pcall", None))
+        except Exception:  # noqa: BLE001
+            pass
         self.publish({"type": "ended", "reason": reason})
         self.publish(self.state())
 
-    def on_tick(self, s: Any, d: dict, stable: dict, tick: int) -> None:
+    def on_tick(self, s: Any, d: dict, stable: dict, tick: int, personal_alert: str | None = None) -> None:
         if s.id in self.sessions and not s.closed:
-            self.publish({"type": "verdict", "tick": tick, "elapsed_s": round(s.received_s, 1),
-                          "verdict": d, "stable": stable})
+            ev = {"type": "verdict", "tick": tick, "elapsed_s": round(s.received_s, 1), "verdict": d, "stable": stable}
+            if personal_alert is not None:           # only present when the user opted in: otherwise the event is unchanged
+                ev["personal_alert"] = personal_alert
+            self.publish(ev)
 
     def dismiss_all(self) -> int:
         return sum(1 for s in list(self.sessions.values()) if s.stab.dismiss())
