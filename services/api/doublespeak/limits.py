@@ -136,6 +136,8 @@ class BodyLimitMiddleware:
         if scope["path"] == "/analyze":
             limit = max_upload_bytes() + _FORM_SLACK
             msg = f"audio too large: limit is {max_upload_bytes() // (1024 * 1024)} MB"
+        elif scope["path"].startswith(("/blocklist", "/feedback")):
+            limit, msg = 8192, "request body too large"
         else:
             limit, msg = _SMALL_BODY, "request body too large"
         declared = dict(scope["headers"]).get(b"content-length")
