@@ -3,7 +3,7 @@
 ## 1 · The clone test
 0–3 s: "This is my voice." (founder on camera)  
 3–8 s: "This is also my voice." (Gradium clone plays from a phone; captions show the waveform)  
-8–20 s: Screen: Doublespeak listening. Counter: 0 bytes out. Verdict flips to "AI · undisclosed". Read the tells aloud: "no breath events… pauses metronomic… pitch unusually steady."  
+8–20 s: Screen: Tell listening. Counter: 0 bytes out. Verdict flips to "AI · undisclosed". Read the tells aloud: "no breath events… pauses metronomic… pitch unusually steady."  
 20–30 s: "Nothing left my laptop. That's not a setting. It's a test in the repo."  
 30–40 s: "Set a safe word with your family. Then install the thing for when they forget it."  
 CTA: link in bio.
@@ -16,6 +16,6 @@ CTA: link in bio.
 
 ## 3 · What leaves the device
 0–5 s: Three app logos; "Where does your call go when you ask 'is this AI?'"  
-5–20 s: Diagram: cloud arrows for the incumbents; a loopback arrow for Doublespeak.  
+5–20 s: Diagram: cloud arrows for the incumbents; a loopback arrow for Tell.  
 20–35 s: Terminal: `make test` → `test_analysis_path_has_no_network_imports PASSED`.  
 35–45 s: "If a privacy claim can't be tested, it's marketing. Ours is a test."

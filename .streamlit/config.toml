@@ -1,4 +1,4 @@
-# DoubleSpeak Streamlit configuration.
+# Tell Streamlit configuration.
 # Usage statistics are disabled to honour the "no telemetry" hard rule.
 
 [browser]

@@ -7,7 +7,7 @@ in here to replace this shim; the API below matches it exactly, so the scripts
 work either way, and the fine-tuned ``.pt`` stays drop-in compatible with the
 official inference script.
 
-This shim reuses DoubleSpeak's already-ported, verified implementation
+This shim reuses Tell's already-ported, verified implementation
 (``doublespeak.deepfake``) so the pipeline runs offline right now. Importing it
 pulls in the offline guard via the ``doublespeak`` package, which is fine for
 feature extraction and training (both run offline).

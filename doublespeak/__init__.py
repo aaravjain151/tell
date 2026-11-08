@@ -1,4 +1,4 @@
-"""DoubleSpeak: a 100% on-device scam-call detector for older people.
+"""Tell: a 100% on-device scam-call detector for older people.
 
 The package is intentionally split into small, single-purpose modules:
 

@@ -1,4 +1,4 @@
-# training/ — build DoubleSpeak's two models
+# training/ — build Tell's two models
 
 Downloads run **once, online**. Training and use are **fully offline** after.
 Every dataset and licence is recorded in [`DATA_SOURCES.md`](../DATA_SOURCES.md).

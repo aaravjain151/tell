@@ -15,7 +15,7 @@ venv/
 # Local secrets / config
 .env
 
-# --- DoubleSpeak ---
+# --- Tell ---
 # Local-only data: encrypted alert history must never be committed
 data/
 # Large model weights fetched by download_models.py

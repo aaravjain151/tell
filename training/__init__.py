@@ -1,4 +1,4 @@
-"""Training pipeline for DoubleSpeak's two models.
+"""Training pipeline for Tell's two models.
 
 Part A (pellav2-finetune/): voice model - real vs AI-generated speech.
 Part B (scam-text):          transcript model - scam vs not-scam.

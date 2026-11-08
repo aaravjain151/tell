@@ -1,4 +1,4 @@
-"""Central configuration for the legacy Tell (formerly DoubleSpeak) Streamlit prototype.
+"""Central configuration for the legacy Tell Streamlit prototype.
 
 All tunable constants and filesystem paths live here so the rest of the code
 stays declarative. Importing this module also enforces offline mode via

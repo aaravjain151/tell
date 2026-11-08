@@ -68,7 +68,7 @@ for name, t in (("light", light), ("dark", dark)):
         pairs.append((f"{name}: status.{k} text on surface", v, t["surface"], 4.5))
 
 tokens = {
-    "name": "Doublespeak",
+    "name": "Tell",
     "palette": {"signal": signal, "neutral": neutral},
     "themes": {"light": light, "dark": dark},
     "type": {

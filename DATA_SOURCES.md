@@ -1,6 +1,6 @@
 # Data sources & licences
 
-Every external dataset used to **train** DoubleSpeak's models is listed here,
+Every external dataset used to **train** Tell's models is listed here,
 with its licence and how we use it. This is a hard requirement of the project:
 nothing trains on data whose licence we have not recorded.
 
