@@ -44,7 +44,7 @@ Python API for the learning code: `feedback.recent(n)` (newest first, `[]` when 
 No network, no library (`phonenumbers` is not used even if installed, so results are identical on every machine). Result is E.164 or `None`; it never raises. Input must be a string of at most 32 characters made of digits, space, `. - ( ) /` and an optional leading `+`.
 
 - `+` or `00` prefix: explicit country code, 7 to 15 digits, first digit not 0.
-- Otherwise national format, using `DOUBLESPEAK_DEFAULT_REGION` (default `US`): US/CA 10 digits or 1 plus 10 (area code and exchange start 2 to 9); GB `0` plus 10 digits; IN 10 digits starting 6 to 9 (optional leading 0); AU `0` plus 9 digits.
+- Otherwise national format, using `TELL_DEFAULT_REGION` (default `US`): US/CA 10 digits or 1 plus 10 (area code and exchange start 2 to 9); GB `0` plus 10 digits; IN 10 digits starting 6 to 9 (optional leading 0); AU `0` plus 9 digits.
 
 It cannot: check that a number exists or is dialable, handle short codes (911, SMS codes), extensions, vanity letters (`1-800-FLOWERS`), or national-format numbers from any other region. Those get `422 number not recognised` and the user must type the `+country` form.
 

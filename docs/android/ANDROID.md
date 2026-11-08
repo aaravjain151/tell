@@ -1,6 +1,6 @@
-# Doublespeak for Android
+# Tell for Android
 
-A thin client. The phone listens through its microphone and sends the audio to the Doublespeak engine on your computer over the USB cable. The engine does the analysis; the phone only shows the verdict. The audio stays on your own devices: it goes from the phone only to your own computer over the USB cable (it does leave the phone), is analysed in memory there, and nothing is recorded or stored. There is no LAN, Wi-Fi, cloud, relay or analytics, and the app never speaks to the caller (D-003, D-009, D-011; the phone-to-computer cable is the PROPOSED exception D-012 to D-004's "never leaves the device").
+A thin client. The phone listens through its microphone and sends the audio to the Tell engine on your computer over the USB cable. The engine does the analysis; the phone only shows the verdict. The audio stays on your own devices: it goes from the phone only to your own computer over the USB cable (it does leave the phone), is analysed in memory there, and nothing is recorded or stored. There is no LAN, Wi-Fi, cloud, relay or analytics, and the app never speaks to the caller (D-003, D-009, D-011; the phone-to-computer cable is the PROPOSED exception D-012 to D-004's "never leaves the device").
 
 ## What it can and cannot do (read this first)
 
@@ -26,7 +26,7 @@ brew install android-platform-tools          # adb
 make api-android                             # the engine, accepting the app's origins (loopback only)
 ```
 
-`make api-android` is `make api` with `DOUBLESPEAK_CORS_ORIGINS=http://localhost,http://localhost:5173,...`. The default engine refuses the installed app's origin (`http://localhost`) with a 403; the app says "The engine refused this page" if you forget.
+`make api-android` is `make api` with `TELL_CORS_ORIGINS=http://localhost,http://localhost:5173,...`. The default engine refuses the installed app's origin (`http://localhost`) with a 403; the app says "The engine refused this page" if you forget.
 
 ## Phone setup
 
@@ -60,7 +60,7 @@ Open `http://localhost:5173/` in Chrome on the phone, menu > **Add to Home scree
 1. Open the app. The pill top right must say "Your computer". If it says "Not connected", follow the steps on screen.
 2. Tap **Start listening**, read the consent sheet, continue. The Listening bar shows a timer and level bars.
 3. With the app listening, play the phone's speaker next to you: first just talk, check the bars move.
-4. Real call: have someone call you, answer, **switch to speakerphone**, then open Doublespeak and Start listening (keep the screen on). Have the caller read a scripted scam ("this is your bank, read me the code you just received, don't tell anyone").
+4. Real call: have someone call you, answer, **switch to speakerphone**, then open Tell and Start listening (keep the screen on). Have the caller read a scripted scam ("this is your bank, read me the code you just received, don't tell anyone").
 5. No call needed for a first check: play `data/calls/qwen3tts/scam_bank_otp.wav` from the laptop at normal volume near the phone and Start listening. Expect warming for about 8 s, then human/unsure, amber, then the red takeover with a vibration.
 6. Lock the screen for 5 minutes while listening (installed app only): does the verdict keep updating when you unlock?
 

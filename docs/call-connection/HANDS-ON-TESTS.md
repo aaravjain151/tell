@@ -1,4 +1,4 @@
-# Getting real call audio into Doublespeak: hands-on tests
+# Getting real call audio into Tell: hands-on tests
 
 Written 2026-11-07 from two research passes (sources in the PR). **Nothing below has been run on real hardware yet.** "Verified" means read from a primary source; the routing questions can only be answered by these tests. Whoever runs one: write the result in the matching GitHub issue, including the sample rate and whether the level meter moved.
 
@@ -20,7 +20,7 @@ Always keep the replay path ready. If a live route fails, say "the call-audio ro
 5. Record that loopback device (the package's example `pawp_record_wasapi_loopback.py`).
 6. Place a call from Phone Link to a second phone; have the callee say "one two three".
 7. SUCCESS: the WAV contains the callee's voice. SILENCE: flat zero. Check Phone Link > Settings > Features > "Hear audio from" is Computer.
-8. Chrome variant: open the Doublespeak page, Share > Entire screen > tick "Also share system audio", confirm the meter moves.
+8. Chrome variant: open the Tell page, Share > Entire screen > tick "Also share system audio", confirm the meter moves.
 9. If silent, install VB-Cable, set CABLE Input as the default playback device, pick CABLE Output as the input, repeat. Still silent means Phone Link audio bypasses the Windows render path: use the replay path.
 10. Note: 8 kHz or 16 kHz? any echo? is the callee's side of YOUR voice clean?
 
@@ -28,7 +28,7 @@ Always keep the replay path ready. If a live route fails, say "the call-audio ro
 1. Same Apple Account on both, same Wi-Fi, Bluetooth on.
 2. iPhone: Settings > Phone > Calls on Other Devices > allow the Mac. Mac: FaceTime > Settings > General > Calls from iPhone.
 3. `brew install --cask blackhole-2ch`. In Audio MIDI Setup create a Multi-Output Device = real speakers + BlackHole 2ch, make it the Mac's sound output.
-4. Doublespeak page > Audio source > pick "BlackHole 2ch" > Check level.
+4. Tell page > Audio source > pick "BlackHole 2ch" > Check level.
 5. Call the iPhone from a second phone, answer on the Mac. SUCCESS: the level meter moves with the caller's voice. SILENCE: the call is still on the iPhone, or the Multi-Output Device is not the system output.
 6. Record 10 s, analyse; compare the verdict with the same call replayed through the speakers.
 
@@ -38,7 +38,7 @@ Always keep the replay path ready. If a live route fails, say "the call-audio ro
 3. On-device timing (only if time): sherpa-onnx Moonshine Tiny / Whisper Tiny and an ONNX Runtime Mobile model; record seconds per 4 s window, RAM, temperature.
 
 ## What each path can and cannot honestly claim
-- Phone Link and Continuity: the user takes the call on the PC/Mac; Doublespeak hears the caller through the computer's audio. It does not hear a call that stays on the phone.
+- Phone Link and Continuity: the user takes the call on the PC/Mac; Tell hears the caller through the computer's audio. It does not hear a call that stays on the phone.
 - Android app: an ordinary app never gets call audio (VOICE_CALL needs a system permission; the mic is often silenced in a call). Speakerphone mode only, labelled as such. Real two-sided audio needs an OEM or dialer partnership, a Bluetooth hands-free box, or Phone Link to a PC.
 - Never claim: it hears both sides of a normal call; it works without speakerphone on Android; "fully on-device" for the phone; reliable deepfake detection on phone-call audio (8 kHz codecs are untested); that it beats Pixel/Samsung scam detection.
 

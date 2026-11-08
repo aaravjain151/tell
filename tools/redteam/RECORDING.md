@@ -2,7 +2,7 @@
 
 Same words, two voices: an engine clone of teammate X (`make redteam`) and teammate X reading the
 identical scripts (`make record`), then opus-8k copies and a speaker→mic replay. Script tells cancel,
-so the wild eval measures whether Doublespeak separates the *voice*.
+so the wild eval measures whether Tell separates the *voice*.
 
 ~30 min per speaker. Credits: 6 clips per engine per voice.
 

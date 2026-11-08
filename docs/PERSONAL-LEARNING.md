@@ -4,7 +4,7 @@ Like a phone keyboard that learns your next word, Tell can learn **when you want
 
 **Honest name.** This is *online learning*: a Thompson-sampling contextual bandit over six sensitivity arms per call profile (the default), with an online logistic calibration kept as the tested alternative. It is **not** deep reinforcement learning. The whole state is a few dozen numbers.
 
-Code: `services/api/doublespeak/personal.py`. Tools: `tools/personal/{collect,simulate,fusion}.py`. Tests: `services/api/tests/test_personal.py`.
+Code: `services/api/tell/personal.py`. Tools: `tools/personal/{collect,simulate,fusion}.py`. Tests: `services/api/tests/test_personal.py`.
 
 ## What it learns
 
@@ -34,7 +34,7 @@ The only output is one extra field in the live event, `personal_alert: none|ambe
 
 ## Privacy
 
-- Off by default. Active only if `DOUBLESPEAK_PERSONAL=1` **and** the user switched it on (`POST /personal`).
+- Off by default. Active only if `TELL_PERSONAL=1` **and** the user switched it on (`POST /personal`).
 - On-device only. `personal.py` has no network code (checked by `test_import_scan` / `test_network_guard`).
 - Encrypted at rest with AES-256-GCM through `secure_store` (key in the OS keychain, never on disk). If the keychain is unavailable the feature stays off (fails closed). File mode 0600, atomic replace. A tampered or corrupt file is ignored.
 - Holds only weights and decayed counts. No audio, no transcript, no evidence strings, no per-call log. Recent per-call feature vectors live in memory only (last 50) so a feedback label can be matched to its call.
@@ -50,7 +50,7 @@ The only output is one extra field in the live event, `personal_alert: none|ambe
 
 ## Feedback adapter
 
-Feedback storage (`POST /feedback`, `feedback.recent(n)`) is built on another branch. `personal.py` consumes an abstract list of dicts `{id?, call_id?, label, tick?, ts?}` through `FeedbackSource.recent(n)`. `feedback_adapter()` imports `doublespeak.feedback` if it exists (reversing newest-first output) and otherwise returns an empty `FakeFeedback`, so the layer is inert, not broken. Records are de-duplicated by `id` (else by `ts|call_id|label|tick`). A record with an unknown or missing `call_id` is attributed to the most recent finished call (assumption: feedback follows the call). Learning runs when a call ends and on `GET /personal`.
+Feedback storage (`POST /feedback`, `feedback.recent(n)`) is built on another branch. `personal.py` consumes an abstract list of dicts `{id?, call_id?, label, tick?, ts?}` through `FeedbackSource.recent(n)`. `feedback_adapter()` imports `tell.feedback` if it exists (reversing newest-first output) and otherwise returns an empty `FakeFeedback`, so the layer is inert, not broken. Records are de-duplicated by `id` (else by `ts|call_id|label|tick`). A record with an unknown or missing `call_id` is attributed to the most recent finished call (assumption: feedback follows the call). Learning runs when a call ends and on `GET /personal`.
 
 ## Why Thompson sampling (the simulation choice)
 

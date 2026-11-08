@@ -5,7 +5,7 @@
 | Top-tier Claude in Claude Code | architecture, PM, `scorer.py` / `thresholds.py` / `privacy.py` (dangerous areas), reviews | mechanical renames |
 | Smaller Claude model | mechanical work: fixtures, regex lists, docstrings, copy tweaks | threshold changes |
 | Codex | well-scoped tickets with tests (one signal, one endpoint), branch per task | UI polish |
-| Cursor | `apps/web` edit → preview loops | anything in `services/api/doublespeak/scorer.py` or `privacy.py` |
+| Cursor | `apps/web` edit → preview loops | anything in `services/api/tell/scorer.py` or `privacy.py` |
 | Claude app (chat) | research, pitch copy, briefs, council questions | code edits |
 | Image/video tools | marketing visuals only; never fake users, screenshots of "results", or testimonials | product UI |
 
