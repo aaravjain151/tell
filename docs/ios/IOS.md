@@ -88,3 +88,19 @@ Write down: did the level bars move with the caller's voice on a real call or st
 * The transcript on screen is the last words the engine returned, held in memory only; Stop leaves the last verdict until you tap Clear screen.
 * Debug builds accept launch arguments (`-DSInjectWAV`, `-DSDemo`, `-DSToken`, `-DSPort`, `-DSAutoStart`, `-DSResetConsent`) for testing; they are compiled out of Release.
 * The app icon and launch mark come from `design/logo` (the same mark as Android). The font is Outfit (OFL), converted to static TTFs; no network.
+
+## Blocked numbers (Call Directory extension)
+
+The app has a "Blocked numbers" card and sheet (add by typing a number, remove, a note per number) and an embedded Call Directory extension, `CallBlocker` (`CXCallDirectoryProvider`), that gives iOS the list as blocking entries. Design, privacy and limits: `docs/BLOCK-SPAM.md` (on the backend PR). The list is the user's own, local, never uploaded, and there is no database of known spam numbers, so only numbers you add are blocked.
+
+**Turn it on once on the phone:** Settings > Phone > Call Blocking & Identification > switch on Doublespeak (the sheet has an Open Settings button). iOS blocks nothing until you do. After that the app calls `reloadExtension` on every change.
+
+**How the list reaches the extension (verified on this Mac with the owner's free Personal Team; build only, not on the phone):**
+
+* App Groups: a build signed with an App Group entitlement is rejected on the free team ("Provisioning profile ... doesn't match the entitlements file's value for the com.apple.security.application-groups entitlement"). So the default build does not use one. `Entitlements/App.appgroup.entitlements` and `CallBlocker.appgroup.entitlements` are kept for a paid team (`DS_ENTITLEMENTS_APP=... DS_ENTITLEMENTS_EXT=...` on the xcodebuild line); the code uses the App Group container automatically when it exists.
+* Fallback (the default): Keychain Sharing. Both targets are signed with `Entitlements/Keychain.entitlements` (group `<TeamID>.dev.doublespeak.shared`), which the free team signs (the device build succeeded and `codesign -d --entitlements` shows the group on the extension). The app mirrors only the sorted numbers (no notes) into one keychain item, "after first unlock, this device only", and the extension reads it. The full list with notes stays in the app's own file under iOS Data Protection.
+* If a build has neither, the sheet says "Not connected to call blocking" instead of pretending.
+
+**Not verified:** nothing was installed on the phone. That the keychain item is really readable from the extension at runtime on the free team, and that iOS lists Doublespeak under Call Blocking & Identification, still need a test on the real phone (add a number, enable it, call from a second phone). Limits that remain: exact numbers only (no prefixes), hidden numbers cannot be matched, it never runs during a call, and a Personal Team build still expires after 7 days.
+
+Done here: simulator `xcodebuild ... test CODE_SIGNING_ALLOWED=NO` passes 31 tests (the original 23 plus 8 for the block list); `generic/platform=iOS ... CODE_SIGNING_ALLOWED=NO build` succeeds; a signed device build with `DEVELOPMENT_TEAM` set also succeeds (no install).

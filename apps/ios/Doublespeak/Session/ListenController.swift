@@ -3,7 +3,7 @@ import SwiftUI
 import UIKit
 
 enum Mode: Equatable { case offline, idle, listening, ended }
-enum Sheet: String, Identifiable { case consent, speaker, connect; var id: String { rawValue } }
+enum Sheet: String, Identifiable { case consent, speaker, connect, blocked; var id: String { rawValue } }
 
 struct Notice: Equatable { var title: String; var body: String }
 

@@ -26,6 +26,10 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Doublespeak/Info.plist
+        # Keychain Sharing signs on a free Personal Team; App Groups are rejected there (docs/BLOCK-SPAM.md). On a paid team
+        # pass DS_ENTITLEMENTS_APP=Entitlements/App.appgroup.entitlements (and the CallBlocker twin) to use an App Group.
+        DS_ENTITLEMENTS_APP: Entitlements/Keychain.entitlements
+        CODE_SIGN_ENTITLEMENTS: $(DS_ENTITLEMENTS_APP)
     info:
       path: Doublespeak/Info.plist
       properties:
@@ -40,6 +44,38 @@ targets:
         UIAppFonts: [Outfit-ExtraLight.ttf, Outfit-Light.ttf, Outfit-Regular.ttf, Outfit-Medium.ttf]
         NSMicrophoneUsageDescription: "Doublespeak listens to a call you play out loud near this phone and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored."
         ITSAppUsesNonExemptEncryption: false
+        # App Group id the list is shared through. It only takes effect when the build is signed with the
+        # appgroup entitlements (docs/BLOCK-SPAM.md); without them the app keeps the list to itself.
+        DSAppGroup: group.dev.doublespeak.app.ios
+        DSKeychainGroup: $(AppIdentifierPrefix)dev.doublespeak.shared
+    dependencies:
+      - target: CallBlocker
+        embed: true
+  CallBlocker:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: CallBlocker
+        excludes: ["Info.plist"]
+      - path: Doublespeak/Core/BlockList.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.doublespeak.app.ios.CallBlocker
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: CallBlocker/Info.plist
+        DS_ENTITLEMENTS_EXT: Entitlements/Keychain.entitlements
+        CODE_SIGN_ENTITLEMENTS: $(DS_ENTITLEMENTS_EXT)
+        SKIP_INSTALL: YES
+    info:
+      path: CallBlocker/Info.plist
+      properties:
+        CFBundleDisplayName: Doublespeak Call Blocker
+        DSAppGroup: group.dev.doublespeak.app.ios
+        DSKeychainGroup: $(AppIdentifierPrefix)dev.doublespeak.shared
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.callkit.call-directory
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CallDirectoryHandler
   DoublespeakTests:
     type: bundle.unit-test
     platform: iOS
