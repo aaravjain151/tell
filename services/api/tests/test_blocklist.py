@@ -113,7 +113,9 @@ def test_encrypted_at_rest(store):
     assert {f.name for f in files} == {"blocklist.enc", "feedback.enc"}
     for f in files:
         raw = f.read_bytes()
-        for needle in (NUM, NUM[1:], RAW_DIGITS, "5550123", "SENTINEL", b"scam".decode(), "415"):
+        # only needles long enough that random base64 ciphertext cannot contain them by chance
+        # ("415" or "scam" appear in random base64 now and then, which made this test flaky)
+        for needle in (NUM, NUM[1:], RAW_DIGITS, "5550123", "SENTINEL-LABEL-91", "SENTINEL-REASON-77", '"label": "scam"'):
             assert needle.encode() not in raw, (f.name, needle)
         assert (f.stat().st_mode & 0o777) == 0o600
     # and it does decrypt with the key
