@@ -49,3 +49,4 @@ apps/android/native/*.apk
 *.aab
 *.jks
 *.keystore
+apps/android/native/www/

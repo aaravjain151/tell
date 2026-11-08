@@ -66,6 +66,86 @@ Open `http://localhost:5173/` in Chrome on the phone, menu > **Add to Home scree
 
 Write down: phone model and Android version; PWA or app; did the level bars move with the caller's voice on a real call, or stay flat; did the other side of the call sound in the room mic; time to first verdict; how long until amber/red on the scripted call; did listening survive the screen lock; vibration on amber and red; anything that said the wrong thing. Put it in the call-connection issue (see `docs/call-connection/HANDS-ON-TESTS.md`, Test C).
 
+## Auto-listen (start when you answer a call)
+
+Installed app only (the browser cannot see calls). Opt-in, **off by default**. Turn it on with the switch "Listen automatically when I answer a call" on the main screen or in Settings (the sliders button top right). The first time, a sheet shows the fixed consent: "When you answer a call, Tell listens through your microphone in speaker mode and sends the audio only to your own computer over the USB cable. Nothing is recorded or stored. Tell the other person if your state requires it." Then Android asks for the permissions below. Any refusal leaves the setting off and says why; a permission refused for good shows an "Open app settings" link.
+
+### Permissions
+
+| Permission | Why | When asked |
+|---|---|---|
+| `READ_PHONE_STATE` (Phone) | To see that a call rang, was answered and ended. Tell never reads the number, contacts or call history (it does not request `READ_CALL_LOG`, so Android does not even hand it the number). | When the setting is turned on |
+| `RECORD_AUDIO` (Microphone) | To listen in speaker mode. Android 14 also refuses a microphone service without it. | Same moment, if not granted yet |
+| `POST_NOTIFICATIONS` (Android 13+) | The "listening" notification with Stop, the "Call answered, tap Listen" prompt and the "could not reach your computer" notice. | Same moment, if not granted yet |
+
+### What happens on a call
+
+* Call rings: nothing yet. A missed or rejected call does nothing.
+* Call answered (incoming call: RINGING then OFFHOOK): auto-listen starts, either by itself or after one tap, depending on the Android version and whether Tell is on screen (table below). An outgoing call does not start it; a call waiting that you answer during an outgoing call does. Call waiting during a listened call keeps the same session.
+* While listening: an ongoing notification **"Tell is listening to this call"** with **Stop** and **Turn on speaker**, plus Android's green microphone dot. If Tell is on screen, it switches to the live view by itself and shows the verdicts.
+* No sound for 8 s: the notification and the live view say "No sound is reaching the microphone. Is the call on speaker? Android may be silencing the microphone during calls."
+* Computer not reachable (cable out, `adb reverse` missing, engine stopped): a notification "Tell could not reach your computer; plug in the USB cable." and listening stops; it does not fail silently. A 403 (engine started without the app's origin) says to use `make api-android`; a 429 says another session is open; a cable pulled mid-call says "Lost contact with your computer".
+* Call ended (Android reports IDLE only when every call has ended), Stop tapped, the setting turned off, or Tell swiped away from Recents: the microphone is released, the stream is closed with `stop`, the engine session is deleted (`DELETE /session/{id}`), the frame buffer is zeroed. Nothing is written to storage at any point. After Stop, auto-listen does not restart for the rest of that call.
+* Setting off: the call-state receiver is disabled in the package manager, so a call does not even wake Tell.
+
+### Which path each Android version takes
+
+"In front" = a Tell screen is resumed. When you answer, the phone app's in-call screen usually comes to the front, so on a real call Tell is normally **not** in front (exception: Samsung's pop-up call display while you use Tell).
+
+| Android | Tell in front | Tell in background or screen off | Why |
+|---|---|---|---|
+| 5.1 to 10 (API 22-29) | starts by itself | starts by itself | Background foreground-service starts allowed; no microphone while-in-use rule |
+| 11 (API 30) | starts by itself | **"Call answered" notification, tap Listen** | A microphone service started from the background gets silence (while-in-use rule) |
+| 12, 12L, **13** (API 31-33) | starts by itself | **"Call answered" notification, tap Listen** | `startForegroundService` from the background throws `ForegroundServiceStartNotAllowedException`; a call-state broadcast is not an exemption |
+| 14+ (API 34+) | starts by itself | **"Call answered" notification, tap Listen** | As 13, and a microphone-type service started from the background throws `SecurityException` |
+
+Tapping **Listen** (or the notification body) starts the service through `PendingIntent.getForegroundService`: a notification tap is an allowed start and grants microphone access on every version. If a direct start is refused anyway (race with the in-call screen), Tell falls back to the notification. The decision is `StartPolicy` (unit-tested for API 22 to 35).
+
+**On the owner's Galaxy S20 FE (Android 13):** expect one tap. Answer, tap Speaker, pull down the shade, tap **Listen** on "Call answered". If you answer from Samsung's call pop-up while Tell is open on screen, it may start without the tap. Swiping the "listening" notification away is not possible on 13 (ongoing foreground-service notification); on 14+ Android lets you swipe it and Tell posts it again while it listens.
+
+### Speakerphone: what Tell can and cannot do
+
+Tell cannot switch a cellular call to speaker on Android 12+ (and does not try). In AOSP, `AudioManager.setSpeakerphoneOn()` is ignored during a cellular call for apps without `MODIFY_PHONE_STATE` (a system-only permission), and `setCommunicationDevice()` only takes effect for the app that owns the audio mode, which is the phone app. The compliant ways around it (becoming the default phone app with `InCallService`) or the non-compliant ones (hidden APIs, an accessibility service pressing the button, an overlay) are deliberately not used and a static test fails if they appear. So **Turn on speaker** opens the phone app's in-call screen (`TelecomManager.showInCallScreen`, public API, needs `READ_PHONE_STATE`) and you tap its Speaker button.
+
+### Honest limits
+
+* **The microphone may be silenced during a call.** AOSP's audio policy (Android 10+) gives ordinary apps silence from the microphone while a phone call is active unless they are privileged, the assistant or an accessibility service; manufacturers can differ. If the S20 FE does this, auto-listen starts correctly but hears nothing and says "No sound is reaching the microphone" within 8 s. This is the first thing the real-call test below finds out. Not verified on a real call yet.
+* Speaker mode only; a call on the earpiece, Bluetooth or headphones is not heard.
+* One tap on Android 11+ when Tell is not on screen (see the table). No full-screen intent, overlay or wake-up trick is used to avoid it: those are restricted to phone/alarm apps or against Play policy.
+* If Tell was force-stopped (Settings > Apps > Force stop), Android does not deliver the call broadcast until Tell is opened once.
+* The engine must be running with `make api-android` and the cable plugged in; port 8000 is fixed for the native stream.
+* Manually started listening and auto-listen do not run at the same time: if you already tapped Start listening, the call does not open a second session.
+
+### Implementation map
+
+`apps/android/native/android/app/src/main/java/dev/doublespeak/app/`: `call/CallStateMachine` (RINGING/OFFHOOK/IDLE rules), `call/StartPolicy` (per-version path), `call/PermissionGate`, `call/AutoListenCore` (glue, never starts with the setting off), `call/CallSession` + `call/LoopbackEngine` (AudioRecord frames to `POST /session` + `WS /ws/stream` on 127.0.0.1:8000, plain Java sockets, `Origin: http://localhost`, 100 ms PCM16 frames, ping every 10 s), `CallStateReceiver` (manifest `PHONE_STATE`, disabled until opted in), `CallMonitor` (TelephonyCallback.CallStateListener on 12+, PhoneStateListener below), `CallListenService` (microphone foreground service, native capture), `Notices`, `SpeakerActivity`, `ListenServicePlugin` (`getAutoListen`, `setAutoListen`, `stopAutoListen`, `openAppSettings`, event `autoListen`). Page side: `lib/autolisten.js` (wording, status line) and the auto-listen block in `app.js`.
+
+Tests: `cd apps/android/native/android && ./gradlew testDebugUnitTest` (call-state machine incl. missed calls, call waiting, two calls, user stop, setting changes, process restart; per-version start path; permission-denied paths; the not-connected, refused, busy, lost and mic-failed session paths; WebSocket framing and a full session against a fake engine). `TELL_ENGINE_PORT=8077 ./gradlew testDebugUnitTest --tests '*RealEngineIT*'` streams to a real engine (verified: session, verdicts, clean stop). `node --test apps/android/tests/android.test.mjs` checks the wording, the status line and the Play-policy guard.
+
+### Checking it over adb (no call needed)
+
+```
+adb shell cmd package query-receivers --components -a android.intent.action.PHONE_STATE | grep doublespeak   # listed only while the setting is on
+adb shell dumpsys package dev.doublespeak.app | grep -A3 "runtime permissions" | grep -E "PHONE_STATE|RECORD_AUDIO|NOTIFICATIONS"
+adb shell dumpsys activity services dev.doublespeak.app/.CallListenService                                   # during a call: isForeground=true
+```
+
+### The 2-minute real-call test (Android 13, S20 FE)
+
+Before: cable in, `make api-android` running, `adb reverse tcp:8000 tcp:8000`, Tell installed, the pill says "Your computer", auto-listen switched on (consent read, Phone, Microphone and Notifications allowed). A second phone to call from.
+
+1. **0:00 Missed call.** Press Home. Call the S20 FE and hang up before answering. Expect: no Tell notification at all.
+2. **0:15 Answer.** Call again and answer. Expect within about 2 s: a "Call answered" notification (heads-up) with **Listen** and **Turn on speaker**.
+3. **0:25 Speaker.** Tap Speaker on the in-call screen (or **Turn on speaker**, which brings the in-call screen back).
+4. **0:30 Listen.** Pull down the shade, tap **Listen**. Expect: "Tell is listening to this call" with **Stop**, and the green microphone dot.
+5. **0:40 Does it hear?** Caller reads: "This is your bank, read me the code you just received, don't tell anyone." Open Tell: the live view should be showing, with level bars moving. Write down whether "No sound is reaching the microphone" appeared (= Android silences the mic during calls on this phone).
+6. **1:10 Stop.** Tap **Stop** in the notification. Expect: the notification and the mic dot disappear; Tell shows "Listening stopped".
+7. **1:20 Call end stops it.** Hang up. Call again, answer, tap Listen, then let the caller hang up. Expect: the listening notification disappears by itself within a second or two.
+8. **1:40 Not connected.** Run `adb reverse --remove-all` (or stop the engine). Call, answer, tap Listen. Expect: "Tell could not reach your computer; plug in the USB cable." Restore the tunnel afterwards.
+9. **Optional: Tell in front.** Open Tell, keep it on screen, receive a call, answer from the pop-up. Note whether it started without a tap.
+
+Write down for each step: what appeared, and the delay. Put it in the call-connection issue next to the speaker-mode test.
+
 ## Limits worth knowing
 
 * One engine session at a time per phone; "Another listening session is open" means a previous session has not timed out (about a minute) or a laptop listener is running.

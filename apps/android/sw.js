@@ -1,9 +1,9 @@
 /* Service worker: caches ONLY the app shell (the files listed in SHELL), so the app opens and shows its pairing screen
    with no tunnel. It never touches audio, the WebSocket, /live/events, /session or any verdict: those are not in SHELL,
    and every other request is left to the network untouched (no respondWith, no caching). */
-const VERSION = "ds-android-shell-v1";
+const VERSION = "ds-android-shell-v2";
 const SHELL = ["./", "index.html", "app.css", "app.js", "worklet.js", "outfit.woff2", "manifest.webmanifest",
-  "lib/pcm.js", "lib/protocol.js", "lib/verdict.js", "icons/icon-192.png", "icons/icon-512.png", "icons/mark-light.svg", "icons/mark-dark.svg"];
+  "lib/pcm.js", "lib/protocol.js", "lib/verdict.js", "lib/autolisten.js", "icons/icon-192.png", "icons/icon-512.png", "icons/mark-light.svg", "icons/mark-dark.svg"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
