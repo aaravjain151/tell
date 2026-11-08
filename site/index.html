@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Doublespeak</title>
+<meta name="description" content="Doublespeak listens when you pick up and tells you two things about the caller: human or AI, and scam or not. It runs on your own device.">
+<script>try{document.documentElement.classList.add("js");var t=new URLSearchParams(location.search).get("theme")||localStorage.getItem("ds-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="preload" href="outfit.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23141D44'/%3E%3Crect x='6' y='12' width='4' height='8' fill='%23fff'/%3E%3Crect x='14' y='6' width='4' height='20' fill='%23189192'/%3E%3Crect x='22' y='10' width='4' height='12' fill='%23F73C45'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the content</a>
+<div class="wrap">
+  <header class="nav">
+    <a class="brand" href="#top" aria-label="Doublespeak home"><svg viewBox="334 126 366 338" aria-hidden="true" shape-rendering="crispEdges"><g color="currentColor"><path d="M338.0 277.0 L340.0 277.0 L342.0 277.0 L344.0 276.8 L346.0 276.4 L348.0 275.8 L350.0 275.4 L352.0 274.6 L354.0 273.8 L356.0 272.8 L358.0 271.8 L360.0 270.6 L362.0 269.0 L364.0 267.0 L366.0 264.6 L368.0 261.8 L370.0 258.6 L372.0 255.0 L374.0 250.6 L376.0 245.6 L378.0 240.0 L380.0 234.0 L382.0 228.4 L384.0 223.4 L386.0 218.8 L388.0 215.0 L390.0 212.0 L392.0 209.8 L394.0 208.0 L396.0 206.4 L398.0 205.2 L400.0 204.4 L402.0 204.0 L404.0 204.0 L406.0 204.0 L408.0 204.0 L410.0 204.4 L412.0 205.2 L414.0 206.4 L416.0 207.6 L418.0 209.2 L420.0 211.2 L422.0 213.8 L424.0 217.4 L426.0 222.2 L428.0 228.4 L430.0 235.6 L432.0 243.8 L434.0 252.0 L436.0 260.0 L438.0 266.6 L440.0 271.8 L442.0 275.8 L444.0 279.2 L446.0 281.6 L448.0 283.2 L450.0 284.0 L452.0 284.6 L454.0 284.8 L456.0 284.2 L458.0 283.2 L460.0 281.8 L462.0 279.8 L464.0 276.8 L466.0 272.8 L468.0 268.2 L470.0 262.0 L472.0 254.4 L474.0 245.6 L476.0 235.4 L478.0 225.0 L480.0 214.4 L482.0 203.8 L484.0 194.2 L486.0 186.0 L488.0 178.6 L490.0 172.4 L492.0 167.2 L494.0 163.0 L496.0 159.4 L498.0 156.4 L500.0 154.0 L502.0 152.2 L504.0 150.6 L506.0 149.6 L508.0 148.8 L510.0 148.5 L511.0 148.3 L511.0 423.7 L510.0 423.5 L508.0 423.2 L506.0 422.8 L504.0 422.2 L502.0 421.2 L500.0 419.8 L498.0 418.0 L496.0 415.8 L494.0 413.2 L492.0 409.8 L490.0 405.6 L488.0 400.6 L486.0 394.6 L484.0 388.4 L482.0 382.6 L480.0 377.4 L478.0 373.4 L476.0 370.4 L474.0 368.0 L472.0 366.4 L470.0 365.4 L468.0 364.8 L466.0 364.4 L464.0 364.0 L462.0 364.0 L460.0 364.0 L458.0 364.0 L456.0 364.0 L454.0 363.6 L452.0 362.8 L450.0 361.6 L448.0 359.8 L446.0 356.8 L444.0 352.8 L442.0 347.0 L440.0 339.2 L438.0 330.2 L436.0 321.2 L434.0 314.8 L432.0 310.2 L430.0 307.4 L428.0 305.8 L426.0 304.8 L424.0 304.2 L422.0 304.2 L420.0 304.8 L418.0 306.2 L416.0 308.0 L414.0 310.8 L412.0 315.2 L410.0 320.8 L408.0 325.8 L406.0 330.0 L404.0 333.4 L402.0 336.0 L400.0 337.6 L398.0 338.8 L396.0 339.6 L394.0 340.0 L392.0 340.0 L390.0 340.0 L388.0 339.8 L386.0 339.2 L384.0 337.6 L382.0 336.2 L380.0 334.4 L378.0 331.6 L376.0 328.2 L374.0 324.0 L372.0 319.4 L370.0 315.0 L368.0 311.4 L366.0 308.4 L364.0 305.6 L362.0 303.2 L360.0 301.4 L358.0 300.2 L356.0 299.0 L354.0 298.0 L352.0 297.4 L350.0 296.6 L348.0 296.0 L346.0 295.4 L344.0 295.0 L342.0 295.0 L340.0 295.0 L338.0 295.0Z" fill="currentColor"/><rect x="556.5" y="164.5" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="181.9" width="18.1" height="18.2" fill="#189192"/><rect x="573.8" y="181.9" width="35.4" height="18.2" fill="#189192"/><rect x="625.9" y="181.9" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="199.2" width="18.1" height="18.2" fill="#189192"/><rect x="608.6" y="199.2" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="216.6" width="52.8" height="18.2" fill="#189192"/><rect x="591.2" y="216.6" width="35.4" height="18.2" fill="#189192"/><rect x="625.9" y="216.6" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="233.9" width="35.4" height="18.2" fill="#189192"/><rect x="591.2" y="233.9" width="35.4" height="18.2" fill="#189192"/><rect x="625.9" y="233.9" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="251.3" width="35.4" height="18.2" fill="#189192"/><rect x="573.8" y="251.3" width="52.8" height="18.2" fill="#189192"/><rect x="625.9" y="251.3" width="18.1" height="18.2" fill="#F73C45"/><rect x="643.3" y="251.3" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="268.6" width="104.8" height="18.2" fill="#189192"/><rect x="625.9" y="268.6" width="18.1" height="18.2" fill="#F73C45"/><rect x="643.3" y="268.6" width="35.4" height="18.2" fill="#189192"/><rect x="521.8" y="285.9" width="104.8" height="18.2" fill="#189192"/><rect x="625.9" y="285.9" width="18.1" height="18.2" fill="#F73C45"/><rect x="643.3" y="285.9" width="35.4" height="18.2" fill="#189192"/><rect x="521.8" y="303.3" width="87.4" height="18.2" fill="#189192"/><rect x="625.9" y="303.3" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="320.7" width="87.4" height="18.2" fill="#189192"/><rect x="608.6" y="320.7" width="35.4" height="18.2" fill="#F73C45"/><rect x="521.8" y="338.0" width="52.8" height="18.2" fill="#189192"/><rect x="591.2" y="338.0" width="18.1" height="18.2" fill="#189192"/><rect x="608.6" y="338.0" width="35.4" height="18.2" fill="#F73C45"/><rect x="521.8" y="355.4" width="52.8" height="18.2" fill="#189192"/><rect x="591.2" y="355.4" width="18.1" height="18.2" fill="#189192"/><rect x="608.6" y="355.4" width="18.1" height="18.2" fill="#F73C45"/><rect x="521.8" y="372.7" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="390.0" width="18.1" height="18.2" fill="#189192"/><rect x="573.8" y="390.0" width="18.1" height="18.2" fill="#189192"/><rect x="521.8" y="424.8" width="18.1" height="18.2" fill="#189192"/></g></svg><span>Doublespeak</span></a>
+    <nav class="links" aria-label="Page sections">
+      <a href="#how">How it works</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#platforms">Where it runs</a>
+      <a href="#faq">Questions</a>
+      <button class="paren" id="theme" type="button" aria-label="Switch between light and dark">(Dark)</button>
+    </nav>
+    <a class="btn primary" href="mailto:aaravjain151@gmail.com?subject=Doublespeak%20early%20access&amp;body=Hi%2C%20I%27d%20like%20early%20access%20to%20Doublespeak.%20My%20device%3A%20" data-early>Get early access</a>
+  </header>
+</div>
+
+<main id="main">
+<div class="wrap" id="top">
+  <section class="hero" aria-labelledby="h1">
+    <div>
+      <h1 id="h1">Human or AI? Scam or not?</h1>
+      <p class="hero-p">It starts listening when you pick up, on your own device.</p>
+      <div class="hero-act">
+        <a class="btn primary" href="mailto:aaravjain151@gmail.com?subject=Doublespeak%20early%20access&amp;body=Hi%2C%20I%27d%20like%20early%20access%20to%20Doublespeak.%20My%20device%3A%20" data-early>Get early access</a>
+        <a class="link" href="#how">See how it works</a>
+      </div>
+    </div>
+
+    <figure class="demo" id="demo" aria-label="Recorded demo of a scripted scam call. It starts as Listening, reads Sounds human, then Not sure yet, and about 18 seconds in changes to Scam pattern.">
+      <div class="demo-top">
+        <span><b>Recorded demo</b> of a scripted call</span>
+        <span id="demo-clock" aria-hidden="true">0:36</span>
+        <button class="link" id="demo-replay" type="button" hidden>Replay</button>
+      </div>
+      <div aria-hidden="true">
+        <p class="demo-h" id="demo-h">Scam pattern</p>
+        <div class="demo-rule" id="demo-rule"></div>
+        <p class="demo-changed" id="demo-changed">Changed to Scam pattern at 0:18, was Not sure yet.</p>
+        <div class="demo-row">
+          <div class="quad" id="demo-quad" style="--c:var(--red)">
+            <span></span><span class="ax">Not scam</span><span class="ax">Scam</span>
+            <span class="rw">Human voice</span><i></i><i class="on"></i>
+            <span class="rw">AI voice</span><i></i><i></i>
+          </div>
+          <p class="demo-q" id="demo-q">Human voice, but scam pattern in what was said.<small>Two separate answers.</small></p>
+        </div>
+        <p class="demo-tx" id="demo-tx">Grandma, it&rsquo;s me, <mark>this is your grandson</mark>. <mark>I&rsquo;m in trouble</mark>. I <mark>need bail</mark> money <mark>right now</mark>, please <mark>don&rsquo;t tell mom</mark> or dad.</p>
+        <div class="cells" id="demo-cells"></div>
+      </div>
+      <p class="demo-note">Replayed from a test script, not a live call. Real screens, scripted words.</p>
+    </figure>
+  </section>
+</div>
+
+<div class="wrap">
+  <section class="sec" id="how" aria-labelledby="how-h">
+    <h2 id="how-h">It starts by itself. You do nothing.</h2>
+    <ol class="steps">
+      <li><h3>You pick up</h3><p>No button, no app to open. When the call plays on your Mac, Doublespeak starts listening.</p></li>
+      <li><h3>It listens to the caller</h3><p>Only the caller&rsquo;s side, on your own device. It never speaks to the caller and keeps no recording.</p></li>
+      <li><h3>You see two answers</h3><p>One calm card that updates as the call goes on, with the words and sounds behind it. It can change its mind.</p></li>
+    </ol>
+  </section>
+
+  <section class="sec" aria-labelledby="quad-h">
+    <div class="split">
+      <div>
+        <h2 id="quad-h">Two questions, answered separately.</h2>
+        <p class="lede">A scammer can be a real person. A harmless reminder can be an AI. So Doublespeak says what the voice sounds like and what the call is asking for, as two answers, each with its evidence.</p>
+      </div>
+      <div class="grid22" role="group" aria-label="The two answers as a grid">
+        <span></span><span class="ax">Not a scam</span><span class="ax">Scam pattern</span>
+        <span class="rw">Human voice</span>
+        <div class="c ok"><b>Sounds human</b><span>No scam wording heard.</span></div>
+        <div class="c sc"><b>Human, scam wording</b><span>A person asking for money or codes.</span></div>
+        <span class="rw">AI voice</span>
+        <div class="c"><b>AI, said so</b><span>For example an appointment reminder that says it is automated.</span></div>
+        <div class="c sc"><b>AI, scam wording</b><span>A synthetic voice pressing you to pay.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="live-h">
+    <h2 id="live-h">It updates live and can change its mind.</h2>
+    <p class="lede">It does not wait for the call to end. Early on it says it is still listening. If the caller later asks you to pay, keep a secret or act right now, the card changes and says when. A red banner appears only for a corroborated scam pattern, and you can dismiss it.</p>
+  </section>
+
+  <section class="sec" id="privacy" aria-labelledby="priv-h">
+    <h2 id="priv-h">Proof on screen, not a promise.</h2>
+    <div class="proof" style="margin-top:clamp(32px,6vh,56px)">
+      <div>
+        <div class="proof-n" aria-hidden="true">0 B</div>
+        <p class="proof-cap">The counter in the app for caller audio sent off your device. In our own test runs on a Mac it read zero.</p>
+      </div>
+      <div class="facts">
+        <div><span>Runs on</span><b>Your own device</b></div>
+        <div><span>Listens to</span><b>The caller&rsquo;s side only</b></div>
+        <div><span>Sent or stored by default</span><b>Nothing</b></div>
+        <div><span>Outbound connections</span><b>Counted by the operating system and shown</b></div>
+        <div><span>History of flagged calls</span><b>Opt in, encrypted, on your device</b></div>
+        <div><span>Speaks to the caller</span><b>Never</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="platforms" aria-labelledby="plat-h">
+    <h2 id="plat-h">Where it runs today.</h2>
+    <p class="lede">We would rather tell you what works than what is planned.</p>
+    <table>
+      <caption>Platform status as of November 2026</caption>
+      <thead><tr><th scope="col">Platform</th><th scope="col">Status</th><th scope="col">What that means</th></tr></thead>
+      <tbody>
+        <tr data-s="live"><th scope="row">Mac</th><td><span class="st">Works live</span></td><td>iPhone calls answered on the Mac through Calls on Other Devices, and calls on the Mac itself. Listening starts when the call plays.</td></tr>
+        <tr data-s="soon"><th scope="row">iPhone</th><td><span class="st">Through your Mac today</span></td><td>iOS gives apps no call audio, so iPhone calls are covered through your Mac. The iPhone app is on the way.</td></tr>
+        <tr data-s="early"><th scope="row">Android</th><td><span class="st">Speaker mode, early access</span></td><td>The app listens to the call on speakerphone. It is installed on one phone so far. A real call has not been verified yet, and some phones silence the microphone during calls.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="sec" aria-labelledby="fit-h">
+    <h2 id="fit-h">Where it fits.</h2>
+    <p class="lede">Services such as Hiya and Google also detect scams in real time or on the device. Doublespeak does not claim to be the only one. What it shows is different: the voice and the words as two separate answers, with the evidence, starting by itself, on your own device. We evaluate and fine-tune open-source models, and we do not publish an accuracy figure because our test set is still small.</p>
+  </section>
+
+  <section class="sec" id="faq" aria-labelledby="faq-h">
+    <h2 id="faq-h">Questions, answered plainly.</h2>
+    <div class="faq">
+      <details><summary>What can it not hear?</summary><p>Anything that is not played through the device it runs on. It does not hear a call held to your ear on a phone. Phone lines and speakers strip detail from a voice, so on a bad line the voice check can be unsure. It then says so and leans on the words.</p></details>
+      <details><summary>Can it be wrong?</summary><p>Yes. The scores are scores, not probabilities. A real person can sound scripted, and a good fake can sound natural. Not sure yet is a real answer, and you should still hang up and call back on a number you trust if money or codes come up.</p></details>
+      <details><summary>Does it record my calls?</summary><p>No audio is saved. It analyses the caller&rsquo;s audio in memory and clears it when the call ends. A history of flagged calls is off unless you turn it on, and holds only the time, the verdict and the top reasons.</p></details>
+      <details><summary>Do I need to tell the other person?</summary><p>Rules about listening to calls vary by state and country. If yours requires telling the other person, tell them. We are not a lawyer, so check the rules where you live.</p></details>
+      <details><summary>Does it speak to the caller?</summary><p>Never. It only shows you what it heard.</p></details>
+      <details><summary>What does it run on?</summary><p>Open-source models on your own machine: speech to text, voice checks and a small local language model for scam wording. Our own rules combine them, and show you why.</p></details>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="cta-h">
+    <div class="cta">
+      <div>
+        <h2 id="cta-h">Try it early.</h2>
+        <p class="lede">Tell us your device and we will write back. This opens your email app. We collect nothing on this page.</p>
+      </div>
+      <a class="btn primary" href="mailto:aaravjain151@gmail.com?subject=Doublespeak%20early%20access&amp;body=Hi%2C%20I%27d%20like%20early%20access%20to%20Doublespeak.%20My%20device%3A%20" data-early>Get early access</a>
+    </div>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Doublespeak is a warning, not a verdict, and it can be wrong. Built at HACK1984 in the Privacy-First track.</p>
+    <p>Open-source fonts: Outfit, SIL Open Font License.</p>
+  </div>
+</footer>
+<script src="demo.js"></script>
+</body>
+</html>
