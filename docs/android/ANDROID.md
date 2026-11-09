@@ -16,7 +16,11 @@ A thin client. The phone listens through its microphone and sends the audio to t
 
 **Why we use it.** On stage it must not break: demo mode needs only the USB tunnel + engine — no microphone permission, no live call, no Wi-Fi. If the engine is unreachable it shows the normal "not connected to your computer" state.
 
-**The clips.** `apps/android/demo/scam.pcm` (an escalating tech-support scam) and `apps/android/demo/human.pcm` (a human check-in), converted from the repo's consented data (`data/calls/qwen3tts/long_tech_scam.wav`, `data/calls/human/sanath/long_checkin.wav`; consent `data/consents/`) with `ffmpeg -ar 16000 -ac 1 -f s16le -acodec pcm_s16le`. Each is under 2 MB and is bundled into the APK by `native/build-www.mjs` (the `demo` folder). The streamer is `lib/demo.js` (`frameClip`, `createStreamer`, `levelOf`); the page wiring is the demo block in `app.js`.
+**The clips.** Neither clip contains a teammate's voice.
+- `apps/android/demo/scam.pcm` (an escalating tech-support scam, 28.6 s) is the `long_tech_scam` script read by Gradium's default stock voice (`uvx gradium tts`, no `--voice-id`). The engine rates it tier `scam`, but its voice check reads "unclear" (p_ai about 0.42), not AI.
+- `apps/android/demo/human.pcm` (a human reading, 35.5 s) joins LibriSpeech dev-clean utterances `1272-128104-0000` to `-0003` (speaker 1272), taken from the Hugging Face sample `hf-internal-testing/librispeech_asr_dummy` with 0.6 s gaps. The engine rates it `human_ok`. LibriSpeech is by Panayotov et al. 2015 and licensed CC BY 4.0 (https://www.openslr.org/12).
+
+Both are PCM16, 16 kHz, mono (`ffmpeg -ar 16000 -ac 1 -f s16le -acodec pcm_s16le`). Each is under 2 MB and is bundled into the APK by `native/build-www.mjs` (the `demo` folder). The streamer is `lib/demo.js` (`frameClip`, `createStreamer`, `levelOf`); the page wiring is the demo block in `app.js`.
 
 **How to start it (hidden, OFF by default).** Demo mode never appears in the normal flow. Enter it either by **long-pressing the Tell logo** (top left, ~1.2 s) or by opening the app with **`?demo=1`**. You then get **Scam call** / **Human call** buttons and a big **Stop**; **Exit demo** leaves it.
 
