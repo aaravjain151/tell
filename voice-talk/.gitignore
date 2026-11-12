@@ -1,0 +1,13 @@
+.venv/
+voices/
+outputs/
+models/
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+bench_results.json
+qa_out/
+source_clips/
+qa_out_*/
+.env.local

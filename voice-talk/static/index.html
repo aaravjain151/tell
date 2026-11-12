@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>voice-talk</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f3f5fb;--bg-soft:#eaedf6;--panel:#ffffff;--ink:#141824;--muted:#5b6478;--line:#e2e6f1;--line-strong:#c8cfe0;
+  --accent:#4d63ea;--accent-2:#12b48f;--accent-ink:#ffffff;--accent-soft:#e8ebff;
+  --bubble-you:#e8ebff;--bubble-bot:#f5f7fc;
+  --stop:#d3332b;--stop-ink:#ffffff;--warn:#7a4a00;--warnbg:#fbf0d6;--err:#c5281f;--ok:#0e8f72;--badge:#6a4fd0;--think:#b7791f;
+  --glow-a:rgba(77,99,234,.14);--glow-b:rgba(18,180,143,.10);
+  --shadow:0 1px 2px rgba(20,24,36,.05),0 8px 24px -12px rgba(20,24,36,.18);
+  --radius:12px;--radius-lg:18px;
+  --font:"Inter","SF Pro Text","Avenir Next","Segoe UI Variable","Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  color-scheme:dark;
+  --bg:#0a0c12;--bg-soft:#0f1219;--panel:#12151e;--ink:#eceef6;--muted:#9aa3b8;--line:#232837;--line-strong:#363d52;
+  --accent:#8196ff;--accent-2:#3ddbb4;--accent-ink:#0a0c12;--accent-soft:#1b2140;
+  --bubble-you:#1b2140;--bubble-bot:#161a26;
+  --stop:#ff6b60;--stop-ink:#1a0a08;--warn:#f0c46e;--warnbg:#2b2312;--err:#ff8f86;--ok:#3ddbb4;--badge:#b7a6ff;--think:#f0c46e;
+  --glow-a:rgba(129,150,255,.20);--glow-b:rgba(61,219,180,.12);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px -14px rgba(0,0,0,.7)}}
+:root[data-theme=dark]{
+  color-scheme:dark;
+  --bg:#0a0c12;--bg-soft:#0f1219;--panel:#12151e;--ink:#eceef6;--muted:#9aa3b8;--line:#232837;--line-strong:#363d52;
+  --accent:#8196ff;--accent-2:#3ddbb4;--accent-ink:#0a0c12;--accent-soft:#1b2140;
+  --bubble-you:#1b2140;--bubble-bot:#161a26;
+  --stop:#ff6b60;--stop-ink:#1a0a08;--warn:#f0c46e;--warnbg:#2b2312;--err:#ff8f86;--ok:#3ddbb4;--badge:#b7a6ff;--think:#f0c46e;
+  --glow-a:rgba(129,150,255,.20);--glow-b:rgba(61,219,180,.12);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px -14px rgba(0,0,0,.7)}
+*{box-sizing:border-box;min-width:0}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;color:var(--ink);font:15.5px/1.55 var(--font);overflow-x:hidden;min-height:100vh;
+  background:radial-gradient(1100px 520px at 8% -8%,var(--glow-a),transparent 60%),radial-gradient(900px 480px at 100% 0%,var(--glow-b),transparent 55%),var(--bg);
+  background-attachment:fixed}
+h1,h2,p{margin:0}
+/* header */
+header{display:flex;align-items:center;gap:.7rem;padding:.9rem clamp(1rem,3vw,2rem);position:sticky;top:0;z-index:6;
+  background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.logo{width:2rem;height:2rem;flex:none}
+h1{font-size:1.1rem;font-weight:650;letter-spacing:-.015em;margin-right:auto;white-space:nowrap;display:flex;align-items:center;gap:.6rem}
+h1 span{font-weight:500;font-size:.78rem;color:var(--muted);background:var(--bg-soft);border:1px solid var(--line);border-radius:99px;padding:.1rem .6rem;text-transform:capitalize}
+.badge{flex:none;border:1px solid color-mix(in srgb,var(--badge) 55%,transparent);background:color-mix(in srgb,var(--badge) 12%,transparent);color:var(--badge);border-radius:99px;padding:.15rem .7rem;font-size:.72rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.pill{flex:none;border:1px solid var(--line-strong);border-radius:99px;padding:.15rem .7rem .15rem .55rem;font-size:.78rem;color:var(--muted);white-space:nowrap;display:inline-flex;align-items:center;gap:.4rem}
+.pill::before{content:"";width:.5rem;height:.5rem;border-radius:50%;background:var(--line-strong)}
+.pill[data-s=ready]{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 50%,transparent)}.pill[data-s=ready]::before{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 25%,transparent)}
+.pill[data-s=loading]::before{background:var(--think);animation:pulse 1s ease-in-out infinite}
+.pill[data-s=error]{color:var(--err);border-color:var(--err)}.pill[data-s=error]::before{background:var(--err)}
+#theme{flex:none;width:2.2rem;height:2.2rem;padding:0;display:grid;place-items:center;border-radius:50%;background:var(--panel);color:var(--ink);border:1px solid var(--line-strong);box-shadow:none}
+#theme svg{width:1.05rem;height:1.05rem}
+@media (max-width:520px){.pill,.badge{display:none}}
+/* layout */
+main{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,400px);gap:clamp(1rem,2.5vw,1.6rem);padding:clamp(1rem,2.5vw,1.6rem) clamp(1rem,3vw,2rem) 3rem;max-width:1320px;margin:0 auto;align-items:start}
+@media (max-width:900px){main{grid-template-columns:minmax(0,1fr)}}
+main>div,main>aside{display:flex;flex-direction:column;gap:1rem}
+section{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);padding:1.1rem 1.25rem 1.2rem;box-shadow:var(--shadow)}
+h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:650;margin-bottom:.8rem}
+label{display:block;font-size:.82rem;color:var(--muted);margin:.8rem 0 .3rem;font-weight:500}
+.vh{position:absolute;left:-9999px}
+select,input[type=text],textarea,input[type=file]{width:100%;padding:.6rem .75rem;border:1px solid var(--line-strong);border-radius:var(--radius);background:var(--bg-soft);color:var(--ink);font:inherit;transition:border-color .15s,box-shadow .15s}
+select:hover,input[type=text]:hover,textarea:hover{border-color:var(--muted)}
+select:focus,input[type=text]:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 28%,transparent)}
+textarea{resize:vertical;min-height:3.4rem}
+.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.7rem}
+.row.one{grid-template-columns:minmax(0,1fr)}
+/* toggle switches */
+.check{display:flex;gap:.7rem;align-items:flex-start;font-size:.88rem;margin:.75rem 0}
+.check label{margin:0;color:var(--ink);font-size:.88rem;font-weight:450;cursor:pointer}
+.check input[type=checkbox]{appearance:none;-webkit-appearance:none;flex:none;width:2.5rem;height:1.45rem;margin:.05rem 0 0;border-radius:99px;background:var(--line-strong);position:relative;cursor:pointer;transition:background .18s}
+.check input[type=checkbox]::after{content:"";position:absolute;top:.17rem;left:.17rem;width:1.11rem;height:1.11rem;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .18s}
+.check input[type=checkbox]:checked{background:var(--accent)}
+.check input[type=checkbox]:checked::after{transform:translateX(1.05rem)}
+/* buttons */
+button{font:inherit;font-weight:600;font-size:.9rem;padding:.6rem 1.1rem;border-radius:var(--radius);border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer;transition:transform .08s,filter .15s,background .15s,box-shadow .15s;box-shadow:0 6px 16px -8px color-mix(in srgb,var(--accent) 80%,transparent)}
+button:hover:not(:disabled){filter:brightness(1.07)}button:active:not(:disabled){transform:translateY(1px)}
+button.secondary{background:transparent;color:var(--ink);border-color:var(--line-strong);box-shadow:none}
+button.secondary:hover:not(:disabled){background:var(--bg-soft);filter:none}
+button.danger{background:transparent;color:var(--stop);border-color:var(--stop);box-shadow:none}
+button:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
+button[aria-pressed=true].secondary{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 60%,transparent);outline-offset:2px}
+.actions{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:.9rem}
+#start{width:100%;padding:.8rem 1rem;font-size:1rem}
+#start.live{background:transparent;color:var(--stop);border-color:var(--stop);box-shadow:none}
+#ptt::before,#open::before{content:"";display:inline-block;width:1.05em;height:1.05em;margin-right:.45em;vertical-align:-.17em;background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='2' width='6' height='12' rx='3'/%3E%3Cpath d='M5 11a7 7 0 0 0 14 0M12 18v4'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='2' width='6' height='12' rx='3'/%3E%3Cpath d='M5 11a7 7 0 0 0 14 0M12 18v4'/%3E%3C/svg%3E") center/contain no-repeat}
+/* mode switch */
+.seg{display:grid;grid-template-columns:1fr 1fr;padding:.25rem;gap:.25rem;background:var(--bg-soft);border:1px solid var(--line);border-radius:calc(var(--radius) + 4px)}
+.seg button{border:0;background:transparent;color:var(--muted);box-shadow:none;padding:.5rem}
+.seg button[aria-pressed=true]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.18),0 0 0 1px var(--line)}
+/* status orb */
+.status{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.state{display:flex;align-items:center;gap:1rem;flex:1 1 13rem}
+.state big{display:block;font-size:1.45rem;font-weight:700;letter-spacing:-.01em;line-height:1.15}
+.state small{display:block;font-size:.84rem;color:var(--muted);margin-top:.1rem}
+.dot{position:relative;width:3.3rem;height:3.3rem;border-radius:50%;flex:none;display:block;background:radial-gradient(circle at 32% 28%,var(--line-strong),var(--line));transition:background .3s,box-shadow .3s}
+.state[data-s=idle] big{color:var(--muted)}
+.state[data-s=listening] .dot{background:radial-gradient(circle at 32% 28%,#9ff5dd,var(--accent-2));animation:ripple 1.6s ease-out infinite}
+.state[data-s=thinking] .dot{background:radial-gradient(circle at 32% 28%,#ffe3a1,var(--think));animation:ripple2 1.1s ease-in-out infinite}
+.state[data-s=thinking] .dot::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:3px solid transparent;border-top-color:var(--think);animation:spin .9s linear infinite}
+.state[data-s=speaking] .dot{background:radial-gradient(circle at 32% 28%,#c3ceff,var(--accent));animation:speak 1s ease-in-out infinite}
+@keyframes ripple{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent-2) 55%,transparent)}100%{box-shadow:0 0 0 1.1rem transparent}}
+@keyframes ripple2{50%{transform:scale(.94)}}
+@keyframes speak{0%,100%{box-shadow:0 0 0 .2rem color-mix(in srgb,var(--accent) 28%,transparent);transform:scale(1)}50%{box-shadow:0 0 0 .75rem color-mix(in srgb,var(--accent) 12%,transparent);transform:scale(1.06)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.dot,.dot::after,.pill::before{animation:none!important}}
+#stop{flex:0 1 11rem;min-height:3rem;font-size:.95rem;letter-spacing:.02em;background:var(--stop);border-color:var(--stop);color:var(--stop-ink);box-shadow:0 8px 18px -10px var(--stop)}
+#stop:disabled{background:transparent;color:var(--muted);border-color:var(--line-strong);opacity:.7;box-shadow:none}
+/* transcript as chat bubbles */
+#transcript{margin-top:1.1rem;height:clamp(260px,48vh,540px);overflow:auto;border:1px solid var(--line);background:var(--bg-soft);border-radius:var(--radius-lg);padding:1rem;display:flex;flex-direction:column;gap:.7rem;scroll-behavior:smooth}
+.turn{max-width:86%;padding:.65rem .95rem .7rem;border-radius:1.15rem;border:1px solid var(--line);background:var(--bubble-bot);align-self:flex-start;border-bottom-left-radius:.35rem;animation:pop .18s ease-out}
+.turn.you{align-self:flex-end;background:var(--bubble-you);border-color:color-mix(in srgb,var(--accent) 30%,var(--line));border-bottom-left-radius:1.15rem;border-bottom-right-radius:.35rem}
+.turn.disc{align-self:center;max-width:92%;background:transparent;border-style:dashed;border-color:color-mix(in srgb,var(--badge) 50%,transparent);border-radius:99px;padding:.3rem .9rem;text-align:center}
+.turn.disc .who{display:none}.turn.disc .txt{font-size:.82rem}
+@keyframes pop{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+.who{font-size:.66rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:700;margin-bottom:.1rem}
+.turn.bot .who{color:var(--accent)}.turn.you .who{color:var(--accent-2)}.turn.disc .txt{color:var(--badge)}
+.txt{font-size:1rem;overflow-wrap:anywhere}.turn.bad{border-color:var(--err)}.turn.bad .txt{color:var(--err)}
+.sub{color:var(--muted);font-size:.88rem;overflow-wrap:anywhere}.sub:empty,.timing:empty{display:none}
+.timing{font:.72rem/1.4 var(--mono);color:var(--muted);margin-top:.3rem;overflow-wrap:anywhere}
+#transcript .empty{margin:auto;text-align:center;color:var(--muted);max-width:18rem;font-size:.92rem}
+#transcript .empty::before{content:"";display:block;width:2.6rem;height:2.6rem;margin:0 auto .7rem;border-radius:50%;background:var(--accent-soft);
+  -webkit-mask:none;box-shadow:inset 0 0 0 1px var(--line-strong)}
+/* latency tiles */
+#meter{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;font-variant-numeric:tabular-nums}
+#meter>div{background:var(--bg-soft);border:1px solid var(--line);border-radius:var(--radius);padding:.7rem .8rem}
+#meter b{display:block;font-size:1.3rem;font-weight:700;letter-spacing:-.01em}#meter span{font-size:.7rem;color:var(--muted);line-height:1.25;display:block}
+@media (max-width:560px){#meter{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.compose textarea{background:var(--bg-soft)}
+.compose .actions button{flex:1 1 auto}
+.compose #speak{flex:2 1 7rem}
+.msg{padding:.6rem .8rem;border-radius:var(--radius);margin:.7rem 0 0;font-size:.88rem}.msg.warn{background:var(--warnbg);color:var(--warn)}.msg.err{color:var(--err);border:1px solid var(--err)}
+.attackerbar{background:linear-gradient(90deg,var(--stop),color-mix(in srgb,var(--stop) 70%,#7a1a14));color:var(--stop-ink);font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:.5rem 1rem;font-size:.82rem;position:sticky;top:3.75rem;z-index:5}
+.attackerbar[hidden]{display:none}
+#stagebox{border:1px solid var(--line-strong);padding:.8rem 1rem;margin:.7rem 0;background:var(--bg-soft);border-radius:var(--radius)}
+#stagebox b{font-size:.95rem}#stagebox .bar{display:flex;gap:5px;margin:.55rem 0}#stagebox .bar i{flex:1;height:6px;border-radius:99px;background:var(--line-strong)}#stagebox .bar i.on{background:var(--stop)}
+.note{font-size:.8rem;color:var(--muted);margin-top:.55rem;line-height:1.5}
+ul.voices{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.45rem}
+ul.voices li{display:flex;gap:.5rem;align-items:center;padding:.55rem .7rem;flex-wrap:wrap;background:var(--bg-soft);border:1px solid var(--line);border-radius:var(--radius)}
+ul.voices span{margin-right:auto;overflow-wrap:anywhere;font-weight:500}
+ul.voices button{padding:.28rem .7rem;font-size:.8rem}
+details{margin-top:.8rem;border-top:1px solid var(--line);padding-top:.7rem}details summary{cursor:pointer;font-weight:600;font-size:.9rem;list-style:none;display:flex;align-items:center;gap:.5rem}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"";width:.5rem;height:.5rem;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s}
+details[open] summary::before{transform:rotate(45deg)}
+code,pre{font:.78rem/1.5 var(--mono)}pre{background:var(--bg-soft);border:1px solid var(--line);padding:.7rem;overflow-x:auto;border-radius:var(--radius);margin:.5rem 0}
+dialog{border:1px solid var(--line-strong);border-radius:var(--radius-lg);background:var(--panel);color:var(--ink);max-width:min(30rem,92vw);box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(5,7,12,.55);backdrop-filter:blur(3px)}
+audio{width:100%;margin-top:.7rem;height:2.4rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8196ff"/><stop offset="1" stop-color="#3ddbb4"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><g fill="#0a0c12"><rect x="6" y="13" width="3" height="6" rx="1.5"/><rect x="11" y="9" width="3" height="14" rx="1.5"/><rect x="16" y="5.5" width="3" height="21" rx="1.5"/><rect x="21" y="10" width="3" height="12" rx="1.5"/><rect x="26" y="14" width="2" height="4" rx="1"/></g></svg>voice-talk <span id="modename">converse</span></h1>
+  <span class="badge" id="aibadge" title="Audio is synthesized by an AI voice model">AI voice</span>
+  <span class="pill" id="state" data-s="loading" role="status" aria-live="polite">loading model</span>
+  <button type="button" id="theme" class="secondary" aria-label="Switch light and dark theme" title="Switch light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+</header>
+<div class="attackerbar" id="attackerlabel" role="status" aria-live="polite" hidden>TEST ATTACKER - fictional scenario</div>
+<main>
+<div>
+  <section class="first" aria-labelledby="h-stage">
+    <h2 id="h-stage">Conversation</h2>
+    <div class="status">
+      <div class="state" id="big" data-s="idle" role="status" aria-live="polite"><i class="dot"></i><div><big id="bigtext">Idle</big><small id="bigsub">Start a session to begin</small></div></div>
+      <button id="stop" disabled>Stop (Esc)</button>
+    </div>
+    <div id="transcript" role="log" aria-live="polite" tabindex="0" aria-label="Transcript"><div class="empty">The transcript of both sides appears here.</div></div>
+  </section>
+  <section class="compose" aria-labelledby="h-in">
+    <h2 id="h-in">You</h2>
+    <label for="text" class="vh">Message</label>
+    <textarea id="text" rows="2" disabled placeholder="Start a session, then type or use the mic"></textarea>
+    <div class="check" id="liverow" hidden><input type="checkbox" id="live" checked><label for="live">Speak as I type (sends on punctuation or a short pause)</label></div>
+    <div class="check" id="handsfreerow"><input type="checkbox" id="handsfree"><label for="handsfree">Hands-free: open the mic automatically when the session starts (headphones recommended)</label></div>
+    <div class="check" id="bargerow"><input type="checkbox" id="barge"><label for="barge">Let me interrupt by speaking (headphones recommended)</label></div>
+    <div class="actions">
+      <button id="speak" disabled>Send</button>
+      <button id="ptt" class="secondary" disabled aria-pressed="false">Hold to talk</button>
+      <button id="open" class="secondary" disabled aria-pressed="false">Open mic</button>
+    </div>
+    <p class="note">Esc or Stop cancels the reply being generated and everything queued to be spoken. Without the interrupt option the open mic is muted while the bot talks.</p>
+  </section>
+  <section aria-labelledby="h-lat">
+    <h2 id="h-lat">Last turn</h2>
+    <div id="meter">
+      <div><b id="m-stt">-</b><span>speech to text (ms)</span></div>
+      <div><b id="m-llm">-</b><span>LLM first token (ms)</span></div>
+      <div><b id="m-first">-</b><span>first audio (ms)</span></div>
+      <div><b id="m-rtf">-</b><span>real-time factor</span></div>
+    </div>
+  </section>
+</div>
+<aside>
+  <section class="first" aria-labelledby="h-session">
+    <h2 id="h-session">Session</h2>
+    <div class="seg" role="group" aria-label="Mode"><button id="mode-converse" aria-pressed="true">Converse</button><button id="mode-translate" aria-pressed="false">Translate</button></div>
+    <label for="voice">Reference voice</label>
+    <select id="voice"></select>
+    <div class="row">
+      <div><label for="src" id="srclabel">Conversation language</label><select id="src"></select></div>
+      <div><label for="tgt" id="tgtlabel">Also speak replies in</label><select id="tgt"></select></div>
+    </div>
+    <div class="check"><input type="checkbox" id="demo"><label for="demo">Demo mode (attacker demo personas; for the Doublespeak detector demo)</label></div>
+    <div id="demowrap" hidden>
+      <label for="demopersona">Attacker demo set</label><select id="demopersona"></select>
+      <div class="check"><input type="checkbox" id="demoauto" checked><label for="demoauto">Advance the stage by turn count (Escalate always works)</label></div>
+      <div class="check"><input type="checkbox" id="prerec" checked><label for="prerec">Pre-record the next line (synthesize the next stage's opening line ahead of time)</label></div>
+      <div class="check"><input type="checkbox" id="savecall"><label for="savecall">Save this test call (WAV + label.json in qa_out/)</label></div>
+      <div id="stagebox" hidden><b id="stagename">Stage -</b><div class="bar" id="stagebar"></div><div class="note" id="stagenote" style="margin:0"></div>
+        <div class="actions"><button id="escalate" disabled>Escalate to next stage</button></div></div>
+      <p class="note">Local speakers only. The bot plays a fictional test caller (placeholders: Example Bank, case 000-TEST). The consent gate, AI-voice badge and spoken disclosure still apply; dropping the spoken disclosure needs the acknowledgement tick.</p>
+    </div>
+    <div id="personawrap"><label for="persona">Persona</label><select id="persona"></select></div>
+    <label for="backend" id="backlabel">Local model server</label>
+    <div class="row one"><select id="backend" aria-label="Local model server"></select><select id="model" aria-label="Model"></select></div>
+    <div class="actions"><button type="button" class="secondary" id="llmrefresh">Refresh servers</button></div>
+    <div class="note" id="llmnote" role="status"></div>
+    <div class="check"><input type="checkbox" id="disc" checked><label for="disc">Speak a short AI-voice disclosure at the start of each session</label></div>
+    <div class="check" id="ackrow" hidden><input type="checkbox" id="ack"><label for="ack">Everyone who will hear this knows it is an AI voice</label></div>
+    <div class="check"><input type="checkbox" id="save"><label for="save">Save audio to the local outputs/ folder</label></div>
+    <div class="actions"><button id="start">Start session</button></div>
+    <div id="sessmsg" role="alert"></div>
+    <p class="note" id="histnote">The conversation is kept in memory only (last 10 turns) and is wiped when you end the session.</p>
+  </section>
+  <section aria-labelledby="h-vm">
+    <h2 id="h-vm">Reference voices</h2>
+    <ul class="voices" id="vlist"></ul>
+    <details>
+      <summary>Add a voice</summary>
+      <div id="recbox">
+        <p class="note"><b>Record it now:</b> press Record and read this aloud in your normal voice and pace (10 to 25 s), then Stop.
+          It is transcribed on this machine; fix any wrong words below before adding.</p>
+        <p class="note"><i>"Hey, it's me. I'm just reading this out loud so the app can learn how I sound. Let's meet on Tuesday afternoon, and I'll bring the notes. If that doesn't work, Wednesday morning is fine too."</i></p>
+        <div class="actions"><button type="button" id="recbtn" class="secondary">Record</button><span class="note" id="rectime" aria-live="polite"></span></div>
+        <audio id="recplay" controls hidden></audio>
+      </div>
+      <form id="vform">
+        <label for="vname">Name (letters, digits, - _)</label><input type="text" id="vname" required pattern="[A-Za-z0-9][A-Za-z0-9_\-]{0,39}">
+        <label for="vfile">Reference clip (.wav, 3 to 30 s, clear speech)</label><input type="file" id="vfile" accept=".wav,audio/wav" required>
+        <label for="vtext">The exact words spoken in the clip</label><textarea id="vtext" required></textarea>
+        <label for="vspk">Speaker's name</label><input type="text" id="vspk" required>
+        <div class="check"><input type="checkbox" id="vcons" required><label for="vcons" id="vconstext"></label></div>
+        <p class="note">The clip stays on this machine in voices/. Do not use this to imitate someone to people who do not know, to deceive, or to commit fraud.</p>
+        <div class="actions"><button type="submit">Add voice</button></div>
+        <div id="vmsg" role="alert"></div>
+      </form>
+    </details>
+    <details>
+      <summary>Import from a longer recording</summary>
+      <p class="note">On the command line, the cleanest 5 to 15 s is picked for you. The speaker and what they agreed to are required and never defaulted:</p>
+      <pre>python tools/import_voice.py --src rec.wav --transcript rec.txt \
+  --name NAME --speaker "Full Name" \
+  --attest "what they agreed to"</pre>
+    </details>
+  </section>
+  <section aria-labelledby="h-qa">
+    <h2 id="h-qa">QA mode</h2>
+    <p class="note" style="margin-top:0">Test the Doublespeak detector (running on 127.0.0.1:8000). The bot plays a labelled test caller; nothing is routed anywhere and files stay in qa_out/.</p>
+    <details>
+      <summary>Commands</summary>
+      <pre>python tools/qa_run.py --voice demo-say \
+  --ack-test-only
+python tools/qa_score.py qa_out/ \
+  --api http://127.0.0.1:8000</pre>
+      <p class="note">Scenarios: benign receptionist (undisclosed AI), disclosed automated assistant, and a fictional scam-pattern test caller. A few clips are a sanity check, not a measurement.</p>
+    </details>
+  </section>
+</aside>
+</main>
+<dialog id="cdlg"><form method="dialog" id="cform">
+  <p id="cdtext"></p><label for="cspk">Speaker's name</label><input type="text" id="cspk" required>
+  <div class="check"><input type="checkbox" id="ccons" required><label for="ccons" id="ccontext"></label></div>
+  <div class="actions"><button type="submit" value="ok">Save consent</button><button type="button" class="secondary" id="ccancel">Cancel</button></div>
+</form></dialog>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+let translating = false, ws = null, active = false, cfg = {}, ctx = null, nextT = 0, srcs = [], pending = null, muted = false;
+let sentLen = 0, pauseTimer = null, mic = null, micMode = null, items = {}, mode = "converse", awaiting = false, loudSince = 0;
+const turns = {};
+
+function setState(s, text){ const e=$("state"); e.dataset.s=s; e.textContent=text||s; }
+function say(el, text, cls){ el.innerHTML=""; if(!text) return; const d=document.createElement("div"); d.className="msg "+(cls||"warn"); d.textContent=text; el.appendChild(d); }
+const send = o => { if(ws && ws.readyState===1) ws.send(JSON.stringify(o)); };
+const speaking = () => !!ctx && nextT > ctx.currentTime + 0.02;
+
+async function init(){
+  cfg = await (await fetch("/api/config")).json();
+  for (const id of ["src","tgt"]) for (const [k,v] of Object.entries(cfg.languages)) $(id).add(new Option(v,k));
+  $("src").value="en"; $("tgt").insertBefore(new Option("No translation",""), $("tgt").firstChild); $("tgt").value="";
+  try { const p = await (await fetch("/api/personas")).json(); for (const x of p.personas) $("persona").add(new Option(x.title, x.name)); $("persona").value=p.default; } catch(e){}
+  await loadLlm();
+  $("vconstext").textContent = cfg.consent_text; $("ccontext").textContent = cfg.consent_text;
+  try { const dj = await (await fetch("/api/demo")).json(); demoSets = dj.personas; for (const x of demoSets) $("demopersona").add(new Option(x.title, x.name)); } catch(e){}
+  setMode("converse"); await loadVoices(); poll(); setInterval(paintStatus, 150);
+}
+async function poll(){
+  const c = await (await fetch("/api/config")).json();
+  if (c.model_state==="ready"){ setState("ready", "model ready"); }
+  else if (c.model_state==="error"){ setState("error","model error"); say($("sessmsg"), c.model_error, "err"); }
+  else { setState("loading","loading model"); setTimeout(poll,1500); }
+}
+function setMode(m){
+  if (active) return; mode=m; const c=m==="converse";
+  $("mode-converse").setAttribute("aria-pressed",c); $("mode-translate").setAttribute("aria-pressed",!c);
+  $("modename").textContent = m;
+  $("srclabel").textContent = c ? "Conversation language" : "I speak / type";
+  $("tgtlabel").textContent = c ? "Also speak replies in" : "Spoken aloud in";
+  const t=$("tgt"); [...t.options].forEach(o=>{ if(o.value==="") o.hidden=!c; });
+  if(c) t.value=""; else if(t.value==="") t.value="es";
+  paintMicBtn(); $("personawrap").hidden=!c; paintDemo(); $("bargerow").hidden=!c; $("handsfreerow").hidden=!c; $("liverow").hidden=c; $("histnote").hidden=!c;
+  $("backlabel").textContent = c ? "Local model server (chat and translation)" : "Local model server (translation)";
+}
+let demoSets = [];
+function demoCur(){ return demoSets.find(x=>x.name===$("demopersona").value); }
+function paintDemo(){
+  const on=$("demo").checked && mode==="converse", d=demoCur();
+  $("demowrap").hidden=!on; $("personawrap").hidden=on || mode!=="converse";
+  const att = on && d && d.attacker; $("attackerlabel").hidden=!att; if(d) $("attackerlabel").textContent = att ? d.label : "";
+  document.title = att ? "TEST ATTACKER - voice-talk" : "voice-talk";
+}
+function paintStage(m){
+  $("stagebox").hidden=false; $("stagename").textContent="Stage "+m.stage+" of "+m.of+": "+m.name;
+  const b=$("stagebar"); b.innerHTML=""; for(let i=1;i<=m.of;i++){ const x=document.createElement("i"); if(i<=m.stage) x.className="on"; b.appendChild(x); }
+  $("stagenote").textContent = m.pending ? "Escalating after this line..." : (m.final ? "Final stage." : "");
+  $("escalate").disabled = !active || m.final;
+  if(m.label){ $("attackerlabel").hidden=!m.test_attacker; $("attackerlabel").textContent=m.label; }
+}
+$("demo").onchange=paintDemo; $("demopersona").onchange=paintDemo;
+$("escalate").onclick=()=>send({type:"escalate"});
+$("mode-converse").onclick=()=>setMode("converse"); $("mode-translate").onclick=()=>setMode("translate");
+
+async function loadVoices(){
+  const v = await (await fetch("/api/voices")).json(); const sel=$("voice"), keep=sel.value; sel.innerHTML="";
+  const ul=$("vlist"); ul.innerHTML="";
+  if(!v.length){ sel.add(new Option("(add a voice first)","")); ul.innerHTML='<li class="sub">No voices yet.</li>'; }
+  for(const x of v){
+    if(x.consent) sel.add(new Option(x.name+" - "+x.speaker, x.name));
+    const li=document.createElement("li"); const sp=document.createElement("span");
+    sp.textContent = x.name + (x.consent ? " (consent: "+x.speaker+")" : " - no consent record, cannot be used"); li.appendChild(sp);
+    if(x.consent){ const b=document.createElement("button"); b.className="secondary"; b.textContent="Preview"; b.setAttribute("aria-label","Preview "+x.name); b.onclick=()=>new Audio("/api/voices/"+x.name+"/audio").play(); li.appendChild(b); }
+    else { const b=document.createElement("button"); b.className="secondary"; b.textContent="Add consent"; b.onclick=()=>askConsent(x.name); li.appendChild(b); }
+    const d=document.createElement("button"); d.className="danger"; d.textContent="Delete"; d.setAttribute("aria-label","Delete "+x.name);
+    d.onclick=async()=>{ if(confirm("Delete voice "+x.name+"?")){ await fetch("/api/voices/"+x.name,{method:"DELETE"}); loadVoices(); } }; li.appendChild(d);
+    ul.appendChild(li);
+  }
+  if([...sel.options].some(o=>o.value===keep)) sel.value=keep;
+}
+$("vform").onsubmit = async e => {
+  e.preventDefault(); const fd=new FormData();
+  fd.append("name",$("vname").value); fd.append("ref_text",$("vtext").value); fd.append("speaker_name",$("vspk").value);
+  fd.append("consent",$("vcons").checked?"true":"false"); fd.append("audio",$("vfile").files[0]);
+  const r=await fetch("/api/voices",{method:"POST",body:fd}); const j=await r.json();
+  if(!r.ok){ say($("vmsg"), j.detail, "err"); return; }
+  say($("vmsg"), j.warnings.length ? "Added. Warning: "+j.warnings.join(" ") : "Added ("+j.duration+" s).", "warn");
+  $("vform").reset(); loadVoices();
+};
+
+// ---- local model servers: LM Studio, Ollama, llama.cpp, vLLM, Jan, custom (any OpenAI-compatible loopback endpoint) ----
+let llm = null;
+async function loadLlm(){
+  try{ llm = await (await fetch("/api/llm")).json(); }catch(e){ $("llmnote").textContent="Could not list model servers."; return; }
+  const sb=$("backend"), keepB=sb.value, keepM=$("model").value; sb.innerHTML="";
+  for(const s of llm.servers){ const o=new Option(s.label+(s.reachable?" ("+s.models.length+" models)":" (not running)"), s.id); sb.add(o); }
+  const usable = id => llm.servers.some(s=>s.id===id && s.reachable);
+  sb.value = usable(keepB) ? keepB : (usable(llm.default_backend) ? llm.default_backend : (llm.servers.find(s=>s.reachable)||{}).id || llm.default_backend);
+  fillModels(keepM);
+}
+function fillModels(keep){
+  const s=llm.servers.find(x=>x.id===$("backend").value), m=$("model"); m.innerHTML="";
+  m.add(new Option("auto: first model","")); for(const id of (s?s.models:[])) m.add(new Option(id,id));
+  const prefer = keep || (s && s.id===llm.default_backend ? llm.default_model : "");
+  if(prefer && [...m.options].some(o=>o.value===prefer)) m.value=prefer;
+  $("llmnote").textContent = s && !s.reachable ? s.label+" is not running on "+s.base_url+"." : "";
+}
+$("backend").onchange = () => fillModels(""); $("llmrefresh").onclick = loadLlm;
+
+// ---- record a reference clip on the fly, transcribe it locally, fill the form ------------------------------------
+let rec = null;
+const REC_MAX_S = 28;
+function wavFromFloat(f32, sr){   // mono 16-bit PCM WAV
+  const b=new ArrayBuffer(44+f32.length*2), v=new DataView(b), w=(o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+  w(0,"RIFF"); v.setUint32(4,36+f32.length*2,true); w(8,"WAVE"); w(12,"fmt "); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,"data"); v.setUint32(40,f32.length*2,true);
+  for(let i=0;i<f32.length;i++) v.setInt16(44+i*2, Math.max(-1,Math.min(1,f32[i]))*32767, true);
+  return new Blob([b],{type:"audio/wav"});
+}
+function downsample(f32, from, to){
+  const r=from/to, n=Math.floor(f32.length/r), out=new Float32Array(n);
+  for(let i=0;i<n;i++){ let s=0,a=Math.floor(i*r),b=Math.max(a+1,Math.floor((i+1)*r)); for(let j=a;j<b&&j<f32.length;j++) s+=f32[j]; out[i]=s/(b-a); }
+  return out;
+}
+async function recStart(){
+  let stream; try{ stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:false,noiseSuppression:false,autoGainControl:false}}); }
+  catch(e){ say($("vmsg"),"Microphone unavailable: "+e.message,"err"); return; }
+  const c=audioCtx(), srcN=c.createMediaStreamSource(stream), proc=c.createScriptProcessor(4096,1,1), chunks=[];
+  proc.onaudioprocess = ev => chunks.push(new Float32Array(ev.inputBuffer.getChannelData(0)));
+  srcN.connect(proc); proc.connect(c.destination);
+  const t0=performance.now();
+  rec={stream,proc,srcN,chunks,sr:c.sampleRate,timer:setInterval(()=>{ const s=(performance.now()-t0)/1000; $("rectime").textContent="Recording "+s.toFixed(0)+" s"; if(s>=REC_MAX_S) recStop(); },200)};
+  $("recbtn").textContent="Stop"; $("recbtn").setAttribute("aria-pressed","true"); say($("vmsg"),"","");
+}
+async function recStop(){
+  if(!rec) return; const r=rec; rec=null; clearInterval(r.timer);
+  r.proc.disconnect(); r.srcN.disconnect(); r.stream.getTracks().forEach(t=>t.stop());
+  $("recbtn").textContent="Record"; $("recbtn").setAttribute("aria-pressed","false"); $("rectime").textContent="";
+  const all=new Float32Array(r.chunks.reduce((n,x)=>n+x.length,0)); let o=0; for(const x of r.chunks){ all.set(x,o); o+=x.length; }
+  const clip=downsample(all, r.sr, 16000), dur=clip.length/16000;
+  if(dur<3){ say($("vmsg"),"That was only "+dur.toFixed(1)+" s; record at least 3 s.","err"); return; }
+  const blob=wavFromFloat(clip,16000), file=new File([blob],"recording.wav",{type:"audio/wav"});
+  const dt=new DataTransfer(); dt.items.add(file); $("vfile").files=dt.files;
+  $("recplay").src=URL.createObjectURL(blob); $("recplay").hidden=false;
+  $("recbtn").disabled=true; say($("vmsg"),"Transcribing on this machine...","warn");
+  try{
+    const fd=new FormData(); fd.append("audio",file); fd.append("lang",$("src").value||"en");
+    const resp=await fetch("/api/voices/transcribe",{method:"POST",body:fd}), j=await resp.json();
+    if(!resp.ok) throw new Error(j.detail||resp.status);
+    $("vtext").value=j.text;
+    say($("vmsg"),"Draft transcript filled in ("+j.duration_s+" s). Fix any wrong words, enter the speaker's name, tick the consent box, then Add voice.","warn");
+  }catch(e){ say($("vmsg"),"Could not transcribe ("+e.message+"). Type the exact words you said into the box below.","err"); }
+  finally{ $("recbtn").disabled=false; }
+}
+$("recbtn").onclick = () => rec ? recStop() : recStart();
+let consentFor=null;
+function askConsent(n){ consentFor=n; $("cdtext").textContent="Voice: "+n; $("cdlg").showModal(); }
+$("ccancel").onclick=()=>$("cdlg").close();
+$("cform").onsubmit = async e => { e.preventDefault(); const fd=new FormData(); fd.append("speaker_name",$("cspk").value); fd.append("consent",$("ccons").checked?"true":"false");
+  const r=await fetch("/api/voices/"+consentFor+"/consent",{method:"POST",body:fd}); $("cdlg").close(); if(!r.ok) say($("vmsg"),(await r.json()).detail,"err"); loadVoices(); };
+$("disc").onchange = () => { $("ackrow").hidden = $("disc").checked; if($("disc").checked) $("ack").checked=false; };
+
+// ---- status: IDLE / READY / LISTENING / THINKING / SPEAKING ---------------
+function paintStatus(){
+  $("start").classList.toggle("live", !!active);
+  let s="idle", t="Idle", sub="Start a session to begin";
+  if(active){
+    if(speaking()){ s="speaking"; t="Speaking"; sub="press Stop or Esc to interrupt"; }
+    else if(awaiting){ s="thinking"; t="Thinking"; sub="waiting for the first words"; }
+    else if(mic){ s="listening"; t="Listening"; sub= micMode==="ptt" ? "release to send" : "speak any time, pause to send"; }
+    else { s="idle"; t="Ready"; sub="type a message, hold the talk button, or open the mic"; }
+  }
+  $("big").dataset.s=s; $("bigtext").textContent=t; $("bigsub").textContent=sub;
+}
+
+// ---- session -------------------------------------------------------------
+function audioCtx(){ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); if(ctx.state==="suspended") ctx.resume(); return ctx; }
+function connect(){
+  ws = new WebSocket("ws://"+location.host+"/ws"); ws.binaryType="arraybuffer";
+  ws.onmessage = ev => { if (ev.data instanceof ArrayBuffer) playPcm(ev.data); else handle(JSON.parse(ev.data)); };
+  ws.onclose = () => { if(active) endUi("Connection closed."); };
+  return new Promise(res => ws.onopen = res);
+}
+function clearTranscript(){ $("transcript").innerHTML=""; for(const k in turns) delete turns[k]; items={}; }
+$("start").onclick = async () => {
+  if (active) { try{ws.close();}catch(e){} endUi(""); return; }
+  if (!$("voice").value) { say($("sessmsg"), "Add a reference voice (with consent) first.", "err"); return; }
+  if (!$("disc").checked && !$("ack").checked) { say($("sessmsg"), "To turn the disclosure off, confirm that everyone who will hear this knows it is an AI voice.", "err"); return; }
+  audioCtx(); await connect(); clearTranscript();
+  const base={type:"start", voice:$("voice").value, backend:$("backend").value, ...($("model").value ? {model:$("model").value} : {}), disclosure:$("disc").checked, disclosure_ack:$("ack").checked, save_audio:$("save").checked};
+  if(mode==="converse") send({...base, mode:"converse", lang:$("src").value, translate_to:$("tgt").value||null, persona:$("persona").value,
+    ...( $("demo").checked ? {demo:$("demopersona").value, demo_auto:$("demoauto").checked, prerecord:$("prerec").checked, save_call:$("savecall").checked} : {} )});
+  else send({...base, mode:"translate", source:$("src").value, target:$("tgt").value});
+};
+function endUi(msg){ active=false; awaiting=false; ["text","speak","ptt","open","stop"].forEach(i=>$(i).disabled=true); $("start").textContent="Start session";
+  ["mode-converse","mode-translate","demo"].forEach(i=>$(i).disabled=false); $("escalate").disabled=true; $("stagebox").hidden=true; paintDemo(); stopMic(); haltAudio(); say($("sessmsg"),msg,"warn"); $("text").placeholder="Start a session, then type or use the mic"; paintStatus(); }
+function el(cls, who){ const d=document.createElement("div"); d.className="turn "+cls;
+  d.innerHTML='<div class="who"></div><div class="txt"></div><div class="sub"></div><div class="timing"></div>'; d.children[0].textContent=who;
+  const t=$("transcript"); const em=t.querySelector(".empty"); if(em) em.remove(); t.appendChild(d); t.scrollTop=t.scrollHeight;
+  return {el:d, txt:d.children[1], sub:d.children[2], timing:d.children[3]}; }
+function botTurn(n){ const k="b"+n; return turns[k] || (turns[k]=el("bot","Bot")); }
+function handle(m){
+  switch(m.type){
+    case "started": active=true; translating=!!m.translate_to; sentLen=0; muted=false; awaiting=false; say($("sessmsg"),""); $("start").textContent="End session";
+      ["mode-converse","mode-translate","demo"].forEach(i=>$(i).disabled=true);
+      if(m.demo){ $("attackerlabel").hidden=!m.test_attacker; $("attackerlabel").textContent=m.label; }
+      ["text","speak","ptt","open","stop"].forEach(i=>$(i).disabled=false); $("text").placeholder=mode==="converse"?"Say something...":"Type here..."; $("text").focus();
+      if(mode==="converse" && $("handsfree").checked) startMic("open");   // opt-in: mic opens by itself, pauses send your turn
+      break;
+    case "stage": paintStage(m); { const t=el("disc","Stage"); t.txt.textContent="Stage "+m.stage+" of "+m.of+": "+m.name+(m.reason?" ("+m.reason+")":""); } break;
+    case "saved": say($("sessmsg"),"Saved test call: "+m.path,"warn"); break;
+    case "user": { const t=el("you","You"); t.txt.textContent=m.text; turns["u"+m.turn]=t; awaiting=true; break; }
+    case "bot_delta": { const t=botTurn(m.turn); t.txt.textContent += m.text; $("transcript").scrollTop=1e9; break; }
+    case "interrupted": awaiting=false; botTurn(m.turn).sub.textContent="(interrupted)"; break;
+    case "turn": { awaiting=false; const t=botTurn(m.turn); const f=v=>v==null?"-":v;
+      t.timing.textContent="STT "+f(m.stt_ms)+" ms | LLM first token "+f(m.llm_first_token_ms)+" ms | first audio "+f(m.tts_first_audio_ms)+" ms | synth "+m.synth_ms+" ms | rtf "+f(m.rtf)+(m.source?" | stage "+m.stage+" "+m.source:"");
+      $("m-stt").textContent=f(m.stt_ms); $("m-llm").textContent=f(m.llm_first_token_ms); $("m-first").textContent=f(m.tts_first_audio_ms); $("m-rtf").textContent=f(m.rtf); break; }
+    case "translation": if(mode==="converse"){ if(!translating) break; const t=el("bot","Bot, translated"); t.txt.textContent=m.text; } else item(m.seq).tr.textContent = m.text; break;
+    case "source": if(mode==="translate") item(m.seq).src.textContent = m.text; break;
+    case "disclosure": { const t=el("disc","AI-voice disclosure"); t.txt.textContent=m.text; break; }
+    case "audio": pending = m; awaiting=false; break;
+    case "chunk_done": if(mode==="translate"){ const x=m.metrics; $("m-first").textContent=x.first_audio_ms; $("m-stt").textContent="-"; $("m-llm").textContent=x.translate_ms; $("m-rtf").textContent=x.rtf;
+      item(m.seq).meta.textContent = x.first_audio_ms+" ms to audio | rtf "+x.rtf; } break;
+    case "stopped": muted=false; haltAudio(); break;
+    case "error": awaiting=false; if(m.seq && mode==="translate"){ const it=item(m.seq); it.el.classList.add("bad"); it.tr.textContent="Error: "+m.message; } else say($("sessmsg"), m.message, "err");
+      if(["consent_required","disclosure_required","bad_request","start_failed","model_not_ready","llm_unavailable"].includes(m.code)){ const msg=m.message; try{ws.close();}catch(e){} endUi(msg); } break;
+  }
+}
+function item(seq){   // translate mode: one block per chunk
+  if(items[seq]) return items[seq];
+  const t=el("bot","Chunk "+seq); const it={el:t.el, src:t.sub, tr:t.txt, meta:t.timing}; items[seq]=it; return it;
+}
+function playPcm(buf){
+  if (!pending || muted) { pending=null; return; }
+  const c=audioCtx(), i16=new Int16Array(buf), f=new Float32Array(i16.length);
+  for(let i=0;i<i16.length;i++) f[i]=i16[i]/32768;
+  const ab=c.createBuffer(1,f.length,pending.sample_rate); ab.copyToChannel(f,0);
+  const s=c.createBufferSource(); s.buffer=ab; s.connect(c.destination);
+  const t=Math.max(nextT, c.currentTime+0.03); s.start(t); nextT=t+ab.duration;   // strictly sequential: no overlap
+  srcs.push(s); s.onended=()=>{ srcs=srcs.filter(x=>x!==s); }; pending=null;
+}
+function haltAudio(){ srcs.forEach(s=>{try{s.stop();}catch(e){}}); srcs=[]; nextT=0; pending=null; }
+function stopAll(){ if(!active) return; muted=true; haltAudio(); awaiting=false; send({type: mode==="converse"?"interrupt":"stop"}); }
+$("stop").onclick = () => { stopAll(); $("text").focus(); };
+document.addEventListener("keydown", e => { if(e.key==="Escape") stopAll(); });
+
+// ---- typed input ---------------------------------------------------------
+function sendDelta(){
+  const v=$("text").value; if(v.length<sentLen) sentLen=v.length;
+  const d=v.slice(sentLen); if(d){ send({type:"text",text:d}); sentLen=v.length; }
+}
+$("text").addEventListener("input", () => {
+  if(!active||mode!=="translate"||!$("live").checked) return;
+  const v=$("text").value; if(v.length<sentLen){ sentLen=v.length; return; }
+  const last=v.slice(-1); clearTimeout(pauseTimer);
+  if(/[\s.,;:!?]/.test(last)) sendDelta();
+  pauseTimer=setTimeout(()=>{ sendDelta(); send({type:"flush"}); }, 1100);   // pause = flush
+});
+function speakNow(){
+  if(!active) return;
+  if(mode==="converse"){ const v=$("text").value.trim(); if(!v) return; haltAudio(); awaiting=true; send({type:"say",text:v}); $("text").value=""; return; }
+  clearTimeout(pauseTimer); sendDelta(); send({type:"flush"}); $("text").value=""; sentLen=0;
+}
+$("speak").onclick = speakNow;
+$("text").addEventListener("keydown", e => { if(e.key==="Enter" && (e.ctrlKey||e.metaKey || (mode==="converse" && !e.shiftKey))){ e.preventDefault(); speakNow(); } });
+
+// ---- microphone ------------------------------------------------------------
+async function startMic(kind){
+  if(mic) return false; const c=audioCtx();
+  let stream; try{ stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true}}); }
+  catch(e){ say($("sessmsg"),"Microphone unavailable: "+e.message,"err"); return false; }
+  const srcN=c.createMediaStreamSource(stream), proc=c.createScriptProcessor(4096,1,1), ratio=c.sampleRate/16000;
+  proc.onaudioprocess = ev => {
+    const inp=ev.inputBuffer.getChannelData(0), allow = mode==="converse" && $("barge").checked;
+    if(!active || (kind==="open" && !allow && (speaking() || muted))) return;     // do not listen to our own output
+    if(allow && speaking()){   // barge-in: sustained speech over the bot stops it (the server also cancels generation)
+      let e=0; for(let i=0;i<inp.length;i++) e+=inp[i]*inp[i]; const rms=Math.sqrt(e/inp.length);
+      if(rms>0.04){ loudSince = loudSince || performance.now(); if(performance.now()-loudSince>200){ loudSince=0; stopAll(); } } else loudSince=0;
+    }
+    const n=Math.floor(inp.length/ratio), out=new Int16Array(n);
+    for(let i=0;i<n;i++){ let s=0,a=Math.floor(i*ratio),b=Math.floor((i+1)*ratio); for(let j=a;j<b;j++) s+=inp[j]; s/=Math.max(1,b-a); out[i]=Math.max(-1,Math.min(1,s))*32767; }
+    if(ws && ws.readyState===1) ws.send(out.buffer);
+  };
+  srcN.connect(proc); proc.connect(c.destination); mic={stream,proc,srcN}; micMode=kind; paintMicBtn();
+  send({type:"mic_start",mode:kind}); return true;
+}
+function stopMic(){ if(!mic) return; mic.proc.disconnect(); mic.srcN.disconnect(); mic.stream.getTracks().forEach(t=>t.stop()); mic=null; micMode=null;
+  if(active) send({type:"mic_end"}); paintMicBtn(); }
+function paintMicBtn(){ const on = micMode==="open";
+  $("ptt").setAttribute("aria-pressed", micMode==="ptt"); $("open").setAttribute("aria-pressed", on);
+  $("open").textContent = on ? "Open mic: on (click to stop)" : "Open mic"; }
+async function pttDown(){ if(!active||mic) return; if(mode==="converse" && (speaking() || awaiting)) stopAll(); $("ptt").setAttribute("aria-pressed","true"); if(!await startMic("ptt")) $("ptt").setAttribute("aria-pressed","false"); }
+function pttUp(){ if(micMode==="ptt") stopMic(); }
+$("ptt").addEventListener("pointerdown", pttDown); window.addEventListener("pointerup", pttUp);
+$("ptt").addEventListener("keydown", e => { if((e.key===" "||e.key==="Enter")&&!e.repeat){ e.preventDefault(); pttDown(); } });
+$("ptt").addEventListener("keyup", e => { if(e.key===" "||e.key==="Enter"){ e.preventDefault(); pttUp(); } });
+$("open").onclick = async () => { if(micMode==="open"){ stopMic(); return; } if(mic) return; await startMic("open"); };
+(function(){   // light / dark switch, remembered on this device (follows the system until you choose)
+  const root=document.documentElement;
+  try{ const s=localStorage.getItem("vt-theme"); if(s) root.dataset.theme=s; }catch(e){}
+  $("theme").onclick=()=>{ const dark = root.dataset.theme ? root.dataset.theme==="dark" : matchMedia("(prefers-color-scheme:dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark"; try{ localStorage.setItem("vt-theme", root.dataset.theme); }catch(e){} };
+})();
+init();
+</script>
+</body>
+</html>
